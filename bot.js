@@ -11,8 +11,7 @@ client.on('ready', () => {
 });
 
 function getRandomInt(max) {
-  return (Math.random() * Math.floor(max));
-  console.log(getRandomInt(3));
+  return Math.round(Math.random() * Math.floor(max));
 }
 
 function AutoMsg() {
@@ -27,22 +26,27 @@ function AutoMsg() {
     .setDescription('**What is this bot?**\nI am a Discord Bot created to help you!\nI can provide you with helpful links, fun commands,\nand more coming soon!')
     .setThumbnail('https://i.ibb.co/s5dY0bj/tlclogo.png')
     .setFooter('Use the command `$help` to see what I can do!');
-  var i = getRandomInt(3);
-  // IF ELSE
-  switch(i > -1) {
-    case(i <= 0):
-//      console.log('Zero');
-      i = getRandomInt(3);
+  const automsg3 = new MessageEmbed().setTitle('The Legend Continues | AutoMsg')
+    .setColor(0x000080)
+    .setDescription('**Have you checked stats lately?**\nNathanacus maintains our stats on our website!\nRun the command $stats to see more.')
+    .setThumbnail('https://i.ibb.co/s5dY0bj/tlclogo.png')
+    .setFooter('Use the command `stats` to see various stats!');
+// SWITCH STATEMENT
+  switch(getRandomInt(4)) {
+    case 0:
+      console.log('Zero');
       break;
-    case(i <= 2):
+    case 1:
       channel.send(automsg1);
-//      console.log('First Msg');
-      i = getRandomInt(3);
+      console.log('First Msg');
       break;
-    case(i <= 3):
+    case 2:
       channel.send(automsg2);
-//      console.log('Second Msg');
-      i = getRandomInt(3);
+      console.log('Second Msg');
+      break;
+    case 3:
+      channel.send(automsg3);
+      console.log('Third Msg')
       break;
   }
 }

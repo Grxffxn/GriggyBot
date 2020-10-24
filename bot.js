@@ -17,7 +17,7 @@ function getRandomInt(max) {
 
 function AutoMsg() {
   var channel = client.channels.cache.get("407425882928578561");
-  if(!channel) return console.log("Not a channel. Or ur dumb.");
+  if(!channel) return console.log("Not a channel.");
   const automsg1 = new MessageEmbed().setTitle('The Legend Continues | AutoMsg')
     .setColor(0x000080)
     .setDescription('**Have you voted yet today?**\nRun the command `$vote` to vote for rewards\nin-game! Access /fly, /god & more!')
@@ -31,53 +31,24 @@ function AutoMsg() {
   // IF ELSE
   switch(i > -1) {
     case(i <= 0):
-      console.log('Zero');
+//      console.log('Zero');
       i = getRandomInt(3);
       break;
     case(i <= 2):
       channel.send(automsg1);
-      console.log('First Msg');
+//      console.log('First Msg');
       i = getRandomInt(3);
       break;
     case(i <= 3):
       channel.send(automsg2);
-      console.log('Second Msg');
+//      console.log('Second Msg');
       i = getRandomInt(3);
       break;
   }
 }
 
-//while(i > -1) {
-//  if(i = 1) {
-//    channel.send(automsg1);
-//    console.log('First Msg');
-//    i++;
-//  } else if(i = 2) {
-//    channel.send(automsg2);
-//    console.log('Second Msg');
-//    i++;
-//  } else if(i = 0) {
-//    console.log('Zero');
-//  }
-//}
-
 setInterval(AutoMsg,7200000);
 //1 hour: 3600000
-//function broadcast() {
-//  const embed = new MessageEmbed().setTitle('The Legend Continues | AutoMsg')
-//    .setColor(0x000080)
-//    .setDescription('test message')
-//    .setThumbnail('https://i.ibb.co/s5dY0bj/tlclogo.png');
-//  message.channel1.send(embed);
-//}
-
-// vote timer ??? look into votifier api
-//const voteTimer = 0;
-//
-//while(voteTimer < 24) {
-//  wait(1);
-//  voteTimer++;
-//}
 
 // COMMANDS
 client.on("message", function(message) {

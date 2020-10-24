@@ -6,5 +6,6 @@ If you somehow stumbled upon this repository, I assume you're looking for coding
 I am not the person to come to for coding help, but I hope my code helps you fix your issue.
 
 Join our Discord! We're a close community of friends and we're always welcoming new players.
-Our main website is https://www.thelegendcontinues.org/ and our Minecraft server is
-mc.thelegendcontinues.info
+Discord: https://discord.gg/6p5sB88
+TLC Website: https://www.thelegendcontinues.org/
+Minecraft Server IP: mc.thelegendcontinues.info

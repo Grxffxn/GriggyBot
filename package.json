@@ -1,0 +1,12 @@
+{
+  "name": "discord.js",
+  "version": "1.0.0",
+  "description": "My First Discord Bot",
+  "main": "bot.js",
+  "author": "Your Name",
+  "dependencies": {
+    "discord.io": "^2.5.3",
+    "discord.js": "^12.4.0",
+    "winston": "^3.3.3"
+  }
+}

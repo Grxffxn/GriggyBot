@@ -3,5 +3,3 @@
 .package.json
 .package-lock.json
 node_modules/
-*.json
-auth.json

@@ -1,0 +1,4 @@
+.DS_Store
+.auth.json
+.package.json
+.package-lock.json

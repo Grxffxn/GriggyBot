@@ -1,8 +1,10 @@
+const Discord = require('discord.js');
+const { Client, MessageEmbed } = require('discord.js');
+
 module.exports = {
 	name: 'karrrot',
 	description: 'TLC | Karrrot',
 	execute(message, args) {
-		const Discord = require("discord.js");
     const embed = new MessageEmbed().setTitle('The Legend Continues | Karrrot')
       .setColor(0x000080)
       .setDescription('I am a poo poo stinkyhead buttface')

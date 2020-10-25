@@ -1,8 +1,10 @@
+const Discord = require('discord.js');
+const { Client, MessageEmbed } = require('discord.js');
+
 module.exports = {
 	name: 'dynmap',
 	description: 'TLC Dynmap',
 	execute(message, args) {
-		const Discord = require("discord.js");
     const embed = new MessageEmbed().setTitle('The Legend Continues | Dynmap')
         .setColor(0x000080)
         .setURL('https://map.thelegendcontinues.org/')

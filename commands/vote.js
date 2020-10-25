@@ -1,8 +1,10 @@
+const Discord = require('discord.js');
+const { Client, MessageEmbed } = require('discord.js');
+
 module.exports = {
 	name: 'vote',
 	description: 'TLC Voting',
 	execute(message, args) {
-		const Discord = require("discord.js");
     //somehow connect votifier API so send embeds when players vote
     const embed = new MessageEmbed().setTitle('The Legend Continues | Vote')
       .setColor(0x000080)

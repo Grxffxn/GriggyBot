@@ -1,8 +1,10 @@
+const Discord = require('discord.js');
+const { Client, MessageEmbed } = require('discord.js');
+
 module.exports = {
 	name: 'rank',
 	description: 'TLC Rank information',
 	execute(message, args) {
-		const Discord = require("discord.js");
     const embed = new MessageEmbed().setTitle('The Legend Continues | Ranks')
       .setColor(0x000080)
       .setDescription('**Rank Commands**\n\n`rank` - bring up this great menu!\n`rank detail` - view your rank stats\n`rank next` - advance to the next rank!\n`rank leaderboard` - view the rank score leaderboard!')

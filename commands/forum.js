@@ -1,8 +1,10 @@
+const Discord = require('discord.js');
+const { Client, MessageEmbed } = require('discord.js');
+
 module.exports = {
 	name: 'forum',
 	description: 'TLC Forums',
 	execute(message, args) {
-		const Discord = require("discord.js");
     const embed = new MessageEmbed().setTitle('The Legend Continues | Forums')
       .setColor(0x000080)
       .setURL('https://thelegendcontinues.org/index.php?route=/forum/')

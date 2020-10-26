@@ -5,6 +5,7 @@ module.exports = {
 	name: 'notstaff',
 	description: 'TLC Not Staff',
 	execute(message, args) {
+		const Discord = require('discord.js');
     const embed = new MessageEmbed().setTitle('The Legend Continues | Not Staff')
       .setColor(0x000080)
       .setDescription('**1.** Glitch')

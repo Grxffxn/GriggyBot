@@ -4,6 +4,7 @@ const { Client, MessageEmbed } = require('discord.js');
 module.exports = {
 	name: 'site',
 	description: 'TLC Homepage',
+	aliases: ['website', 'url'],
 	execute(message, args) {
     const embed = new MessageEmbed().setTitle('The Legend Continues | Site')
       .setColor(0x000080)

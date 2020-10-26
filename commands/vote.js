@@ -4,6 +4,7 @@ const { Client, MessageEmbed } = require('discord.js');
 module.exports = {
 	name: 'vote',
 	description: 'TLC Voting',
+	cooldown: 86400, //in seconds
 	execute(message, args) {
     //somehow connect votifier API so send embeds when players vote
     const embed = new MessageEmbed().setTitle('The Legend Continues | Vote')

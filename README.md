@@ -2,6 +2,8 @@
 Custom bot made for The Legend Continues' Discord server.
 Created by @Grxffxn#6666
 
+This code is completely open source. You can use this code in commercial projects.
+
 If you somehow stumbled upon this repository, I assume you're looking for coding help.
 I am not the person to come to for coding help, but I hope my code helps you fix your issue.
 

@@ -9,3 +9,5 @@ Join our Discord! We're a close community of friends and we're always welcoming 
 Discord: https://discord.gg/6p5sB88
 TLC Website: https://www.thelegendcontinues.org/
 Minecraft Server IP: mc.thelegendcontinues.info
+
+[![ko-fi](https://www.ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/N4N12IXGR)

@@ -11,3 +11,4 @@ TLC Website: https://www.thelegendcontinues.org/
 Minecraft Server IP: mc.thelegendcontinues.info
 
 [![ko-fi](https://www.ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/N4N12IXGR)
+[![paypal](https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif)](https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=griffinmfox%40gmail.com&item_name=Coding+stuff%21&currency_code=USD)

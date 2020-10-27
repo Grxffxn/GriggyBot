@@ -9,32 +9,41 @@ const cooldowns = new Discord.Collection();
 const prefix = '$';
 
 //MySQL Setup
-//const { createConnection } = require('mysql');
+const { createConnection } = require('mysql');
 
-//const database = createConnection({
-//  host: '127.0.0.1',
-//  user: '${config.database-username}',
-//  password: '${config.database-password}',
-//  database: '${config.database-name}',
-//});
+const database = createConnection({
+  host: "REDACTED",
+  user: "REDACTED",
+  password: "REDACTED",
+  database: "REDACTED",
+  post: "3306",
+});
 
+// EITHER LOG ERROR OR LOG DATABASE THREAD ID IF CONNECT SUCCESSFUL
+database.connect(function(err) {
+  if(err) {
+    message.reply('can\'t connect to tlc database... tell grx');
+    console.error('error connecting: ' + err.stack);
+    return;
+  }
+  console.log('connected as id ' + database.threadId);
+});
+
+// AUTOMATIC COMMANDS: CHECKS FOR ALL .js FILES IN ./commands/
 for(const file of commandFiles) {
   const command = require(`./commands/${file}`);
   client.commands.set(command.name, command);
 }
 
-client.once('ready', () => {
-  console.log('GriggyBot ready!')
-});
-
+// GET RANDOM INT FOR AUTOMSG RANDOM MSGS
 function getRandomInt(max) {
   return Math.round(Math.random() * Math.floor(max));
+  console.log(getRandomInt);
 }
 
-//botspam channel id "407425882928578561"
-
+// AUTOMSG MAIN FUNCTION
 function AutoMsg() {
-  var channel = client.channels.cache.get("407425882928578561");
+  const channel = client.channels.cache.get("407425882928578561");
   if(!channel) return console.log("Not a channel.");
   const automsg1 = new MessageEmbed().setTitle('The Legend Continues | AutoMsg')
     .setColor(0x000080)
@@ -54,20 +63,31 @@ function AutoMsg() {
   switch(getRandomInt(4)) {
     case 0:
       channel.send(automsg3);
+      console.log('Sent automsg3');
       break;
     case 1:
       channel.send(automsg1);
+      console.log('Sent automsg1');
       break;
     case 2:
       channel.send(automsg2);
+      console.log('Sent automsg2');
       break;
     case 3:
       channel.send(automsg3);
+      console.log('Sent automsg3');
       break;
   }
 }
 
-setInterval(AutoMsg,3600000);
+// RUN ONCE ON START
+client.once('ready', () => {
+  console.log('GriggyBot ready!');
+});
+
+AutoMsg();
+
+setInterval(AutoMsg,1200000);
 //1 hour: 3600000
 
 // COMMANDS
@@ -92,6 +112,7 @@ client.on("message", function(message) {
     return message.channel.send(reply);
   }
 
+// COOLDOWN
   if(!cooldowns.has(command.name)) {
     cooldowns.set(command.name, new Discord.Collection());
   }
@@ -105,12 +126,14 @@ client.on("message", function(message) {
 
     if(now < expirationTime) {
       const timeLeft = (expirationTime - now) / 1000;
-      return message.reply(`it hasn\'t been 24 hours since you last used this command. You have ${timeLeft.toFixed(1)} seconds left until you can vote again.`);
+      return message.reply(`it hasn\'t been ${cooldownAmount / 1000} seconds since you last used this command. You have ${timeLeft.toFixed(1)} seconds left until you can use ${command.name} again.`);
     }
   } else if(!timestamps.has(message.author.id)) {
     timestamps.set(message.author.id, now);
     setTimeout(() => timestamps.delete(message.author.id), cooldownAmount);
   }
+
+// RUN COMMANDS
 
   try {
     command.execute(message, args);
@@ -118,15 +141,6 @@ client.on("message", function(message) {
     console.error(error);
     message.reply('I couldn\'t run that command. @Grxffxn, your bot is broken!');
   }
-
-//  database.connect(function(err) {
-//    if(err) {
-//      message.reply('can\'t connect to tlc database... tell grx');
-//      console.error('error connecting: ' + err.stack);
-//      return;
-//    }
-//    console.log('connected as id ' + database.threadId);
-//  });
 });
 
 client.login(config.token);

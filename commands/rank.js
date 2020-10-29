@@ -1,6 +1,7 @@
 const Discord = require('discord.js');
 const { Client, MessageEmbed } = require('discord.js');
 const { createConnection } = require('mysql');
+const mysql = require('mysql');
 
 const database = createConnection({
   host: "REDACTED",
@@ -16,24 +17,28 @@ module.exports = {
 //	args: true,
 //	usage: '<example>'
 	execute(message, args) {
+    console.log(args[1]);
+    var detailLink = mysql.format("SELECT points,actionPoints,timePoints,travelPoints,fightPoints,playerName FROM players_rankPoints WHERE playerName = ?", [args[1]]);
     const embed = new MessageEmbed().setTitle('The Legend Continues | Ranks')
       .setColor(0x000080)
       .setDescription('**Rank Commands**\n\n`rank` - bring up this great menu!\n`rank detail` - view your rank stats\n`rank next` - advance to the next rank!\n`rank leaderboard` - view the rank score leaderboard!')
       .setThumbnail('https://i.ibb.co/s5dY0bj/tlclogo.png');
     if(args[0] === 'detail') {
-			const detailArg = `${args[1]}`;
-			if(!args.length > 1) return message.reply('For now, you must specify a username.');
-			database.query('SELECT `points` `actionPoints` `timePoints` `travelPoints` `fightPoints` `playerName` FROM `players_rankPoints` WHERE `playerName` LIKE ??', [detailArg],
+			if(!args[1]) return message.reply('you must specify a username.');
+			database.query(detailLink,
 			function(err, result, fields) {
-				const detailUser = result.playerName;
-				const detailPoints = result.points;
-				const detailAction = result.actionPoints;
-				const detailTime = result.timePoints;
-				const detailTravel = result.travelPoints;
-				const detailFight = result.fightPoints;
+				const detailUser = (result[0].playerName).toString().replace(/\B(?<!\.\d*)(?=(\d{3})+(?!\d))/g, ",");
+				const detailPoints = (result[0].points).toString().replace(/\B(?<!\.\d*)(?=(\d{3})+(?!\d))/g, ",");
+				const detailAction = (result[0].actionPoints).toString().replace(/\B(?<!\.\d*)(?=(\d{3})+(?!\d))/g, ",");
+				const detailTime = (result[0].timePoints).toString().replace(/\B(?<!\.\d*)(?=(\d{3})+(?!\d))/g, ",");
+				const detailTravel = (result[0].travelPoints).toString().replace(/\B(?<!\.\d*)(?=(\d{3})+(?!\d))/g, ",");
+				const detailFight = (result[0].fightPoints).toString().replace(/\B(?<!\.\d*)(?=(\d{3})+(?!\d))/g, ",");
 				if(err) throw err;
-				message.channel.send(`ARGS: ${args[1]} USERNAME: ${detailUser}, POINTS: ${detailPoints}, ACTION PTS: ${detailAction}, TIME PTS: ${detailTime}, TRAVEL PTS: ${detailTravel}, FIGHT PTS: ${detailFight}`);
-				//const pts =
+				var rdcustom = new MessageEmbed().setTitle(`${detailUser}`)
+            .setColor(0x000080)
+            .setDescription(`**Total Points:** ${detailPoints}\n\n**Score Breakdown**\nAction: ${detailAction}pts\nTime Played: ${detailTime}pts\nTravel: ${detailTravel}pts\nFighting: ${detailFight}pts`)
+            .setThumbnail('https://i.ibb.co/s5dY0bj/tlclogo.png');
+				  return message.reply(`here's the score breakdown for player ${detailUser}.`,rdcustom);
 			});
     } else if(args[0] === 'next') {
       return message.reply('This command is not ready yet.\nIssued command: `$rank next`');
@@ -49,4 +54,4 @@ module.exports = {
       message.channel.send(embed);
     }
   }
-};
+}

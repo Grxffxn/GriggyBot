@@ -2,6 +2,7 @@ const fs = require('fs');
 const Discord = require("discord.js");
 const { Client, MessageEmbed } = require('discord.js');
 const config = require('./config.json');
+var mysql = require('mysql');
 const client = new Discord.Client();
 client.commands = new Discord.Collection();
 const commandFiles = fs.readdirSync('./commands').filter(file => file.endsWith('.js'));
@@ -20,14 +21,14 @@ const database = createConnection({
 });
 
 // EITHER LOG ERROR OR LOG DATABASE THREAD ID IF CONNECT SUCCESSFUL
-database.connect(function(err) {
-  if(err) {
-    message.reply('can\'t connect to tlc database... tell grx');
-    console.error('error connecting: ' + err.stack);
-    return;
-  }
-  console.log('connected as id ' + database.threadId);
-});
+database.connect((err, message) => {
+    if (err) {
+      message.reply('can\'t connect to tlc database... tell grx');
+      console.error('error connecting: ' + err.stack);
+      return;
+    }
+    console.log('connected as id ' + database.threadId);
+  });
 
 // AUTOMATIC COMMANDS: CHECKS FOR ALL .js FILES IN ./commands/
 for(const file of commandFiles) {
@@ -38,7 +39,6 @@ for(const file of commandFiles) {
 // GET RANDOM INT FOR AUTOMSG RANDOM MSGS
 function getRandomInt(max) {
   return Math.round(Math.random() * Math.floor(max));
-  console.log(getRandomInt);
 }
 
 // AUTOMSG MAIN FUNCTION
@@ -83,9 +83,8 @@ function AutoMsg() {
 // RUN ONCE ON START
 client.once('ready', () => {
   console.log('GriggyBot ready!');
+  AutoMsg();
 });
-
-AutoMsg();
 
 setInterval(AutoMsg,1200000);
 //1 hour: 3600000

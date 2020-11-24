@@ -12,23 +12,26 @@ const prefix = '$';
 //MySQL Setup
 const { createConnection } = require('mysql');
 
-const database = createConnection({
-  host: "REDACTED",
-  user: "REDACTED",
-  password: "REDACTED",
-  database: "REDACTED",
+const database = mysql.createPool({
+  connectionLimit: 10,
+  host: "127.0.0.1",
+  user: "[REDACTED]",
+  password: "[REDACTED]",
+  database: "tlc_custom",
   post: "3306",
 });
 
 // EITHER LOG ERROR OR LOG DATABASE THREAD ID IF CONNECT SUCCESSFUL
-database.connect((err, message) => {
+database.getConnection((err, message) => {
     if (err) {
       message.reply('can\'t connect to tlc database... tell grx');
       console.error('error connecting: ' + err.stack);
       return;
     }
-    console.log('connected as id ' + database.threadId);
+    console.log('Connected successfully to TLC Database.');
+    database.destroy;
   });
+
 
 // AUTOMATIC COMMANDS: CHECKS FOR ALL .js FILES IN ./commands/
 for(const file of commandFiles) {

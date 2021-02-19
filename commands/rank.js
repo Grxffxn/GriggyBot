@@ -40,7 +40,7 @@ module.exports = {
 				var rdcustom = new MessageEmbed().setTitle(`${detailUser}`)
             .setColor(0x000080)
             .setDescription(`**Total Points:** ${detailPoints}\n\n**Score Breakdown**\nAction: ${detailAction}pts\nTime Played: ${detailTime}pts\nTravel: ${detailTravel}pts\nFighting: ${detailFight}pts`)
-			.setThumbnail(`https://crafatar.com/avatars/${playerIcon}`);
+			.setThumbnail(`https://crafatar.com/avatars/${playerIcon}?overlay=true`);
 				database.destroy;
 				if(err) throw err;
 				return message.reply(`here's the score breakdown for player ${detailUser}.`,rdcustom);

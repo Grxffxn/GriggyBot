@@ -35,9 +35,9 @@ module.exports = {
                     if(!result[0]) return message.reply('That player either doesn\'t exist, or hasn\'t been on TLC before. :(');
                     var trimmedUUID = (result[0].playerUUID).toString().replace(/-/g, "");
                     if(err) throw err;
-                    if(args[0] === 'body') message.channel.send(`https://crafatar.com/renders/body/${trimmedUUID}`);
-                    if(args[0] === 'head') message.channel.send(`https://crafatar.com/renders/head/${trimmedUUID}`);
-                    if(args[0] === 'avatar') message.channel.send(`https://crafatar.com/avatars/${trimmedUUID}`);
+                    if(args[0] === 'body') message.channel.send(`https://crafatar.com/renders/body/${trimmedUUID}?overlay=true`);
+                    if(args[0] === 'head') message.channel.send(`https://crafatar.com/renders/head/${trimmedUUID}?overlay=true`);
+                    if(args[0] === 'avatar') message.channel.send(`https://crafatar.com/avatars/${trimmedUUID}?overlay=true`);
                     database.destroy;
                 });
             });

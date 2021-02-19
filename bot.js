@@ -17,8 +17,8 @@ const database = mysql.createPool({
   host: "127.0.0.1",
   user: "[REDACTED]",
   password: "[REDACTED]",
-  database: "tlc_custom",
-  post: "3306",
+  database: "[REDACTED]",
+  post: "[REDACTED]",
 });
 
 // EITHER LOG ERROR OR LOG DATABASE THREAD ID IF CONNECT SUCCESSFUL

@@ -1,4 +1,4 @@
-const { SlashCommandBuilder } = require('discord.js');
+const { SlashCommandBuilder, MessageFlags } = require('discord.js');
 const config = require('../../config.js');
 
 module.exports = {
@@ -16,7 +16,7 @@ module.exports = {
 			},
 		};
 
-		await interaction.reply({ embeds: [bluemapEmbed], ephemeral: true })
+		await interaction.reply({ embeds: [bluemapEmbed], flags: MessageFlags.Ephemeral })
 			.catch(console.error);
 	},
 };

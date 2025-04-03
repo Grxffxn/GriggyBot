@@ -1,4 +1,4 @@
-const { ButtonBuilder, ActionRowBuilder } = require('discord.js');
+const { ButtonBuilder, ActionRowBuilder, MessageFlags } = require('discord.js');
 const sqlite3 = require('sqlite3').verbose();
 const databaseDir = '/home/minecraft/GriggyBot/database.db';
 const cmiDatabaseDir = '/home/minecraft/Main/plugins/CMI/cmi.sqlite.db';
@@ -54,7 +54,7 @@ async function handleApplication(interaction) {
     const griggyDb = new sqlite3.Database(databaseDir, sqlite3.OPEN_READWRITE);
     const cmiDb = new sqlite3.Database(cmiDatabaseDir, sqlite3.OPEN_READWRITE);
     try {
-        await interaction.deferReply({ ephemeral: true });
+        await interaction.deferReply({ flags: MessageFlags.Ephemeral });
         if (action === 'refresh') {
             const application = await queryDatabase(griggyDb, 'SELECT * FROM applications WHERE discord_id = ? AND status = ?', [vouchingFor, 'active']);
             if (!application) {
@@ -101,10 +101,10 @@ async function handleApplication(interaction) {
                             });
                             rcon.end();
                         } else {
-                            await interaction.followUp({ content: `Role "${rank}" not found in the server. Please check role setup.`, ephemeral: true });
+                            await interaction.followUp({ content: `Role "${rank}" not found in the server. Please check role setup.`, flags: MessageFlags.Ephemeral });
                         }
                     } else {
-                        await interaction.followUp({ content: `Could not fetch member <@${vouchingFor}>. They might not be in the server.`, ephemeral: true });
+                        await interaction.followUp({ content: `Could not fetch member <@${vouchingFor}>. They might not be in the server.`, flags: MessageFlags.Ephemeral });
                     }
                 }
                 await submissionMessage.edit({ components: [buttonRow] });

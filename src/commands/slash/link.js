@@ -1,5 +1,4 @@
-const { SlashCommandBuilder, EmbedBuilder } = require('@discordjs/builders');
-const config = require('../../config.js');
+const { SlashCommandBuilder, EmbedBuilder, MessageFlags } = require('discord.js');
 
 module.exports = {
 	data: new SlashCommandBuilder()
@@ -21,7 +20,7 @@ module.exports = {
 			// Extract guild, channel, and message IDs
 			const match = messageLink.match(/discord\.com\/channels\/(\d+)\/(\d+)\/(\d+)/);
 			if (!match) {
-				return interaction.reply({ content: '<:_:1353522852581605517> can\'t find that message. Please check the link and try again.\n-# Maybe I\'m going blind?', ephemeral: true });
+				return interaction.reply({ content: '<:_:1353522852581605517> can\'t find that message. Please check the link and try again.\n-# Maybe I\'m going blind?', flags: MessageFlags.Ephemeral });
 			}
 
 			const [, guildId, channelId, messageId] = match;
@@ -35,13 +34,13 @@ module.exports = {
 				linkingEmbed.setFooter({ text: `Requested by ${displayName}`, iconURL: avatarURL });
 
 				await message.reply({ embeds: [linkingEmbed] });
-				return interaction.reply({ content: `Replied to ${messageLink} with the linking instructions.`, ephemeral: true });
+				return interaction.reply({ content: `Replied to ${messageLink} with the linking instructions.`, flags: MessageFlags.Ephemeral });
 			} catch (error) {
 				console.error(error);
-				return interaction.reply({ content: '<:_:1353522852581605517> can\'t find that message. Please check the link and try again.\n-# Maybe I\'m going blind?', ephemeral: true });
+				return interaction.reply({ content: '<:_:1353522852581605517> can\'t find that message. Please check the link and try again.\n-# Maybe I\'m going blind?', flags: MessageFlags.Ephemeral });
 			}
 		} else {
-			return interaction.reply({ embeds: [linkingEmbed], ephemeral: true });
+			return interaction.reply({ embeds: [linkingEmbed], flags: MessageFlags.Ephemeral });
 		}
 	}
 };

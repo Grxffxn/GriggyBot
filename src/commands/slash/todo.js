@@ -1,7 +1,7 @@
 // Create an interactive TODO list for staff
 // Any staff member can add, update, delete, view TODO items and update to different lists (To Do, In Progress, Completed)
 const { SlashCommandBuilder, ModalBuilder, TextInputBuilder, ActionRowBuilder, EmbedBuilder } = require('@discordjs/builders');
-const { TextInputStyle } = require('discord.js');
+const { TextInputStyle, MessageFlags } = require('discord.js');
 const sqlite3 = require('sqlite3').verbose();
 const griggyDatabaseDir = '/home/minecraft/GriggyBot/database.db';
 
@@ -106,7 +106,7 @@ module.exports = {
 		const staffRoles = ['moderator', 'admin', 'owner', 'engineer'];
 		const member = await interaction.guild.members.fetch(interaction.user.id);
 		if (!member.roles.cache.some(role => staffRoles.includes(role.name.toLowerCase()))) {
-			return interaction.reply({ content: 'You do not have permission to use this command.', ephemeral: true });
+			return interaction.reply({ content: 'You do not have permission to use this command.', flags: MessageFlags.Ephemeral });
 		}
 		// Define database connection
 		const griggysdb = new sqlite3.Database(griggyDatabaseDir, sqlite3.OPEN_READWRITE);
@@ -165,21 +165,22 @@ module.exports = {
 			}
 			
 			const sendMessage = async (channelOrInteraction, content, isEphemeral) => {
+				const flags = isEphemeral ? MessageFlags.Ephemeral : undefined;
 				// If the length of content is over 2000 characters, split it into multiple messages
 				if (content.length > 2000) {
 					const lastHeaderIndex = content.lastIndexOf('##');
 					const firstPart = content.substring(0, lastHeaderIndex);
 					const secondPart = content.substring(lastHeaderIndex);
 					if (typeof channelOrInteraction.reply === 'function') {
-						await channelOrInteraction.reply({ content: firstPart, ephemeral: isEphemeral });
-						await channelOrInteraction.followUp({ content: secondPart, ephemeral: isEphemeral });
+						await channelOrInteraction.reply({ content: firstPart, flags });
+						await channelOrInteraction.followUp({ content: secondPart, flags });
 					} else {
 						await channelOrInteraction.send({ content: firstPart });
 						await channelOrInteraction.send({ content: secondPart });
 					}
 				} else {
 					if (typeof channelOrInteraction.reply === 'function') {
-						await channelOrInteraction.reply({ content, ephemeral: isEphemeral });
+						await channelOrInteraction.reply({ content, flags });
 					} else {
 						await channelOrInteraction.send({ content });
 					}
@@ -189,7 +190,7 @@ module.exports = {
 			if (post) {
 				const todoChannel = interaction.guild.channels.cache.find(channel => channel.name === 'to-do');
 				await sendMessage(todoChannel, todoString, false);
-				return interaction.reply({ content: `TODO list posted to ${todoChannel}.`, ephemeral: true });
+				return interaction.reply({ content: `TODO list posted to ${todoChannel}.`, flags: MessageFlags.Ephemeral });
 			} else {
 				await sendMessage(interaction, todoString, true);
 			}							
@@ -205,7 +206,7 @@ module.exports = {
 			const modalResult = await interaction.awaitModalSubmit({ customId: 'todoModal', time: 60000 });
 			modalResult.deferUpdate();
 			if (!modalResult) {
-				return interaction.followUp({ content: 'You did not provide a TODO item and priority within 60 seconds.', ephemeral: true });
+				return interaction.followUp({ content: 'You did not provide a TODO item and priority within 60 seconds.', flags: MessageFlags.Ephemeral });
 			}
 			let todoItem = modalResult.fields.getTextInputValue('todo');
 			const hyperlink = modalResult.fields.getTextInputValue('link');
@@ -223,7 +224,7 @@ module.exports = {
 					}
 				});
 			});
-			return interaction.followUp({ content: `TODO item '${todoItem}' added to '${priority}' list.`, ephemeral: true });
+			return interaction.followUp({ content: `TODO item '${todoItem}' added to '${priority}' list.`, flags: MessageFlags.Ephemeral });
 		}
 
 		// /todo update <keyword>
@@ -241,7 +242,7 @@ module.exports = {
 			},
 			);
 			if (todoItemResults.length === 0) {
-				return interaction.reply({ content: `No TODO item found with keyword '${keyword}'.`, ephemeral: true });
+				return interaction.reply({ content: `No TODO item found with keyword '${keyword}'.`, flags: MessageFlags.Ephemeral });
 			}
 
 			// Create a new modal and set the title to the first 15 characters of the TODO item
@@ -259,14 +260,14 @@ module.exports = {
 			const modalResult = await interaction.awaitModalSubmit({ customId: 'todoModal', time: 60000 });
 			modalResult.deferUpdate();
 			if (!modalResult) {
-				return interaction.followUp({ content: 'You did not provide an updated TODO item and priority within 60 seconds.', ephemeral: true });
+				return interaction.followUp({ content: 'You did not provide an updated TODO item and priority within 60 seconds.', flags: MessageFlags.Ephemeral });
 			}
 			let updatedTodoItem = modalResult.fields.getTextInputValue('todo');
 			let updatedPriority = modalResult.fields.getTextInputValue('priority');
 			const updatedHyperlink = modalResult.fields.getTextInputValue('link');
 			// Do not update the TODO item if the user did not provide a response for any of the textinputvalue, but update any that were provided
 			if (!updatedTodoItem && !updatedPriority && !updatedHyperlink) {
-				return interaction.followUp({ content: 'You did not provide an updated TODO item and priority within 60 seconds.', ephemeral: true });
+				return interaction.followUp({ content: 'You did not provide an updated TODO item and priority within 60 seconds.', flags: MessageFlags.Ephemeral });
 			}
 			// If only updating priority, set the TODO item to the original TODO item
 			if (!updatedTodoItem && !updatedHyperlink && updatedPriority) {
@@ -301,7 +302,7 @@ module.exports = {
 				});
 			});
 
-			return interaction.followUp({ content: `TODO item '${todoItemResults[0].todo}' updated to '${updatedTodoItem}' in '${updatedPriority}' list.`, ephemeral: true });
+			return interaction.followUp({ content: `TODO item '${todoItemResults[0].todo}' updated to '${updatedTodoItem}' in '${updatedPriority}' list.`, flags: MessageFlags.Ephemeral });
 		}
 
 		// /todo delete <keyword>
@@ -319,7 +320,7 @@ module.exports = {
 			});
 			// No item found
 			if (!todoItem) {
-				return interaction.reply({ content: `No TODO item found with keyword '${keyword}'.`, ephemeral: true });
+				return interaction.reply({ content: `No TODO item found with keyword '${keyword}'.`, flags: MessageFlags.Ephemeral });
 			}
 			// Create an embed to confirm deletion
 			const embed = new EmbedBuilder()
@@ -345,14 +346,14 @@ module.exports = {
 							}
 						});
 					});
-					return interaction.editReply({ content: `TODO item '${todoItem.todo}' deleted from '${todoItem.status}' list.`, embeds: [], ephemeral: true });
+					return interaction.editReply({ content: `TODO item '${todoItem.todo}' deleted from '${todoItem.status}' list.`, embeds: [], flags: MessageFlags.Ephemeral });
 				} else {
-					return interaction.editReply({ content: 'TODO item deletion cancelled.', embeds: [], ephemeral: true });
+					return interaction.editReply({ content: 'TODO item deletion cancelled.', embeds: [], flags: MessageFlags.Ephemeral });
 				}
 			});
 			deletionReactionCollector.on('end', collected => {
 				if (collected.size === 0) {
-					return interaction.editReply({ content: 'TODO item deletion cancelled.', embeds: [], ephemeral: true });
+					return interaction.editReply({ content: 'TODO item deletion cancelled.', embeds: [], flags: MessageFlags.Ephemeral });
 				}
 			});
 			// Send the embed and add the reactions
@@ -376,7 +377,7 @@ module.exports = {
 				});
 			});
 			if (!todoItem) {
-				return interaction.reply({ content: `No TODO item found with keyword '${keyword}'.`, ephemeral: true });
+				return interaction.reply({ content: `No TODO item found with keyword '${keyword}'.`, flags: MessageFlags.Ephemeral });
 			}
 			// If the TODO item is already assigned to the user, remove the assignment
 			if (todoItem.assignee === assignedUser.id) {
@@ -389,7 +390,7 @@ module.exports = {
 						}
 					});
 				});
-				return interaction.reply({ content: `TODO item '${todoItem.todo}' unassigned from ${assignedUser}.`, ephemeral: true });
+				return interaction.reply({ content: `TODO item '${todoItem.todo}' unassigned from ${assignedUser}.`, flags: MessageFlags.Ephemeral });
 			}
 			// Create an embed to confirm assignment
 			const embed = new EmbedBuilder()
@@ -421,16 +422,16 @@ module.exports = {
 							}
 						});
 					});
-					return interaction.editReply({ content: `TODO item '${todoItem.todo}' assigned to ${assignedUser}.`, embeds: [], ephemeral: true });
+					return interaction.editReply({ content: `TODO item '${todoItem.todo}' assigned to ${assignedUser}.`, embeds: [], flags: MessageFlags.Ephemeral });
 				}
 				if (reaction.emoji.name === '❌') {
-					return interaction.editReply({ content: 'TODO item assignment cancelled.', embeds: [], ephemeral: true });
+					return interaction.editReply({ content: 'TODO item assignment cancelled.', embeds: [], flags: MessageFlags.Ephemeral });
 				}
 			},
 			);
 			assignmentReactionCollector.on('end', collected => {
 				if (collected.size === 0) {
-					return interaction.editReply({ content: 'TODO item assignment cancelled.', embeds: [], ephemeral: true });
+					return interaction.editReply({ content: 'TODO item assignment cancelled.', embeds: [], flags: MessageFlags.Ephemeral });
 				}
 			});
 			// Send the embed and add the reactions

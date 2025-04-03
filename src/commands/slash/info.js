@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, EmbedBuilder, ButtonBuilder, ActionRowBuilder } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, ButtonBuilder, ActionRowBuilder, MessageFlags } = require('discord.js');
 const fs = require('fs').promises;
 const path = require('path');
 const sqlite3 = require('sqlite3').verbose();
@@ -33,7 +33,7 @@ module.exports = {
 			const { data } = await axios.get(`https://api.geysermc.org/v2/utils/uuid/bedrock_or_java/${username}?prefix=.`)
 
 			if (!data) {
-				return interaction.followUp({ content: 'Invalid username, or Mojang\'s API is down.', ephemeral: true });
+				return interaction.followUp({ content: 'Invalid username, or Mojang\'s API is down.', flags: MessageFlags.Ephemeral });
 			}
 
 			const trimmedUUID = data.id;
@@ -155,7 +155,7 @@ module.exports = {
 
 		} catch (err) {
 			console.error(err);
-			interaction.followUp({ content: 'Command failed </3 Try again or ping Griggy\nPlayer data could be formatted improperly.', ephemeral: true });
+			interaction.followUp({ content: 'Command failed </3 Try again or ping Griggy\nPlayer data could be formatted improperly.', flags: MessageFlags.Ephemeral });
 		}
 	}
 };

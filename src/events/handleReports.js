@@ -1,4 +1,4 @@
-const { EmbedBuilder, ActionRowBuilder, ModalBuilder, TextInputBuilder, TextInputStyle } = require('discord.js');
+const { EmbedBuilder, ActionRowBuilder, ModalBuilder, TextInputBuilder, TextInputStyle, MessageFlags } = require('discord.js');
 const sqlite3 = require('sqlite3').verbose();
 const databaseDir = '/home/minecraft/GriggyBot/database.db';
 const axios = require('axios');
@@ -69,14 +69,14 @@ async function handleReports(interaction) {
 		});
 	const moderationChannel = interaction.guild.channels.cache.get('698701443602841730')
 	if (!moderationChannel) {
-		return interaction.reply({ content: 'Error: Moderation channel not found.', ephemeral: true });
+		return interaction.reply({ content: 'Error: Moderation channel not found.', flags: MessageFlags.Ephemeral });
 	}
 	await moderationChannel.send({ embeds: [reportEmbed] });
 	const reportSentEmbed = new EmbedBuilder()
 		.setTitle('Report Sent')
 		.setDescription('Your report was sent to the moderation channel.')
 		.setColor('#FF5733');
-	await interaction.followUp({ embeds: [reportSentEmbed], ephemeral: true });
+	await interaction.followUp({ embeds: [reportSentEmbed], flags: MessageFlags.Ephemeral });
 	griggydb.close();
 }
 

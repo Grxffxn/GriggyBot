@@ -1,4 +1,4 @@
-const { Events, InteractionType } = require('discord.js');
+const { Events, InteractionType, MessageFlags } = require('discord.js');
 const Vouch = require('./vouch.js');
 const handleApplication = require('./handleApplication.js');
 const handleReports = require('./handleReports.js');
@@ -15,11 +15,11 @@ module.exports = {
 					command.run(interaction);
 				} else {
 					console.error(`Command ${interaction.commandName} not found or does not have a run method.`);
-					interaction.reply({ content: ':no_entry_sign: Command is not valid.\nI think something just exploded...', ephemeral: true });
+					interaction.reply({ content: ':no_entry_sign: Command is not valid.\nI think something just exploded...', flags: MessageFlags.Ephemeral });
 				}
 			} catch (e) {
 				console.error(e);
-				interaction.reply({ content: ':dizzy_face: Uh oh! There was an error processing your slash command.', ephemeral: true });
+				interaction.reply({ content: ':dizzy_face: Uh oh! There was an error processing your slash command.', flags: MessageFlags.Ephemeral });
 			}
 		} else if (interaction.type === InteractionType.MessageComponent) {
 			if (interaction.customId.startsWith('vouchButton-')) {

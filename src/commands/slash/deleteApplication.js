@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, MessageFlags } = require('discord.js');
 const sqlite3 = require('sqlite3').verbose();
 const databaseDir = '/home/minecraft/GriggyBot/database.db';
 
@@ -33,19 +33,19 @@ module.exports = {
             async (err, row) => {
                 if (err) {
                     console.error(err);
-                    await interaction.reply({ content: 'An error occurred while fetching data.', ephemeral: true });
+                    await interaction.reply({ content: 'An error occurred while fetching data.', flags: MessageFlags.Ephemeral });
                     return;
                 }
 
                 if (!row) {
-                    await interaction.reply({ content: 'No active application found for the specified rank and player.', ephemeral: true });
+                    await interaction.reply({ content: 'No active application found for the specified rank and player.', flags: MessageFlags.Ephemeral });
                     return;
                 }
 
                 const allowedRoles = ['Moderator', 'Engineer', 'Admin', 'Owner'];
                 const isStaff = interaction.member.roles.cache.some(role => allowedRoles.includes(role.name));
                 if (interaction.user.id !== row.discord_id && !isStaff) {
-                    await interaction.reply({ content: 'You are not authorized to delete this application.', ephemeral: true });
+                    await interaction.reply({ content: 'You are not authorized to delete this application.', flags: MessageFlags.Ephemeral });
                     return;
                 }
 
@@ -75,18 +75,18 @@ module.exports = {
                             (err) => {
                                 if (err) {
                                     console.error(err);
-                                    interaction.followUp({ content: 'An error occurred while deleting the application.', ephemeral: true });
+                                    interaction.followUp({ content: 'An error occurred while deleting the application.', flags: MessageFlags.Ephemeral });
                                     return;
                                 }
 
-                                interaction.followUp({ content: `The application for **${playerName}** (${rank}) and its associated thread/message have been successfully deleted.`, ephemeral: true });
+                                interaction.followUp({ content: `The application for **${playerName}** (${rank}) and its associated thread/message have been successfully deleted.`, flags: MessageFlags.Ephemeral });
                             }
                         );
 
                         collector.stop();
                     } catch (error) {
                         console.error(error);
-                        await interaction.followUp({ content: 'Failed to delete the application thread.', ephemeral: true });
+                        await interaction.followUp({ content: 'Failed to delete the application thread.', flags: MessageFlags.Ephemeral });
                     } 
                 });
 

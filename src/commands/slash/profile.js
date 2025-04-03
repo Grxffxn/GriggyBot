@@ -1,5 +1,5 @@
 /* eslint-disable no-unused-vars */
-const { SlashCommandBuilder, EmbedBuilder, ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder, ButtonStyle, ButtonBuilder, PermissionFlagsBits } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder, MessageFlags } = require('discord.js');
 const fs = require('fs');
 
 // Define DB connections and queries
@@ -108,7 +108,7 @@ module.exports = {
 		const minecraftUUID = linkedAccounts[discordId];
 
 		if (!minecraftUUID) {
-			return interaction.reply({ content: 'You must link your Discord account to your Minecraft account before you can customize your profile.', ephemeral: true });
+			return interaction.reply({ content: 'You must link your Discord account to your Minecraft account before you can customize your profile.', flags: MessageFlags.Ephemeral });
 		}
 
 		const trimmedUUID = minecraftUUID.replace(/-/g, '');
@@ -175,7 +175,7 @@ module.exports = {
 		// Run the SQL query
 		griggydb.run(sql, params, function (err) {
 			if (err) {
-				interaction.reply({ content: 'An error occurred while updating your profile. Please try again.', ephemeral: true });
+				interaction.reply({ content: 'An error occurred while updating your profile. Please try again.', flags: MessageFlags.Ephemeral });
 				return console.error(err.message);
 			}
 			console.log(`Rows updated: ${this.changes}`);

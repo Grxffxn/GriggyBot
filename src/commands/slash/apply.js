@@ -1,6 +1,6 @@
 const {
     SlashCommandBuilder, ButtonBuilder, TextInputBuilder,
-    ActionRowBuilder, TextInputStyle, ModalBuilder, EmbedBuilder
+    ActionRowBuilder, TextInputStyle, ModalBuilder, EmbedBuilder, MessageFlags
 } = require('discord.js');
 const axios = require('axios');
 const sqlite3 = require('sqlite3').verbose();
@@ -96,7 +96,7 @@ async function startApplicationProcess(interaction, rank, playerName) {
     if (activeModalHandlers.has(userId)) {
         await interaction.reply({
             content: 'Please wait 5 minutes before starting a new application. Sorry, blame Discord!',
-            ephemeral: true,
+            flags: MessageFlags.Ephemeral,
         });
         return;
     }
@@ -245,13 +245,13 @@ async function startApplicationProcess(interaction, rank, playerName) {
             console.log(`Application process for user ${userId} timed out.`);
             await interaction.followUp({
                 content: 'Your application process timed out. Please try again.',
-                ephemeral: true,
+                flags: MessageFlags.Ephemeral,
             });
         } else {
             console.error('An error occurred:', error.message);
             await interaction.followUp({
                 content: 'An error occurred during the application process. Please try again.',
-                ephemeral: true,
+                flags: MessageFlags.Ephemeral,
             });
         }
     } finally {

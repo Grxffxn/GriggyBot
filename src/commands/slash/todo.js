@@ -201,9 +201,9 @@ module.exports = {
 		// /todo add
 		if (interaction.options.getSubcommand() === 'add') {
 			const modal = new ModalBuilder()
-			.setCustomId('todoModal-add')
-			.setTitle('Add TODO Item')
-			.setComponents(priorityActionRow, itemActionRow, hyperlinkActionRow);
+				.setCustomId('todoModal-add')
+				.setTitle('Add TODO Item')
+				.setComponents(priorityActionRow, itemActionRow, hyperlinkActionRow);
 			await interaction.showModal(modal);
 			const modalResult = await interaction.awaitModalSubmit({ filter: i => i.customId === 'todoModal-add' && i.user.id === interaction.user.id, time: 60000 });
 			modalResult.deferUpdate();
@@ -245,9 +245,9 @@ module.exports = {
 			const todoItemExcerpt = todoItem.substring(0, 32);
 			const todoItemExcerptString = todoItem.length > 32 ? `${todoItemExcerpt}...` : todoItemExcerpt;
 			const modal = new ModalBuilder()
-			.setCustomId('todoModal-update')
-			.setTitle(`${todoItemExcerptString}`)
-			.setComponents(priorityActionRow, itemActionRow, hyperlinkActionRow);
+				.setCustomId('todoModal-update')
+				.setTitle(`${todoItemExcerptString}`)
+				.setComponents(priorityActionRow, itemActionRow, hyperlinkActionRow);
 			await interaction.showModal(modal);
 			const modalResult = await interaction.awaitModalSubmit({ filter: i => i.customId === 'todoModal-update' && i.user.id === interaction.user.id, time: 60000 });
 			modalResult.deferUpdate();

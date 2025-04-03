@@ -4,36 +4,6 @@ const { SlashCommandBuilder, ModalBuilder, TextInputBuilder, ActionRowBuilder, E
 const sqlite3 = require('sqlite3').verbose();
 const griggyDatabaseDir = '/home/minecraft/GriggyBot/database.db';
 
-const priorityTextInput = new TextInputBuilder()
-	.setLabel('Priority')
-	.setStyle(TextInputStyle.Paragraph)
-	.setCustomId('priority')
-	.setPlaceholder('low|todo|inprogress|completed|idea')
-	.setRequired(true);
-
-const todoTextInput = new TextInputBuilder()
-	.setLabel('Title')
-	.setStyle(TextInputStyle.Paragraph)
-	.setCustomId('todo')
-	.setRequired(true)
-	.setPlaceholder('Title of the TODO item');
-
-const hyperlinkTextInput = new TextInputBuilder()
-	.setLabel('Link')
-	.setStyle(TextInputStyle.Paragraph)
-	.setCustomId('link')
-	.setRequired(false)
-	.setPlaceholder('Link to any relevant information');
-
-const priorityActionRow = new ActionRowBuilder()
-	.addComponents(priorityTextInput);
-
-const itemActionRow = new ActionRowBuilder()
-	.addComponents(todoTextInput);
-
-const hyperlinkActionRow = new ActionRowBuilder()
-	.addComponents(hyperlinkTextInput);
-
 module.exports = {
 	data: new SlashCommandBuilder()
 		.setName('todo')
@@ -114,7 +84,7 @@ module.exports = {
 		if (interaction.options.getSubcommand() === 'view') {
 			const post = interaction.options.getBoolean('post');
 			const view = interaction.options.getString('list');
-		
+
 			const statuses = ['low', 'todo', 'inprogress', 'completed', 'idea'];
 			const headers = {
 				low: 'Low Priority',
@@ -130,39 +100,39 @@ module.exports = {
 				completed: '<:bunnycelebrate:1165199351438659626>',
 				idea: '<:bunnystars:1165199816985411624>'
 			};
-		
+
 			const fetchTodos = async (status, limit = null) => {
 				return new Promise((resolve, reject) => {
 					let query = `SELECT * FROM todo WHERE status = ? ORDER BY id DESC`;
 					if (limit) query += ` LIMIT ${limit}`;
-		
+
 					griggysdb.all(query, [status], (err, rows) => {
 						if (err) reject(err);
 						else resolve(rows);
 					});
 				});
 			};
-		
+
 			const lists = Object.fromEntries(
 				await Promise.all(statuses.map(async status => [
 					status, await fetchTodos(status, status === 'completed' ? 3 : null)
 				]))
 			);
-		
+
 			const formatTodoList = (header, emoji, items) => {
-				return `## ${header} ${emoji}\n` + items.map(item => 
+				return `## ${header} ${emoji}\n` + items.map(item =>
 					item.assignee ? `- ${item.todo} - <@${item.assignee}>` : `- ${item.todo}`
 				).join('\n');
 			};
-		
+
 			let todoString = view ? formatTodoList(headers[view], emojis[view], lists[view]) : '';
-		
+
 			if (!view) {
-				todoString += statuses.slice(0, 3).map(status => 
+				todoString += statuses.slice(0, 3).map(status =>
 					`\n${formatTodoList(headers[status], emojis[status], lists[status])}`
 				).join('');
 			}
-			
+
 			const sendMessage = async (channelOrInteraction, content, isEphemeral) => {
 				const flags = isEphemeral ? MessageFlags.Ephemeral : undefined;
 				// If the length of content is over 2000 characters, split it into multiple messages
@@ -185,24 +155,57 @@ module.exports = {
 					}
 				}
 			};
-			
+
 			if (post) {
 				const todoChannel = interaction.guild.channels.cache.find(channel => channel.name === 'to-do');
 				await sendMessage(todoChannel, todoString, false);
 				return interaction.reply({ content: `TODO list posted to ${todoChannel}.`, flags: MessageFlags.Ephemeral });
 			} else {
 				await sendMessage(interaction, todoString, true);
-			}							
-		}			
+			}
+		}
+		// Create Modals based on the provided subcommand
+		const isNewItem = interaction.options.getSubcommand() === 'add';
+
+		// Configure text inputs dynamically
+		const priorityTextInput = new TextInputBuilder()
+			.setLabel('Priority')
+			.setStyle(TextInputStyle.Paragraph)
+			.setCustomId('priority')
+			.setPlaceholder('low|todo|inprogress|completed|idea')
+			.setRequired(isNewItem);
+
+		const todoTextInput = new TextInputBuilder()
+			.setLabel('Title')
+			.setStyle(TextInputStyle.Paragraph)
+			.setCustomId('todo')
+			.setRequired(isNewItem)
+			.setPlaceholder('Title of the TODO item');
+
+		const hyperlinkTextInput = new TextInputBuilder()
+			.setLabel('Link')
+			.setStyle(TextInputStyle.Paragraph)
+			.setCustomId('link')
+			.setRequired(false)
+			.setPlaceholder('Link to any relevant information');
+
+		const priorityActionRow = new ActionRowBuilder()
+			.addComponents(priorityTextInput);
+
+		const itemActionRow = new ActionRowBuilder()
+			.addComponents(todoTextInput);
+
+		const hyperlinkActionRow = new ActionRowBuilder()
+			.addComponents(hyperlinkTextInput);
+
 		// /todo add
 		if (interaction.options.getSubcommand() === 'add') {
 			const modal = new ModalBuilder()
-				.setCustomId('todoModal')
-				.setTitle('Add TODO Item')
-				.setComponents(priorityActionRow, itemActionRow, hyperlinkActionRow);
-
+			.setCustomId('todoModal-add')
+			.setTitle('Add TODO Item')
+			.setComponents(priorityActionRow, itemActionRow, hyperlinkActionRow);
 			await interaction.showModal(modal);
-			const modalResult = await interaction.awaitModalSubmit({ customId: 'todoModal', time: 60000 });
+			const modalResult = await interaction.awaitModalSubmit({ filter: i => i.customId === 'todoModal-add' && i.user.id === interaction.user.id, time: 60000 });
 			modalResult.deferUpdate();
 			if (!modalResult) {
 				return interaction.followUp({ content: 'You did not provide a TODO item and priority within 60 seconds.', flags: MessageFlags.Ephemeral });
@@ -216,11 +219,7 @@ module.exports = {
 			}
 			await new Promise((resolve, reject) => {
 				griggysdb.run('INSERT INTO todo (todo, status) VALUES (?, ?)', [todoItem, priority], (err) => {
-					if (err) {
-						reject(err);
-					} else {
-						resolve();
-					}
+					err ? reject(err) : resolve();
 				});
 			});
 			return interaction.followUp({ content: `TODO item '${todoItem}' added to '${priority}' list.`, flags: MessageFlags.Ephemeral });
@@ -228,15 +227,10 @@ module.exports = {
 
 		// /todo update <keyword>
 		if (interaction.options.getSubcommand() === 'update') {
-			// Create a modal which shows an excerpt of the TODO item as the title
 			const keyword = interaction.options.getString('keyword');
 			const todoItemResults = await new Promise((resolve, reject) => {
 				griggysdb.all('SELECT * FROM todo WHERE todo LIKE ? AND status != ?', [`%${keyword}%`, 'completed'], (err, row) => {
-					if (err) {
-						reject(err);
-					} else {
-						resolve(row);
-					}
+					err ? reject(err) : resolve(row);
 				});
 			},
 			);
@@ -244,60 +238,38 @@ module.exports = {
 				return interaction.reply({ content: `No TODO item found with keyword '${keyword}'.`, flags: MessageFlags.Ephemeral });
 			}
 
-			// Create a new modal and set the title to the first 15 characters of the TODO item
+			// set the title to the first 15 characters of the TODO item
 			let todoItem = todoItemResults[0].todo;
 			const hyperlink = todoItem.includes(' [Info](') ? todoItem.split(' [Info](')[1].split(')')[0] : null;
 			todoItem = todoItem.includes(' [Info](') ? todoItem.split(' [Info](')[0].trim() : todoItem;
 			const todoItemExcerpt = todoItem.substring(0, 32);
 			const todoItemExcerptString = todoItem.length > 32 ? `${todoItemExcerpt}...` : todoItemExcerpt;
-			const updateModal = new ModalBuilder()
-				.setCustomId('todoModal')
-				.setTitle(`${todoItemExcerptString}`)
-				.setComponents(priorityActionRow, itemActionRow, hyperlinkActionRow);
-
-			await interaction.showModal(updateModal);
-			const modalResult = await interaction.awaitModalSubmit({ customId: 'todoModal', time: 60000 });
+			const modal = new ModalBuilder()
+			.setCustomId('todoModal-update')
+			.setTitle(`${todoItemExcerptString}`)
+			.setComponents(priorityActionRow, itemActionRow, hyperlinkActionRow);
+			await interaction.showModal(modal);
+			const modalResult = await interaction.awaitModalSubmit({ filter: i => i.customId === 'todoModal-update' && i.user.id === interaction.user.id, time: 60000 });
 			modalResult.deferUpdate();
 			if (!modalResult) {
-				return interaction.followUp({ content: 'You did not provide an updated TODO item and priority within 60 seconds.', flags: MessageFlags.Ephemeral });
+				return interaction.followUp({ content: 'Didn\'t get a response to the form.', flags: MessageFlags.Ephemeral });
 			}
-			let updatedTodoItem = modalResult.fields.getTextInputValue('todo');
-			let updatedPriority = modalResult.fields.getTextInputValue('priority');
+			let updatedTodoItem = modalResult.fields.getTextInputValue('todo') || todoItem;
+			let updatedPriority = modalResult.fields.getTextInputValue('priority') || todoItemResults[0].status;
 			const updatedHyperlink = modalResult.fields.getTextInputValue('link');
-			// Do not update the TODO item if the user did not provide a response for any of the textinputvalue, but update any that were provided
-			if (!updatedTodoItem && !updatedPriority && !updatedHyperlink) {
-				return interaction.followUp({ content: 'You did not provide an updated TODO item and priority within 60 seconds.', flags: MessageFlags.Ephemeral });
+
+			// If no fields were updated, return early
+			if (!modalResult.fields.getTextInputValue('todo') && !modalResult.fields.getTextInputValue('priority') && !updatedHyperlink) {
+				return interaction.followUp({ content: 'Didn\'t get any changes from your submission.', flags: MessageFlags.Ephemeral });
 			}
-			// If only updating priority, set the TODO item to the original TODO item
-			if (!updatedTodoItem && !updatedHyperlink && updatedPriority) {
-				updatedTodoItem = todoItem;
-			}
-			// Hyperlink
-			// If link is not null but the TODO item is null, set the TODO item to the original TODO item
-			if (!updatedTodoItem && updatedHyperlink) {
-				updatedTodoItem = todoItem;
-			}
-			// If link updated, append to to the end of the TODO item in BB markdown
-			if (updatedHyperlink) {
-				updatedTodoItem = `${updatedTodoItem} [Info](${updatedHyperlink})`;
-			}
-			// If no link update but the original TODO item had a link, append the original link to the end of the TODO item in BB markdown
-			if (!updatedHyperlink && hyperlink) {
-				updatedTodoItem = `${updatedTodoItem} [Info](${hyperlink})`;
-			}
-			// If no updated priority, set updatedPriority to the original priority
-			if (!updatedPriority) {
-				updatedPriority = todoItemResults[0].status;
-			}
-			const rowId = todoItemResults[0].id;
-			// Update the TODO item in the database, but only the ones that are not null
+
+			// Modify hyperlink if present, otherwise preserve original link
+			updatedTodoItem += updatedHyperlink ? ` [Info](${updatedHyperlink})` : (hyperlink ? ` [Info](${hyperlink})` : '');
+
+			// Update the TODO item in the database
 			await new Promise((resolve, reject) => {
-				griggysdb.run('UPDATE todo SET todo = ?, status = ? WHERE id = ?', [updatedTodoItem, updatedPriority, rowId], (err) => {
-					if (err) {
-						reject(err);
-					} else {
-						resolve();
-					}
+				griggysdb.run('UPDATE todo SET todo = ?, status = ? WHERE id = ?', [updatedTodoItem, updatedPriority, todoItemResults[0].id], (err) => {
+					err ? reject(err) : resolve();
 				});
 			});
 
@@ -310,11 +282,7 @@ module.exports = {
 			// Query the database for the TODO item
 			const todoItem = await new Promise((resolve, reject) => {
 				griggysdb.get('SELECT * FROM todo WHERE todo LIKE ? AND status != ?', [`%${keyword}%`, 'completed'], (err, row) => {
-					if (err) {
-						reject(err);
-					} else {
-						resolve(row);
-					}
+					err ? reject(err) : resolve(row);
 				});
 			});
 			// No item found
@@ -338,11 +306,7 @@ module.exports = {
 				if (reaction.emoji.name === '✅') {
 					await new Promise((resolve, reject) => {
 						griggysdb.run('DELETE FROM todo WHERE id = ?', [todoItem.id], (err) => {
-							if (err) {
-								reject(err);
-							} else {
-								resolve();
-							}
+							err ? reject(err) : resolve();
 						});
 					});
 					return interaction.editReply({ content: `TODO item '${todoItem.todo}' deleted from '${todoItem.status}' list.`, embeds: [], flags: MessageFlags.Ephemeral });
@@ -368,11 +332,7 @@ module.exports = {
 			// Query the database for the TODO item
 			const todoItem = await new Promise((resolve, reject) => {
 				griggysdb.get('SELECT * FROM todo WHERE todo LIKE ? AND status != ?', [`%${keyword}%`, 'completed'], (err, row) => {
-					if (err) {
-						reject(err);
-					} else {
-						resolve(row);
-					}
+					err ? reject(err) : resolve(row);
 				});
 			});
 			if (!todoItem) {
@@ -382,11 +342,7 @@ module.exports = {
 			if (todoItem.assignee === assignedUser.id) {
 				await new Promise((resolve, reject) => {
 					griggysdb.run('UPDATE todo SET assignee = ? WHERE id = ?', [null, todoItem.id], (err) => {
-						if (err) {
-							reject(err);
-						} else {
-							resolve();
-						}
+						err ? reject(err) : resolve();
 					});
 				});
 				return interaction.reply({ content: `TODO item '${todoItem.todo}' unassigned from ${assignedUser}.`, flags: MessageFlags.Ephemeral });
@@ -414,11 +370,7 @@ module.exports = {
 					}
 					await new Promise((resolve, reject) => {
 						griggysdb.run('UPDATE todo SET assignee = ? WHERE id = ?', [assignee, todoItem.id], (err) => {
-							if (err) {
-								reject(err);
-							} else {
-								resolve();
-							}
+							err ? reject(err) : resolve();
 						});
 					});
 					return interaction.editReply({ content: `TODO item '${todoItem.todo}' assigned to ${assignedUser}.`, embeds: [], flags: MessageFlags.Ephemeral });

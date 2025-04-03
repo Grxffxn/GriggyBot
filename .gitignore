@@ -1,5 +1,7 @@
 .DS_Store
-.auth.json
-.package.json
-.package-lock.json
+package.json
+package-lock.json
+config.js
+serverData.json
 node_modules/
+assets/

@@ -28,7 +28,7 @@ module.exports = {
 		}
 		botPresence();
 
-		client.log(`${client.user.username} signed in as ${client.user.tag}!`);
+		client.log(`${client.user.username} signed in as ${client.user.tag}! I\'m alive!`);
 
 		UpdateServerData(client);
 		setInterval(() => {

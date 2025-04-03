@@ -2,7 +2,6 @@ const { EmbedBuilder, MessageFlags } = require('discord.js');
 const sqlite3 = require('sqlite3').verbose();
 const databaseDir = '/home/minecraft/GriggyBot/database.db';
 const cmiDatabaseDir = '/home/minecraft/Main/plugins/CMI/cmi.sqlite.db';
-const config = require('../config.js');
 
 async function Vouch(interaction) {
     await interaction.deferReply({ flags: MessageFlags.Ephemeral });

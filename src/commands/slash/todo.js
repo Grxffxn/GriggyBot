@@ -1,7 +1,6 @@
 // Create an interactive TODO list for staff
 // Any staff member can add, update, delete, view TODO items and update to different lists (To Do, In Progress, Completed)
-const { SlashCommandBuilder, ModalBuilder, TextInputBuilder, ActionRowBuilder, EmbedBuilder } = require('@discordjs/builders');
-const { TextInputStyle, MessageFlags } = require('discord.js');
+const { SlashCommandBuilder, ModalBuilder, TextInputBuilder, ActionRowBuilder, EmbedBuilder, TextInputStyle, MessageFlags } = require('discord.js');
 const sqlite3 = require('sqlite3').verbose();
 const griggyDatabaseDir = '/home/minecraft/GriggyBot/database.db';
 

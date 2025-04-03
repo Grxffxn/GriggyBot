@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, EmbedBuilder } = require('@discordjs/builders');
+const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const config = require('../../config.js');
 
 module.exports = {

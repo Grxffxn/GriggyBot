@@ -37,7 +37,6 @@ module.exports = {
 			}
 
 			const trimmedUUID = data.id;
-			console.log(trimmedUUID);
 			let renderUrl = `https://visage.surgeplay.com/bust/256/${trimmedUUID}`;
 
 			// Check if the user has linked their Discord account

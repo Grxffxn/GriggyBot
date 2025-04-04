@@ -138,8 +138,6 @@ async function startApplicationProcess(interaction, rank, playerName) {
     const uniqueId = Date.now();
     const modalCustomId = `applicationModal-${userId}-${uniqueId}`;
 
-    console.log(`Starting ${rank.charAt(0).toUpperCase() + rank.slice(1)} Application`);
-
     // Show the modal to the user
     const modal = new ModalBuilder()
         .setTitle(`${rank.charAt(0).toUpperCase() + rank.slice(1)} Application`)
@@ -170,8 +168,6 @@ async function startApplicationProcess(interaction, rank, playerName) {
         questions.forEach((_, index) => {
             answers.push(modalInteraction.fields.getTextInputValue(`question_${index}`));
         });
-        console.log('Received application submission');
-        console.log(answers);
 
         const { data } = await axios.get(`https://api.geysermc.org/v2/utils/uuid/bedrock_or_java/${playerName}?prefix=.`);
         if (!data) throw new Error('Player not found on Mojang API.');
@@ -188,11 +184,6 @@ async function startApplicationProcess(interaction, rank, playerName) {
             .then(row => parseFloat((row.UserMeta || '').split('%%')[1], 10) || 0);
 
         const vouches = parseInt(row.vouches || 0, 10);
-        console.log('Retrieved DB Data');
-        console.log('Row:');
-        console.log(row);
-        console.log('userPoints:');
-        console.log(userPoints);
 
         // Create embeds and buttons
         const submissionEmbed = createEmbed(
@@ -202,7 +193,6 @@ async function startApplicationProcess(interaction, rank, playerName) {
             `Application submitted by ${interaction.user.username}`,
             interaction.user.displayAvatarURL()
         );
-        console.log('Created Submission Embed');
         const profileColor = `#${row.profile_color}`;
         const profileEmbed = new EmbedBuilder()
             .setColor(profileColor)
@@ -210,10 +200,7 @@ async function startApplicationProcess(interaction, rank, playerName) {
             .setThumbnail(row.profile_image || thumbnailUrl)
             .setDescription(row.profile_description || 'No bio yet.')
             .addFields({ name: 'Favorite Game', value: row.favorite_game || 'No favorite game set.' });
-        console.log('Created Profile Embed');
-        console.log(`createButtons Variables: ${row.discord_id} ${rank} ${vouches} ${userPoints}`);
         const buttonRow = createButtons(row.discord_id, rank, vouches, userPoints);
-        console.log('Created Buttons');
         // Send application to submission channel
         const submissionChannel = interaction.guild.channels.cache.find(c => c.name === 'rank-applications');
         if (!submissionChannel) throw new Error('Submission channel not found.');
@@ -239,10 +226,8 @@ async function startApplicationProcess(interaction, rank, playerName) {
             'INSERT INTO applications (message_id, player_name, role, answers, status, discord_id, approvals, thread_id) VALUES (?, ?, ?, ?, ?, ?, 0, ?)',
             [sentMessage.id, playerName, rank, JSON.stringify(answers), 'active', interaction.user.id, thread.id]
         );
-        console.log(`Application submitted for ${playerName}`);
     } catch (error) {
         if (error.name === 'TimeoutError') {
-            console.log(`Application process for user ${userId} timed out.`);
             await interaction.followUp({
                 content: 'Your application process timed out. Please try again.',
                 flags: MessageFlags.Ephemeral,

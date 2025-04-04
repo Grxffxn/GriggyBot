@@ -84,7 +84,6 @@ module.exports = {
 			if (err) {
 				console.error(err.message);
 			}
-			console.log('Connected to the database.');
 		});
 
 		// Get the user's Discord ID

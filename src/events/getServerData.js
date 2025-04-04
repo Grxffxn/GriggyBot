@@ -52,7 +52,6 @@ async function UpdateServerData() {
 
         // Write to serverData.json
         fs.writeFileSync('./src/serverData.json', JSON.stringify(serverData, null, 4));
-        console.log('Server data updated successfully!');
 
         rcon.end();
     } catch (error) {

@@ -14,7 +14,18 @@ module.exports = {
                 .setDescription('The amount to bet')
                 .setRequired(true)
                 .setMinValue(1)
-                .setMaxValue(1000)),
+                .setMaxValue(1000))
+        .addStringOption(option =>
+            option.setName('theme')
+                .setDescription('The theme to use')
+                .addChoices(
+                    { name: 'Food', value: 'food' },
+                    { name: 'Animals', value: 'animals' },
+                    { name: 'Fruits', value: 'fruits' },
+                    { name: 'Vehicles', value: 'vehicles' },
+                    { name: 'Sports', value: 'sports' },
+                    { name: 'Nature', value: 'nature' },
+                )),
     async run(interaction) {
         const userId = interaction.user.id;
         const now = Date.now();
@@ -91,7 +102,23 @@ module.exports = {
             }
             // GAME START
             // Choose 3 random emojis from the array
-            const emojis = ['🍒', '🍋', '🍊', '🍉', '🍇', '🍓', '🍈', '🍍', '🍌'];
+            // Let the user select an emoji list (food, animals, etc.)
+            let emojis = [];
+            if (!interaction.options.getString('theme')) {
+                emojis = ['🍒', '🍋', '🍊', '🍉', '🍇', '🍓', '🍈', '🍍', '🍌'];
+            } else if (interaction.options.getString('theme') === 'food') {
+                emojis = ['🍔', '🍕', '🌭', '🍟', '🍿', '🍩', '🍪', '🍰', '🎂'];
+            } else if (interaction.options.getString('theme') === 'animals') {
+                emojis = ['🐶', '🐱', '🐭', '🐹', '🐰', '🦊', '🐻', '🐼', '🦁'];
+            } else if (interaction.options.getString('themet') === 'fruits') {
+                emojis = ['🍒', '🍋', '🍊', '🍉', '🍇', '🍓', '🍈', '🍍', '🍌'];
+            } else if (interaction.options.getString('theme') === 'vehicles') {
+                emojis = ['🚗', '🚕', '🚙', '🚌', '🚎', '🏎️', '🚓', '🚑', '🚒'];
+            } else if (interaction.options.getString('theme') === 'sports') {
+                emojis = ['⚽', '🏀', '🏈', '⚾', '🎾', '🏐', '🏉', '🏓', '🏸'];
+            } else if (interaction.options.getString('theme') === 'nature') {
+                emojis = ['🌳', '🌲', '🌴', '🌵', '🌾', '🍂', '🍃', '🍁', '🌼'];
+            }
             const randomEmojis = [];
             for (let i = 0; i < 3; i++) {
                 const randomIndex = Math.floor(Math.random() * emojis.length);
@@ -121,14 +148,22 @@ module.exports = {
             });
             cmidb.close();
 
-            // Response
-            if (allMatch) {
-                await interaction.reply(`# <a:_:774429683876888576> You hit the jackpot! <a:_:780596404044955651>\n-+-+-+-+-+-+-+-+-\n# ${randomEmojis.join(' ')}\n-+-+-+-+-+-+-+-+-\nYou won **$${winnings}!**\nYour new balance is **$${updateBalance}**`);
-            } else if (twoMatch) {
-                await interaction.reply(`# <:_:1162276681323642890> You won **$${winnings}!**\n-+-+-+-+-+-+-+-+-\n# ${randomEmojis.join(' ')}\n-+-+-+-+-+-+-+-+-\nYour new balance is **$${updateBalance}**`);
-            } else {
-                await interaction.reply(`# <:_:774859143495417867> Better luck next time!\n-+-+-+-+-+-+-+-+-\n# ${randomEmojis.join(' ')}\n-+-+-+-+-+-+-+-+-\nYou lost **$${bet}!**\nYour new balance is **$${updateBalance}**`);
-            }
+            // Response with delayed emoji reveal
+            await interaction.reply(`# 🎰 Rolling the slots...\n-+-+-+-+-+-+-+-+-\n# ${randomEmojis[0]} ❓ ❓\n-+-+-+-+-+-+-+-+-`);
+
+            setTimeout(async () => {
+                await interaction.editReply(`# 🎰 Rolling the slots...\n-+-+-+-+-+-+-+-+-\n# ${randomEmojis[0]} ${randomEmojis[1]} ❓\n-+-+-+-+-+-+-+-+-`);
+            }, 1000); // 1-second delay
+
+            setTimeout(async () => {
+                if (allMatch) {
+                    await interaction.editReply(`# <a:_:774429683876888576> You hit the jackpot! <a:_:780596404044955651>\n-+-+-+-+-+-+-+-+-\n# ${randomEmojis.join(' ')}\n-+-+-+-+-+-+-+-+-\nYou won **$${winnings}!**\nYour new balance is **$${updateBalance}**`);
+                } else if (twoMatch) {
+                    await interaction.editReply(`# <:_:1162276681323642890> You won **$${winnings}!**\n-+-+-+-+-+-+-+-+-\n# ${randomEmojis.join(' ')}\n-+-+-+-+-+-+-+-+-\nYour new balance is **$${updateBalance}**`);
+                } else {
+                    await interaction.editReply(`# <:_:774859143495417867> Better luck next time!\n-+-+-+-+-+-+-+-+-\n# ${randomEmojis.join(' ')}\n-+-+-+-+-+-+-+-+-\nYou lost **$${bet}!**\nYour new balance is **$${updateBalance}**`);
+                }
+            }, 3000); // 3-second delay
         } catch (error) {
             console.error('Error:', error);
             interaction.reply({ content: 'An error occurred while processing your request.', flags: MessageFlags.Ephemeral });

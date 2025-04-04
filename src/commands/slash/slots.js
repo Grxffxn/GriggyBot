@@ -25,6 +25,7 @@ module.exports = {
                     { name: 'Vehicles', value: 'vehicles' },
                     { name: 'Sports', value: 'sports' },
                     { name: 'Nature', value: 'nature' },
+                    { name: 'VIP', value: 'VIP' },
                 )),
     async run(interaction) {
         const userId = interaction.user.id;
@@ -105,19 +106,21 @@ module.exports = {
             // Let the user select an emoji list (food, animals, etc.)
             let emojis = [];
             if (!interaction.options.getString('theme')) {
-                emojis = ['🍒', '🍋', '🍊', '🍉', '🍇', '🍓', '🍈', '🍍', '🍌'];
+                emojis = ['🍒', '🍋', '🍊', '🍉', '🍇', '🍓', '🍈', '🍍', '🍌', '🍑'];
             } else if (interaction.options.getString('theme') === 'food') {
-                emojis = ['🍔', '🍕', '🌭', '🍟', '🍿', '🍩', '🍪', '🍰', '🎂'];
+                emojis = ['🍔', '🍕', '🌭', '🍟', '🍿', '🍩', '🍪', '🍰', '🎂', '🥪'];
             } else if (interaction.options.getString('theme') === 'animals') {
-                emojis = ['🐶', '🐱', '🐭', '🐹', '🐰', '🦊', '🐻', '🐼', '🦁'];
+                emojis = ['🐶', '🐱', '🐭', '🐹', '🐰', '🦊', '🐻', '🐼', '🦁', '🐨'];
             } else if (interaction.options.getString('themet') === 'fruits') {
-                emojis = ['🍒', '🍋', '🍊', '🍉', '🍇', '🍓', '🍈', '🍍', '🍌'];
+                emojis = ['🍒', '🍋', '🍊', '🍉', '🍇', '🍓', '🍈', '🍍', '🍌', '🍑'];
             } else if (interaction.options.getString('theme') === 'vehicles') {
-                emojis = ['🚗', '🚕', '🚙', '🚌', '🚎', '🏎️', '🚓', '🚑', '🚒'];
+                emojis = ['🚗', '🚕', '🚙', '🚌', '🚎', '🏎️', '🚓', '🚑', '🚒', '🚜'];
             } else if (interaction.options.getString('theme') === 'sports') {
-                emojis = ['⚽', '🏀', '🏈', '⚾', '🎾', '🏐', '🏉', '🏓', '🏸'];
+                emojis = ['⚽', '🏀', '🏈', '⚾', '🎾', '🏐', '🏉', '🏓', '🏸', '🥊'];
             } else if (interaction.options.getString('theme') === 'nature') {
-                emojis = ['🌳', '🌲', '🌴', '🌵', '🌾', '🍂', '🍃', '🍁', '🌼'];
+                emojis = ['🌳', '🌲', '🌴', '🌵', '🌾', '🍂', '🍃', '🍁', '🌼', '🌺'];
+            } else if (interaction.options.getString('theme') === 'VIP') {
+                emojis = ['<:_:776297828645470218>', '<:_:1353522852581605517>', '<:_:1353523579634843758>', '<:_:1353523822401421392>', '<:_:776297828678369300>', '<:_:1353524143177334846>', '<:_:1355689894575472791>', '<:_:1353524874668408953>', '<:_:1354650114236350664>', '<:_:1354987808477151292>'];
             }
             const randomEmojis = [];
             for (let i = 0; i < 3; i++) {

@@ -42,6 +42,7 @@ async function UpdateServerData() {
 
         // Prepare data to write
         const serverData = {
+            online: true,
             bmapStatus,
             numberOnline: sanitizedNumberOnline,
             serverVersion: sanitizedServerVersion,
@@ -56,6 +57,11 @@ async function UpdateServerData() {
         rcon.end();
     } catch (error) {
         console.error('Error updating server data:', error);
+
+        const serverData = {
+            online: false
+        };
+        fs.writeFileSync('./src/serverData.json', JSON.stringify(serverData, null, 4));
     }
 }
 

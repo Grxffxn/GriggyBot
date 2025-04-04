@@ -82,31 +82,40 @@ module.exports = {
                 });
             });
         }
+        // Function to format numbers with commas and two decimal places
+        const formatNumber = (num) => {
+            return new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(num);
+        }
 
         function calculatePayout(betAmount, colorBet, rangeBet, winningNumber, winningColor, winningRange) {
             let payoutMultiplier = 0;
             let payoutMessage = '';
+            // Format bet and winnings with commas and two decimal places
+            const formattedBetAmount = formatNumber(betAmount);
 
             // Handle color bet
             if (colorBet) {
                 if (colorBet === 'green' && winningColor === 'green') {
                     payoutMultiplier += 5; // Example: 5x payout for green
-                    payoutMessage += `You won on green! Payout: **${betAmount * 5}**.\n`;
+                    const winnings = formatNumber(betAmount * 5);
+                    payoutMessage += `You won on green! Payout: **$${winnings}**\n`;
                 } else if (colorBet === winningColor) {
                     payoutMultiplier += 2; // Example: 2x payout for red/black
-                    payoutMessage += `You won on ${winningColor}! Payout: **${betAmount * 2}**.\n`;
+                    const winnings = formatNumber(betAmount * 2);
+                    payoutMessage += `You won on ${winningColor}! Payout: **$${winnings}**\n`;
                 }
             }
 
             // Handle range bet
             if (rangeBet && rangeBet === winningRange) {
                 payoutMultiplier += 2; // Example: 2x payout for high/low
-                payoutMessage += `You won on ${winningRange}! Payout: **${betAmount * 2}**.\n`;
+                const winnings = formatNumber(betAmount * 2);
+                payoutMessage += `You won on ${winningRange}! Payout: **$${winnings}**\n`;
             }
 
             // If no bets were correct
             if (payoutMultiplier === 0) {
-                payoutMessage = 'You lost your bet. Better luck next time!';
+                payoutMessage = `You lost your bet of **$${formattedBetAmount}**. Better luck next time!`;
             }
 
             return { payoutMultiplier, payoutMessage };
@@ -163,9 +172,10 @@ module.exports = {
             if (payoutMultiplier > 0) {
                 cooldowns[userId] = now;
             }
+            const winningNumberEmoji = winningNumber === 0 ? '🟢' : (winningColor === 'red' ? '🔴' : '⚫');
 
             return interaction.reply({
-                content: `Winning number: **${winningNumber}**\n${payoutMessage}\nYour new balance is **${newBalance}**.`,
+                content: `# ${winningNumberEmoji} **${winningNumber}**\n${payoutMessage}\nYour new balance is **${formatNumber(newBalance)}**`,
             });
         } catch (error) {
             console.error('Error:', error);

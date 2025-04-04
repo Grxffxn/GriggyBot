@@ -158,21 +158,27 @@ module.exports = {
                 await interaction.editReply(`# 🎰 Rolling the slots...\n-+-+-+-+-+-+-+-+-\n# ${randomEmojis[0]} ${randomEmojis[1]} ❓\n-+-+-+-+-+-+-+-+-`);
             }, 1000); // 1-second delay
 
+            // Format numbers with commas and round to the nearest hundredth
+            const formatNumber = (num) => new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(num);
+
+            const formattedWinnings = formatNumber(winnings);
+            const formattedBet = formatNumber(bet);
+            const formattedUpdateBalance = formatNumber(updateBalance);
+
             setTimeout(async () => {
                 if (allMatch) {
-                    await interaction.editReply(`# <a:_:774429683876888576> You hit the jackpot! <a:_:780596404044955651>\n-+-+-+-+-+-+-+-+-\n# ${randomEmojis.join(' ')}\n-+-+-+-+-+-+-+-+-\nYou won **$${winnings}!**\nYour new balance is **$${updateBalance}**`);
+                    await interaction.editReply(`# <a:_:774429683876888576> You hit the jackpot! <a:_:780596404044955651>\n-+-+-+-+-+-+-+-+-\n# ${randomEmojis.join(' ')}\n-+-+-+-+-+-+-+-+-\nYou won **$${formattedWinnings}!**\nYour new balance is **$${formattedUpdateBalance}**`);
                 } else if (twoMatch) {
-                    await interaction.editReply(`# <:_:1162276681323642890> You won **$${winnings}!**\n-+-+-+-+-+-+-+-+-\n# ${randomEmojis.join(' ')}\n-+-+-+-+-+-+-+-+-\nYour new balance is **$${updateBalance}**`);
+                    await interaction.editReply(`# <:_:1162276681323642890> You won **$${formattedWinnings}!**\n-+-+-+-+-+-+-+-+-\n# ${randomEmojis.join(' ')}\n-+-+-+-+-+-+-+-+-\nYour new balance is **$${formattedUpdateBalance}**`);
                 } else {
-                    await interaction.editReply(`# <:_:774859143495417867> Better luck next time!\n-+-+-+-+-+-+-+-+-\n# ${randomEmojis.join(' ')}\n-+-+-+-+-+-+-+-+-\nYou lost **$${bet}!**\nYour new balance is **$${updateBalance}**\n-# You may roll again with no cooldown!`);
+                    await interaction.editReply(`# <:_:774859143495417867> Better luck next time!\n-+-+-+-+-+-+-+-+-\n# ${randomEmojis.join(' ')}\n-+-+-+-+-+-+-+-+-\nYou lost **$${formattedBet}!**\nYour new balance is **$${formattedUpdateBalance}**\n-# You may roll again with no cooldown!`);
                 }
-            }, 3000); // 3-second delay
+            }, 2000); // 2-second delay
         } catch (error) {
             console.error('Error:', error);
             interaction.reply({ content: 'An error occurred while processing your request.', flags: MessageFlags.Ephemeral });
         } finally {
             griggydb.close();
         }
-
     }
 }

@@ -164,7 +164,7 @@ module.exports = {
                 } else if (twoMatch) {
                     await interaction.editReply(`# <:_:1162276681323642890> You won **$${winnings}!**\n-+-+-+-+-+-+-+-+-\n# ${randomEmojis.join(' ')}\n-+-+-+-+-+-+-+-+-\nYour new balance is **$${updateBalance}**`);
                 } else {
-                    await interaction.editReply(`# <:_:774859143495417867> Better luck next time!\n-+-+-+-+-+-+-+-+-\n# ${randomEmojis.join(' ')}\n-+-+-+-+-+-+-+-+-\nYou lost **$${bet}!**\nYour new balance is **$${updateBalance}**`);
+                    await interaction.editReply(`# <:_:774859143495417867> Better luck next time!\n-+-+-+-+-+-+-+-+-\n# ${randomEmojis.join(' ')}\n-+-+-+-+-+-+-+-+-\nYou lost **$${bet}!**\nYour new balance is **$${updateBalance}**\n-# You may roll again with no cooldown!`);
                 }
             }, 3000); // 3-second delay
         } catch (error) {

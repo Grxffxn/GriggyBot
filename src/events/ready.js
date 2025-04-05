@@ -4,7 +4,6 @@ const { Routes } = require('discord-api-types/v10');
 const UpdateServerData = require('./getServerData.js');
 const AutoMsg = require('./automsg.js');
 const UpdateImage = require('./updateImage.js');
-const BluemapController = require('./bluemapController.js');
 const config = require('../config.js');
 
 const {

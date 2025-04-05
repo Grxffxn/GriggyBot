@@ -139,10 +139,7 @@ module.exports = {
         // Check if the user has the Linked role
         const linkedRole = interaction.guild.roles.cache.find(role => role.name === 'Linked');
         if (!interaction.member.roles.cache.has(linkedRole.id)) {
-            return interaction.reply({
-                content: 'You must link your accounts to play roulette.\n`/link`',
-                flags: MessageFlags.Ephemeral,
-            });
+            return interaction.reply({ content: 'You must link your accounts to play roulette.\n`/link`', flags: MessageFlags.Ephemeral });
         }
 
         try {

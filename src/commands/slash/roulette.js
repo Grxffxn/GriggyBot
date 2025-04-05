@@ -74,7 +74,7 @@ module.exports = {
 
         function updateBalanceInDatabase(db, uuid, newBalance) {
             return new Promise((resolve, reject) => {
-                db.run('UPDATE users SET balance = ? WHERE player_uuid = ?', [newBalance, uuid], function(err) {
+                db.run('UPDATE users SET Balance = ? WHERE player_uuid = ?', [newBalance, uuid], function(err) {
                     if (err) {
                         return reject(err);
                     }
@@ -139,10 +139,7 @@ module.exports = {
         // Check if the user has the Linked role
         const linkedRole = interaction.guild.roles.cache.find(role => role.name === 'Linked');
         if (!interaction.member.roles.cache.has(linkedRole.id)) {
-            return interaction.reply({
-                content: 'You must link your accounts to play roulette.\n`/link`',
-                flags: MessageFlags.Ephemeral,
-            });
+            return interaction.reply({ content: 'You must link your accounts to play roulette.\n`/link`', flags: MessageFlags.Ephemeral });
         }
 
         try {

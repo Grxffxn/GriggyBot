@@ -4,7 +4,6 @@ const { Routes } = require('discord-api-types/v10');
 const UpdateServerData = require('./getServerData.js');
 const AutoMsg = require('./automsg.js');
 const UpdateImage = require('./updateImage.js');
-const BluemapController = require('./bluemapController.js');
 const config = require('../config.js');
 
 const {
@@ -38,11 +37,6 @@ module.exports = {
 		UpdateImage(client);
 		setInterval(() => {
 			UpdateImage(client);
-		}, 600000);
-
-		BluemapController(client);
-		setInterval(() => {
-			BluemapController(client);
 		}, 600000);
 
 		setInterval(() => {

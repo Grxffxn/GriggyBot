@@ -74,7 +74,7 @@ module.exports = {
 
         function updateBalanceInDatabase(db, uuid, newBalance) {
             return new Promise((resolve, reject) => {
-                db.run('UPDATE users SET balance = ? WHERE player_uuid = ?', [newBalance, uuid], function(err) {
+                db.run('UPDATE users SET Balance = ? WHERE player_uuid = ?', [newBalance, uuid], function(err) {
                     if (err) {
                         return reject(err);
                     }

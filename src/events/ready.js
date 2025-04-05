@@ -40,11 +40,6 @@ module.exports = {
 			UpdateImage(client);
 		}, 600000);
 
-		BluemapController(client);
-		setInterval(() => {
-			BluemapController(client);
-		}, 600000);
-
 		setInterval(() => {
 			AutoMsg(client);
 		}, config.automsgdelay);

@@ -12,17 +12,6 @@ async function UpdateServerData() {
         await rcon.connect();
 
         // Fetch data via RCON
-        let bmapStatus;
-        const bluemapStatusRaw = await rcon.send('bluemap');
-        const bluemapStatusSanitized = bluemapStatusRaw.replace(/\n/g, '').trim(); // Remove newlines and clean up
-        // Check if render-threads are stopped
-        const isRenderingStopped = bluemapStatusSanitized.includes('❌ render-threads are §fstopped');
-        if (isRenderingStopped) {
-            bmapStatus = "off"
-        } else {
-            bmapStatus = "on"
-        }
-
         const numberOnline = await rcon.send('papi parse --null %cmi_server_online%');
         const sanitizedNumberOnline = numberOnline.replace(/\n/g, '').trim();
 

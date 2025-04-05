@@ -111,7 +111,7 @@ module.exports = {
                 emojis = ['🍔', '🍕', '🌭', '🍟', '🍿', '🍩', '🍪', '🍰', '🎂', '🥪'];
             } else if (interaction.options.getString('theme') === 'animals') {
                 emojis = ['🐶', '🐱', '🐭', '🐹', '🐰', '🦊', '🐻', '🐼', '🦁', '🐨'];
-            } else if (interaction.options.getString('themet') === 'fruits') {
+            } else if (interaction.options.getString('theme') === 'fruits') {
                 emojis = ['🍒', '🍋', '🍊', '🍉', '🍇', '🍓', '🍈', '🍍', '🍌', '🍑'];
             } else if (interaction.options.getString('theme') === 'vehicles') {
                 emojis = ['🚗', '🚕', '🚙', '🚌', '🚎', '🏎️', '🚓', '🚑', '🚒', '🚜'];
@@ -121,6 +121,9 @@ module.exports = {
                 emojis = ['🌳', '🌲', '🌴', '🌵', '🌾', '🍂', '🍃', '🍁', '🌼', '🌺'];
             } else if (interaction.options.getString('theme') === 'VIP') {
                 emojis = ['<:_:776297828645470218>', '<:_:1353522852581605517>', '<:_:1353523579634843758>', '<:_:1353523822401421392>', '<:_:776297828678369300>', '<:_:1353524143177334846>', '<:_:1355689894575472791>', '<:_:1353524874668408953>', '<:_:1354650114236350664>', '<:_:1354987808477151292>'];
+            }
+            if (emojis.length === 0) {
+                return interaction.reply({ content: 'An error occurred: Theme selection failed.', flags: MessageFlags.Ephemeral });
             }
             const randomEmojis = [];
             for (let i = 0; i < 3; i++) {

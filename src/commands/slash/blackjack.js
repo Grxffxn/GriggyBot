@@ -143,8 +143,8 @@ module.exports = {
                         const newBalance = balance - bet; // Deduct the bet from the player's balance
                         await consoleChannel.send(`money set ${username} ${newBalance}`);
                         await interaction.editReply({
-                            content: `You drew a **${newCard}**. Your cards: **${playerCards.join(', ')}** (Total: ${playerTotal})\n` +
-                                `You busted! Dealer wins! 😢\nNew balance: **$${formatNumber(newBalance)}**`,
+                            content: `🃏 You drew a **${newCard}**. Your cards: **${playerCards.join(', ')}** (Total: ${playerTotal})\n` +
+                                `You busted! Dealer wins! <:_:774859143495417867>\nNew balance: **$${formatNumber(newBalance)}**`,
                             components: [],
                         });
                         collector.stop('game_over');
@@ -153,8 +153,8 @@ module.exports = {
                         const newBalance = balance + bet; // Add the bet to the player's balance
                         await consoleChannel.send(`money set ${username} ${newBalance}`);
                         await interaction.editReply({
-                            content: `You drew a **${newCard}**. Your cards: **${playerCards.join(', ')}** (Total: ${playerTotal})\n` +
-                                `You hit blackjack! You win! 🎉\nNew balance: **$${formatNumber(newBalance)}**`,
+                            content: `🃏 You drew a **${newCard}**. Your cards: **${playerCards.join(', ')}** (Total: ${playerTotal})\n` +
+                                `You hit blackjack! You win! <a:_:774429683876888576>\nNew balance: **$${formatNumber(newBalance)}**`,
                             components: [],
                         });
                         cooldowns[userId] = now; // Add winner to cooldowns
@@ -162,7 +162,7 @@ module.exports = {
                     } else {
                         // Update the message and let the player decide again
                         await interaction.editReply({
-                            content: `You drew a **${newCard}**. Your cards: **${playerCards.join(', ')}** (Total: ${playerTotal})\n` +
+                            content: `🃏 You drew a **${newCard}**. Your cards: **${playerCards.join(', ')}** (Total: ${playerTotal})\n` +
                                 `Dealer's visible card: **${dealerCards[0]}**\n` +
                                 `What would you like to do?`,
                             components: [row],
@@ -182,23 +182,23 @@ module.exports = {
 
                     // Determine the winner
                     const playerTotal = playerCards.reduce((a, b) => a + b, 0); // Recalculate playerTotal
-                    let resultMessage = `Your cards: **${playerCards.join(', ')}** (Total: ${playerTotal})\n` +
+                    let resultMessage = `🃏 Your cards: **${playerCards.join(', ')}** (Total: ${playerTotal})\n` +
                         `Dealer's cards: **${dealerCards.join(', ')}** (Total: ${dealerTotal})\n`;
 
                     let newBalance;
                     if (playerTotal > 21) {
                         newBalance = balance - bet;
-                        resultMessage += `You busted! Dealer wins! 😢\nNew balance: **$${formatNumber(newBalance)}**`;
+                        resultMessage += `You busted! Dealer wins! <:_:774859143495417867>\nNew balance: **$${formatNumber(newBalance)}**`;
                     } else if (dealerTotal > 21 || playerTotal > dealerTotal) {
                         newBalance = balance + bet;
-                        resultMessage += `You win! 🎉\nNew balance: **$${formatNumber(newBalance)}**`;
+                        resultMessage += `You win! <:_:1162276681323642890>\nNew balance: **$${formatNumber(newBalance)}**`;
                         cooldowns[userId] = now; // Add winner to cooldowns
                     } else if (playerTotal < dealerTotal) {
                         newBalance = balance - bet;
-                        resultMessage += `Dealer wins! 😢\nNew balance: **$${formatNumber(newBalance)}**`;
+                        resultMessage += `Dealer wins! <:_:774859143495417867>\nNew balance: **$${formatNumber(newBalance)}**`;
                     } else {
                         newBalance = balance;
-                        resultMessage += `It's a tie! 🤝\nBalance: **$${formatNumber(newBalance)}**`;
+                        resultMessage += `It's a tie! <a:_:762492571523219466>\nBalance: **$${formatNumber(newBalance)}**`;
                     }
 
                     await interaction.editReply({ content: resultMessage, components: [] });

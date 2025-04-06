@@ -1,5 +1,6 @@
 const { SlashCommandBuilder, MessageFlags } = require('discord.js');
 const config = require('../../config.js');
+const serverData = require('../../serverData.json');
 const sqlite3 = require('sqlite3').verbose();
 const cmiDatabaseDir = '/home/minecraft/Main/plugins/CMI/cmi.sqlite.db';
 const griggyDatabaseDir = '/home/minecraft/GriggyBot/database.db';
@@ -14,7 +15,7 @@ module.exports = {
                 .setDescription('The amount to bet')
                 .setRequired(true)
                 .setMinValue(1)
-                .setMaxValue(1000))
+                .setMaxValue(5000))
         .addStringOption(option =>
             option.setName('theme')
                 .setDescription('The theme to use')
@@ -28,9 +29,17 @@ module.exports = {
                     { name: 'VIP', value: 'VIP' },
                 )),
     async run(interaction) {
+        // Check if gambling is enabled and server is online
+        if (!config.gamblingEnabled || !serverData.online) {
+            return interaction.reply({
+                content: 'Gambling is currently disabled, or TLC is offline.',
+                flags: MessageFlags.Ephemeral,
+            });
+        }
         const userId = interaction.user.id;
+        const consoleChannel = interaction.client.channels.cache.get(config.consoleChannelId);
         const now = Date.now();
-        const cooldownTime = 15 * 60 * 1000; // 15 minutes in milliseconds
+        const cooldownTime = 5 * 60 * 1000; // 5 minutes in milliseconds
         // Check if the user is on cooldown
         if (cooldowns[userId] && now - cooldowns[userId] < cooldownTime) {
             const remainingTime = Math.ceil((cooldownTime - (now - cooldowns[userId])) / 1000 / 60);
@@ -54,7 +63,7 @@ module.exports = {
             });
         }
 
-        function getBalanceFromDatabase(db, uuid) {
+        function getDataFromDatabase(db, uuid) {
             return new Promise((resolve, reject) => {
                 db.get('SELECT * FROM users WHERE player_uuid = ?', [uuid], (err, row) => {
                     if (err) {
@@ -63,7 +72,7 @@ module.exports = {
                     if (!row) {
                         return reject(new Error('You must link your accounts to play slots.\n`/link`'));
                     }
-                    resolve(row.Balance);
+                    resolve(row);
                 });
             });
         }
@@ -92,8 +101,9 @@ module.exports = {
                     console.error(err.message);
                 }
             });
-            const balance = await getBalanceFromDatabase(cmidb, hyphenatedUUID);
-            // Keep DB connection open until the game is finished
+            const playerData = await getDataFromDatabase(cmidb, hyphenatedUUID);
+            const balance = playerData.Balance;
+            cmidb.close();
             // Check if the user has enough balance
             if (isNaN(balance)) {
                 return interaction.reply({ content: 'An error occurred while retrieving your balance.', flags: MessageFlags.Ephemeral });
@@ -143,16 +153,9 @@ module.exports = {
             if (allMatch || twoMatch) {
                 cooldowns[userId] = now;
             }
-            // Update the user's balance in CMI's database
+            // Update the user's balance via Console Channel
             const updateBalance = (balance + winnings) - bet;
-            const updateQuery = 'UPDATE users SET Balance = ? WHERE player_uuid = ?';
-            cmidb.run(updateQuery, [updateBalance, hyphenatedUUID], (err) => {
-                if (err) {
-                    console.error(err.message);
-                    return interaction.reply({ content: 'An error occurred while updating your balance.', flags: MessageFlags.Ephemeral });
-                }
-            });
-            cmidb.close();
+            await consoleChannel.send(`money set ${playerData.username} ${updateBalance}`);
 
             // Response with delayed emoji reveal
             await interaction.reply(`# 🎰 Rolling the slots...\n-+-+-+-+-+-+-+-+-\n# ${randomEmojis[0]} ❓ ❓\n-+-+-+-+-+-+-+-+-`);

@@ -1,5 +1,6 @@
 const { SlashCommandBuilder, MessageFlags } = require('discord.js');
 const config = require('../../config.js');
+const serverData = require('../../serverData.json');
 const sqlite3 = require('sqlite3').verbose();
 const cmiDatabaseDir = '/home/minecraft/Main/plugins/CMI/cmi.sqlite.db';
 const griggyDatabaseDir = '/home/minecraft/GriggyBot/database.db';
@@ -14,7 +15,7 @@ module.exports = {
                 .setDescription('The amount to bet')
                 .setRequired(true)
                 .setMinValue(1)
-                .setMaxValue(1000))
+                .setMaxValue(5000))
         .addStringOption(option =>
             option.setName('color')
                 .setDescription('The color to bet on')
@@ -32,9 +33,17 @@ module.exports = {
                     { name: 'Low', value: 'low' },
                 )),
     async run(interaction) {
+        // Check if gambling is enabled and server is online
+        if (!config.gamblingEnabled || !serverData.online) {
+            return interaction.reply({
+                content: 'Gambling is currently disabled, or TLC is offline.',
+                flags: MessageFlags.Ephemeral,
+            });
+        }
         const userId = interaction.user.id;
+        const consoleChannel = interaction.client.channels.cache.get(config.consoleChannelId);
         const now = Date.now();
-        const cooldownTime = 15 * 60 * 1000; // 15 minutes in milliseconds
+        const cooldownTime = 5 * 60 * 1000; // 5 minutes in milliseconds
         // Check if the user is on cooldown
         if (cooldowns[userId] && now - cooldowns[userId] < cooldownTime) {
             const remainingTime = Math.ceil((cooldownTime - (now - cooldowns[userId])) / 1000 / 60);
@@ -58,7 +67,7 @@ module.exports = {
             });
         }
 
-        function getBalanceFromDatabase(db, uuid) {
+        function getDataFromDatabase(db, uuid) {
             return new Promise((resolve, reject) => {
                 db.get('SELECT * FROM users WHERE player_uuid = ?', [uuid], (err, row) => {
                     if (err) {
@@ -67,21 +76,11 @@ module.exports = {
                     if (!row) {
                         return reject(new Error('No balance found.'));
                     }
-                    resolve(row.Balance);
+                    resolve(row);
                 });
             });
         }
 
-        function updateBalanceInDatabase(db, uuid, newBalance) {
-            return new Promise((resolve, reject) => {
-                db.run('UPDATE users SET Balance = ? WHERE player_uuid = ?', [newBalance, uuid], function(err) {
-                    if (err) {
-                        return reject(err);
-                    }
-                    resolve(this.changes);
-                });
-            });
-        }
         // Function to format numbers with commas and two decimal places
         const formatNumber = (num) => {
             return new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(num);
@@ -145,7 +144,8 @@ module.exports = {
         try {
             const uuid = await getUUIDFromDatabase(griggyDb, userId);
             const hyphenatedUUID = uuid.replace(/(.{8})(.{4})(.{4})(.{4})(.{12})/, '$1-$2-$3-$4-$5');
-            const balance = await getBalanceFromDatabase(cmiDb, hyphenatedUUID);
+            const playerData = await getDataFromDatabase(cmiDb, hyphenatedUUID);
+            const balance = playerData.Balance;
             if (isNaN(balance)) {
                 return interaction.reply({ content: 'An error occurred while retrieving your balance.', flags: MessageFlags.Ephemeral });
             }
@@ -164,7 +164,7 @@ module.exports = {
             const { payoutMultiplier, payoutMessage } = calculatePayout(betAmount, colorBet, rangeBet, winningNumber, winningColor, winningRange);
             let newBalance = balance - betAmount + (betAmount * payoutMultiplier);
 
-            await updateBalanceInDatabase(cmiDb, hyphenatedUUID, newBalance);
+            await consoleChannel.send(`money set ${playerData.username} ${newBalance}`);
             // If payoutMultiplier is greater than 0 (win), add user to cooldown. Otherwise do not.
             if (payoutMultiplier > 0) {
                 cooldowns[userId] = now;

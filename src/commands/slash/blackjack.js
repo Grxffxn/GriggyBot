@@ -202,8 +202,10 @@ module.exports = {
                     }
 
                     await interaction.editReply({ content: resultMessage, components: [] });
-                    
-                    await consoleChannel.send(`money set ${username} ${newBalance}`);
+                    // If it's a tie, do not update balance
+                    if (playerTotal !== dealerTotal) {
+                        await consoleChannel.send(`money set ${username} ${newBalance}`);
+                    }
                     collector.stop('game_over');
                 }
             });

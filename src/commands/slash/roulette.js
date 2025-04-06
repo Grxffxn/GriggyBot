@@ -99,7 +99,7 @@ module.exports = {
                     const winnings = formatNumber(betAmount * 5);
                     payoutMessage += `You won on green! Payout: **$${winnings}**\n`;
                 } else if (colorBet === winningColor) {
-                    payoutMultiplier += 2; // Example: 2x payout for red/black
+                    payoutMultiplier += 1;
                     const winnings = formatNumber(betAmount * 2);
                     payoutMessage += `You won on ${winningColor}! Payout: **$${winnings}**\n`;
                 }
@@ -107,7 +107,7 @@ module.exports = {
 
             // Handle range bet
             if (rangeBet && rangeBet === winningRange) {
-                payoutMultiplier += 2; // Example: 2x payout for high/low
+                payoutMultiplier += 1;
                 const winnings = formatNumber(betAmount * 2);
                 payoutMessage += `You won on ${winningRange}! Payout: **$${winnings}**\n`;
             }
@@ -163,8 +163,10 @@ module.exports = {
 
             const { payoutMultiplier, payoutMessage } = calculatePayout(betAmount, colorBet, rangeBet, winningNumber, winningColor, winningRange);
             let newBalance = balance - betAmount + (betAmount * payoutMultiplier);
-
-            await consoleChannel.send(`money set ${playerData.username} ${newBalance}`);
+            // If payoutMultiplier is greater than 1, update balance, otherwise leave it alone
+            if (payoutMultiplier > 1) {
+                await consoleChannel.send(`money set ${playerData.username} ${newBalance}`);
+            }
             // If payoutMultiplier is greater than 0 (win), add user to cooldown. Otherwise do not.
             if (payoutMultiplier > 0) {
                 cooldowns[userId] = now;

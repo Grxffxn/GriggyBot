@@ -5,6 +5,7 @@ const sqlite3 = require('sqlite3').verbose();
 const cmiDatabaseDir = '/home/minecraft/Main/plugins/CMI/cmi.sqlite.db';
 const griggyDatabaseDir = '/home/minecraft/GriggyBot/database.db';
 const cooldowns = {};
+const globalCooldowns = {};
 
 function formatNumber(num) {
     return new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(num);
@@ -31,6 +32,8 @@ module.exports = {
         const userId = interaction.user.id;
         const now = Date.now();
         const cooldownTime = 5 * 60 * 1000; // 5 minutes in milliseconds
+        const globalCooldownTime = 5 * 1000; // 5 seconds in milliseconds
+
         // Check if the user is on cooldown
         if (cooldowns[userId] && now - cooldowns[userId] < cooldownTime) {
             const remainingTime = Math.ceil((cooldownTime - (now - cooldowns[userId])) / 1000 / 60);
@@ -39,6 +42,17 @@ module.exports = {
                 flags: MessageFlags.Ephemeral,
             });
         }
+
+        // Check if the user is on the global 5-second cooldown
+        if (globalCooldowns[userId] && now - globalCooldowns[userId] < globalCooldownTime) {
+            const remainingTime = Math.ceil((globalCooldownTime - (now - globalCooldowns[userId])) / 1000);
+            return interaction.reply({
+                content: `Slow down! Please wait ${remainingTime} more second(s)! The server needs time to update.`,
+                flags: MessageFlags.Ephemeral,
+            });
+        }
+
+        globalCooldowns[userId] = now;
 
         function getUUIDFromDatabase(db, userId) {
             return new Promise((resolve, reject) => {
@@ -123,7 +137,7 @@ module.exports = {
             const row = new ActionRowBuilder().addComponents(hitButton, standButton);
             // Show the player their cards and the dealer's first card
             await interaction.reply({
-                content: `Your cards: **${playerCards.join(', ')}** (Total: ${playerTotal})\n` +
+                content: `🃏 Your cards: **${playerCards.join(', ')}** (Total: ${playerTotal})\n` +
                     `Dealer's visible card: **${dealerCards[0]}**\n` +
                     `What would you like to do?`,
                 components: [row], // Add the "Hit" and "Stand" buttons

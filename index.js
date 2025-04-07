@@ -6,7 +6,6 @@ const client = new Client({
 });
 const config = require('./src/config.js');
 const { readdirSync } = require('node:fs');
-const moment = require('moment');
 
 const token = config.token;
 
@@ -15,9 +14,17 @@ client.commands = new Collection();
 client.slashcommands = new Collection();
 client.slashdatas = [];
 
-
 function log(message) {
-	console.log(`[${moment().format('DD-MM-YYYY HH:mm:ss')}] ${message}`);
+    const now = new Date();
+    const formattedDate = now.toLocaleString('en-GB', { 
+        day: '2-digit', 
+        month: '2-digit', 
+        year: 'numeric', 
+        hour: '2-digit', 
+        minute: '2-digit', 
+        second: '2-digit' 
+    }).replace(',', ''); // Remove the comma between date and time
+    console.log(`[${formattedDate}] ${message}`);
 }
 client.log = log;
 

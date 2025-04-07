@@ -3,7 +3,6 @@ const fs = require('fs').promises;
 const path = require('path');
 const sqlite3 = require('sqlite3').verbose();
 const axios = require('axios');
-const moment = require('moment');
 
 // Define griggyDB connection and query
 const griggyDatabaseDir = '/home/minecraft/GriggyBot/database.db';
@@ -111,12 +110,13 @@ module.exports = {
 			const primary_group = result2 ? result2.primary_group.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) : 'Unknown';
 			const balance = result1 ? result1.Balance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : 'Unknown';
 			const formattedBalance = `$${balance}`;
-			const hours = result1 ? moment.duration(result1.TotalPlayTime).asHours() : 0;
-			const finalHours = Math.floor(hours);
-			const minutes = result1 ? moment.duration(result1.TotalPlayTime).minutes() : 0;
+			const totalPlayTime = result1 ? result1.TotalPlayTime : 0; // Total playtime in milliseconds
+			const hours = Math.floor(totalPlayTime / (1000 * 60 * 60)); // Convert milliseconds to hours
+			const minutes = Math.floor((totalPlayTime % (1000 * 60 * 60)) / (1000 * 60)); // Remaining minutes
+
 			let formattedDuration = '';
 			if (hours > 0) {
-				formattedDuration += `${finalHours} hours `;
+				formattedDuration += `${hours} hours `;
 			}
 			formattedDuration += `${minutes} minutes`;
 			const finalPlayTime = formattedDuration ? formattedDuration : 'Unknown';

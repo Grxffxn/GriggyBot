@@ -4,6 +4,7 @@ const { Routes } = require('discord-api-types/v10');
 const UpdateServerData = require('./getServerData.js');
 const AutoMsg = require('./automsg.js');
 const UpdateImage = require('./updateImage.js');
+const AutoProfile = require('./src/events/autoprofile');
 const config = require('../config.js');
 const cron = require('node-cron');
 
@@ -30,7 +31,6 @@ module.exports = {
 
 		client.log(`${client.user.username} signed in as ${client.user.tag}! I\'m alive!`);
 
-		// Run UpdateServerData every 10 minutes
 		UpdateServerData(client);
 		setInterval(() => {
 			UpdateServerData(client);
@@ -49,6 +49,10 @@ module.exports = {
 		setInterval(() => {
 			AutoMsg(client);
 		}, config.automsgdelay);
+
+		setInterval(() => {
+			AutoProfile(client);
+		}, 180000);
 
 		try {
 			await (async () => {

@@ -26,7 +26,7 @@ module.exports = {
         const rank = interaction.options.getString('rank');
         const playerName = interaction.options.getString('playername');
 
-        const row = await queryDB(databaseDir, `SELECT * FROM applications WHERE role = ? AND player_name = ? AND status = 'active'`, [rank, playerName]);
+        const row = await queryDB(databaseDir, `SELECT * FROM applications WHERE role = ? AND player_name = ? AND status = 'active'`, [rank, playerName], true);
 
         if (!row) {
             await interaction.reply({ content: 'No active application found for the specified rank and player.', flags: MessageFlags.Ephemeral });

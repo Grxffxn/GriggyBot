@@ -9,7 +9,7 @@ module.exports = {
 		const bluemapEmbed = {
 			title: 'The Legend Continues | BlueMap',
 			color: parseInt(config.defaultColor, 16),
-			url: config.bluemapUrl, // Reference the BlueMap URL from config
+			url: config.bluemapUrl,
 			description: 'View a live map of all of our worlds,\nnow in 3D!',
 			thumbnail: {
 				url: `${config.logoImageUrl}`,

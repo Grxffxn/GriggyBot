@@ -1,5 +1,5 @@
 const { ButtonBuilder, ActionRowBuilder, MessageFlags } = require('discord.js');
-const sqlite3 = require('sqlite3').verbose();
+const { queryDB } = require('../utils/databaseUtils');
 const databaseDir = '/home/minecraft/GriggyBot/database.db';
 const cmiDatabaseDir = '/home/minecraft/Main/plugins/CMI/cmi.sqlite.db';
 const requiredPoints = { fabled: 5, heroic: 10, mythical: 15, apocryphal: 20, legend: 30 };
@@ -7,19 +7,11 @@ const requiredStaffReactions = { fabled: 1, heroic: 1, mythical: 2, apocryphal: 
 const config = require('../config.js');
 const { Rcon } = require('rcon-client');
 
-function queryDatabase(db, sql, params = []) {
-    return new Promise((resolve, reject) => {
-        db.get(sql, params, (err, row) => {
-            if (err) reject(err);
-            else resolve(row || {});
-        });
-    });
-}
-async function fetchUserPoints(cmiDb, username) {
+async function fetchUserPoints(username) {
     const sanitizedUsername = username.trim();
     const sql = 'SELECT UserMeta FROM users WHERE username = ? COLLATE NOCASE';
     try {
-        const row = await queryDatabase(cmiDb, sql, [sanitizedUsername]);
+        const row = await queryDB(cmiDatabaseDir, sql, [sanitizedUsername], true);
         if (!row?.UserMeta?.includes('%%')) {
             console.warn(`Invalid or missing UserMeta for username: ${sanitizedUsername}`);
             return 0;
@@ -31,6 +23,7 @@ async function fetchUserPoints(cmiDb, username) {
         return 0;
     }
 }
+
 function createButtons(vouchingFor, rank, data) {
     const buttons = [
         { id: `approve-${vouchingFor}-${rank}`, label: `Approve (${data.approvals}/${data.requiredApprovals})`, style: 'Primary' },
@@ -44,26 +37,30 @@ function createButtons(vouchingFor, rank, data) {
     });
     return row;
 }
+
 async function handleApplication(interaction) {
     const rcon = new Rcon({
         host: config.rconIp,
         port: config.rconPort,
         password: config.rconPwd
     });
+
     const [action, vouchingFor, rank] = interaction.customId.split('-');
-    const griggyDb = new sqlite3.Database(databaseDir, sqlite3.OPEN_READWRITE);
-    const cmiDb = new sqlite3.Database(cmiDatabaseDir, sqlite3.OPEN_READWRITE);
+
     try {
         await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+
         if (action === 'refresh') {
-            const application = await queryDatabase(griggyDb, 'SELECT * FROM applications WHERE discord_id = ? AND status = ?', [vouchingFor, 'active']);
+            const application = await queryDB(databaseDir, 'SELECT * FROM applications WHERE discord_id = ? AND status = ?', [vouchingFor, 'active'], true);
             if (!application) {
                 await interaction.editReply({ content: `No active application found for <@${vouchingFor}>` });
                 return;
             }
+
             const { approvals = 0 } = application;
-            const { vouches = 0 } = await queryDatabase(griggyDb, 'SELECT * FROM users WHERE discord_id = ?', [vouchingFor]);
-            const userPoints = await fetchUserPoints(cmiDb, application.player_name);
+            const { vouches = 0 } = await queryDB(databaseDir, 'SELECT * FROM users WHERE discord_id = ?', [vouchingFor], true) || {};
+            const userPoints = await fetchUserPoints(application.player_name);
+
             const buttonRow = createButtons(vouchingFor, rank, {
                 approvals,
                 requiredApprovals: requiredStaffReactions[rank],
@@ -71,12 +68,14 @@ async function handleApplication(interaction) {
                 vouches,
                 userPoints
             });
+
             try {
                 const submissionMessage = await interaction.channel.messages.fetch(application.message_id);
                 if (!submissionMessage) {
                     await interaction.editReply({ content: 'Error: The application message could not be found. It may have been deleted.' });
                     return;
                 }
+
                 if (approvals >= requiredStaffReactions[rank] && userPoints >= requiredPoints[rank]) {
                     const guild = interaction.guild;
                     const member = await guild.members.fetch(vouchingFor).catch(() => null);
@@ -89,16 +88,7 @@ async function handleApplication(interaction) {
                             await interaction.channel.send(`Your application has been approved, congratulations <@${member.id}>! <a:_:774429683876888576>`);
                             await interaction.channel.setLocked(true);
                             await rcon.send(`lp user ${application.player_name} promote player`);
-                            await new Promise((resolve, reject) => {
-                                griggyDb.run(
-                                    'UPDATE applications SET status = ? WHERE discord_id = ?',
-                                    ['approved', vouchingFor],
-                                    (err) => {
-                                        if (err) reject(err);
-                                        else resolve();
-                                    }
-                                );
-                            });
+                            await queryDB(databaseDir, 'UPDATE applications SET status = ? WHERE discord_id = ?', ['approved', vouchingFor]);
                             rcon.end();
                         } else {
                             await interaction.followUp({ content: `Role "${rank}" not found in the server. Please check role setup.`, flags: MessageFlags.Ephemeral });
@@ -107,6 +97,7 @@ async function handleApplication(interaction) {
                         await interaction.followUp({ content: `Could not fetch member <@${vouchingFor}>. They might not be in the server.`, flags: MessageFlags.Ephemeral });
                     }
                 }
+
                 await submissionMessage.edit({ components: [buttonRow] });
                 if (approvals < requiredStaffReactions[rank] || userPoints < requiredPoints[rank]) {
                     await interaction.editReply({ content: 'Buttons have been refreshed.' });
@@ -116,6 +107,7 @@ async function handleApplication(interaction) {
                 await interaction.editReply({ content: 'An error occurred while refreshing the buttons.' });
             }
         }
+
         if (action === 'approve') {
             const member = interaction.guild.members.cache.get(interaction.user.id);
             const allowedRoles = ['Moderator', 'Engineer', 'Admin', 'Owner'];
@@ -124,28 +116,24 @@ async function handleApplication(interaction) {
                 await interaction.editReply({ content: 'You do not have the required permissions to approve applications.' });
                 return;
             }
-            const application = await queryDatabase(griggyDb, 'SELECT * FROM applications WHERE discord_id = ? AND status = ?', [vouchingFor, 'active']);
+
+            const application = await queryDB(databaseDir, 'SELECT * FROM applications WHERE discord_id = ? AND status = ?', [vouchingFor, 'active'], true);
             if (!application) {
                 await interaction.editReply({ content: `No active application found for <@${vouchingFor}>` });
                 return;
             }
+
             const approvals = parseInt(application.approvals || 0, 10);
             const updatedApprovals = approvals + 1;
-            await new Promise((resolve, reject) => {
-                griggyDb.run('UPDATE applications SET approvals = ? WHERE discord_id = ?', [updatedApprovals, vouchingFor], (err) => {
-                    if (err) reject(err);
-                    else resolve();
-                });
-            });
+            await queryDB(databaseDir, 'UPDATE applications SET approvals = ? WHERE discord_id = ?', [updatedApprovals, vouchingFor]);
+
             await interaction.editReply({ content: 'Your reaction has been recorded.' });
             await interaction.channel.send({ content: `<@${interaction.user.id}> has approved this application. Multiple approvals may be required for higher ranks.` });
         }
     } catch (error) {
         console.error('Error processing interaction:', error.message);
         await interaction.editReply({ content: 'An error occurred while processing your request.' });
-    } finally {
-        griggyDb.close();
-        cmiDb.close();
     }
 }
+
 module.exports = handleApplication;

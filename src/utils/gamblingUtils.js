@@ -15,7 +15,7 @@ function checkCooldown(userId, commandName, cooldownTime) {
     if (cooldowns[userId] && cooldowns[userId][commandName] && now - cooldowns[userId][commandName] < cooldownTime) {
         return Math.ceil((cooldownTime - (now - cooldowns[userId][commandName])) / 1000); // Remaining time in seconds
     }
-    return false; // No cooldown
+    return false;
 }
 
 function setCooldown(userId, commandName) {
@@ -26,7 +26,6 @@ function setCooldown(userId, commandName) {
         cooldowns[userId] = {};
     }
 
-    // Set the cooldown for the specific command
     cooldowns[userId][commandName] = Date.now();
 
     fs.writeFileSync(cooldownFilePath, JSON.stringify(cooldowns, null, 2));

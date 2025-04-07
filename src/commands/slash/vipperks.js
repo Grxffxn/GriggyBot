@@ -30,7 +30,6 @@ module.exports = {
 			fields: config.vipPlusPlusPerksFields,
 		};
 
-		// Send the embed message for each tier of VIP.
 		await interaction.reply({ embeds: [vipPerks, vipPlusPerks, vipPlusPlusPerks] });
 	},
 };

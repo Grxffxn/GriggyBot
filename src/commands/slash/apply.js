@@ -3,7 +3,7 @@ const {
     ActionRowBuilder, TextInputStyle, ModalBuilder, EmbedBuilder, MessageFlags
 } = require('discord.js');
 const axios = require('axios');
-const sqlite3 = require('sqlite3').verbose();
+const { queryDB } = require('../../utils/databaseUtils.js');
 
 // Database file paths
 const databaseDir = '/home/minecraft/GriggyBot/database.db';
@@ -17,13 +17,6 @@ const questions = [
 ];
 const requiredStaffReactions = { fabled: 1, heroic: 1, mythical: 2, apocryphal: 3, legend: 4 };
 const requiredPoints = { fabled: 5, heroic: 10, mythical: 15, apocryphal: 20, legend: 25 };
-
-// Utility function: Query database
-function queryDatabase(db, sql, params = []) {
-    return new Promise((resolve, reject) => {
-        db.get(sql, params, (err, row) => (err ? reject(err) : resolve(row || {})));
-    });
-}
 
 // Utility function: Create buttons
 function createButtons(discordId, role, vouches, userPoints, approvals = 0) {
@@ -176,11 +169,8 @@ async function startApplicationProcess(interaction, rank, playerName) {
         const thumbnailUrl = `https://visage.surgeplay.com/bust/256/${playerUUID}`;
 
         // Retrieve data from the databases
-        const griggyDb = new sqlite3.Database(databaseDir, sqlite3.OPEN_READWRITE);
-        const cmiDb = new sqlite3.Database(cmiDatabaseDir, sqlite3.OPEN_READWRITE);
-
-        const row = await queryDatabase(griggyDb, 'SELECT * FROM users WHERE minecraft_uuid = ?', [playerUUID]);
-        const userPoints = await queryDatabase(cmiDb, 'SELECT UserMeta FROM users WHERE username = ? COLLATE NOCASE', [playerName])
+        const row = await queryDB(databaseDir, 'SELECT * FROM users WHERE minecraft_uuid = ?', [playerUUID], true);
+        const userPoints = await queryDB(cmiDatabaseDir, 'SELECT UserMeta FROM users WHERE username = ? COLLATE NOCASE', [playerName], true)
             .then(row => parseFloat((row.UserMeta || '').split('%%')[1], 10) || 0);
 
         const vouches = parseInt(row.vouches || 0, 10);
@@ -222,10 +212,7 @@ async function startApplicationProcess(interaction, rank, playerName) {
         await minecraftDiscordLinkChannel.send(`<@${interaction.user.id}> (${playerName}) just submitted a ${rank.charAt(0).toUpperCase() + rank.slice(1)} application! Check it out in <#1346992109491847272>`);
 
         // Save application to database
-        griggyDb.run(
-            'INSERT INTO applications (message_id, player_name, role, answers, status, discord_id, approvals, thread_id) VALUES (?, ?, ?, ?, ?, ?, 0, ?)',
-            [sentMessage.id, playerName, rank, JSON.stringify(answers), 'active', interaction.user.id, thread.id]
-        );
+        await queryDB(databaseDir, 'INSERT INTO applications (message_id, player_name, role, answers, status, discord_id, approvals, thread_id) VALUES (?, ?, ?, ?, ?, ?, 0, ?)', [sentMessage.id, playerName, rank, JSON.stringify(answers), 'active', interaction.user.id, thread.id]);
     } catch (error) {
         if (error.name === 'TimeoutError') {
             await interaction.followUp({

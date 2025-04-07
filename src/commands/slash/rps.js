@@ -54,10 +54,10 @@ module.exports = {
 
         try {
             // Get UUIDs, hyphenate them, and get player data (balances and usernames) then check if they have enough balance
-            const hyphenatedUUID = hyphenateUUID((await queryDB(griggyDatabaseDir, 'SELECT minecraft_uuid FROM users WHERE discord_id = ?', [userId])).minecraft_uuid);
-            const hyphenatedTargetedUUID = hyphenateUUID((await queryDB(griggyDatabaseDir, 'SELECT minecraft_uuid FROM users WHERE discord_id = ?', [targetedUser.id])).minecraft_uuid);
-            const playerData = await queryDB(cmiDatabaseDir, 'SELECT * FROM users WHERE player_uuid = ?', [hyphenatedUUID]);
-            const targetedPlayerData = await queryDB(cmiDatabaseDir, 'SELECT * FROM users WHERE player_uuid = ?', [hyphenatedTargetedUUID]);
+            const hyphenatedUUID = hyphenateUUID((await queryDB(griggyDatabaseDir, 'SELECT minecraft_uuid FROM users WHERE discord_id = ?', [userId], true)).minecraft_uuid);
+            const hyphenatedTargetedUUID = hyphenateUUID((await queryDB(griggyDatabaseDir, 'SELECT minecraft_uuid FROM users WHERE discord_id = ?', [targetedUser.id], true)).minecraft_uuid);
+            const playerData = await queryDB(cmiDatabaseDir, 'SELECT * FROM users WHERE player_uuid = ?', [hyphenatedUUID], true);
+            const targetedPlayerData = await queryDB(cmiDatabaseDir, 'SELECT * FROM users WHERE player_uuid = ?', [hyphenatedTargetedUUID], true);
             if (!checkEnoughBalance(playerData.Balance, wager) || !checkEnoughBalance(targetedPlayerData.Balance, wager)) return interaction.reply({ content: 'You or your opponent do not have enough money to support your wager.', flags: MessageFlags.Ephemeral });
 
             // Create default embed and buttons from the choices array

@@ -1,5 +1,5 @@
 const fs = require('fs');
-const sqlite3 = require('sqlite3').verbose();
+const { queryDB } = require('../utils/databaseUtils');
 
 const databaseDir = '/home/minecraft/GriggyBot/database.db';
 const accountsFilePath = '/home/minecraft/Main/plugins/DiscordSRV/accounts.aof';
@@ -20,51 +20,51 @@ async function AutoProfile(client) {
     for (const line of linkedAccountsLines) {
         const [discordId, minecraftUUID] = line.trim().split(' ');
         if (discordId && minecraftUUID) {
-            linkedAccounts[discordId] = minecraftUUID;
+            linkedAccounts[discordId] = minecraftUUID.replace(/-/g, '');
         }
     }
 
-    // Connect to the database
-    const griggydb = new sqlite3.Database(databaseDir, sqlite3.OPEN_READWRITE, (err) => {
-        if (err) {
-            console.error('Database connection error:', err.message);
+    try {
+        const existingProfiles = await queryDB(
+            databaseDir,
+            'SELECT discord_id FROM users WHERE discord_id IN (' +
+                Object.keys(linkedAccounts).map(() => '?').join(', ') +
+                ')',
+            Object.keys(linkedAccounts)
+        );
+
+        const existingDiscordIds = new Set(existingProfiles.map(profile => profile.discord_id));
+
+        const newProfiles = [];
+        for (const [discordId, minecraftUUID] of Object.entries(linkedAccounts)) {
+            if (!existingDiscordIds.has(discordId)) {
+                newProfiles.push([
+                    discordId,
+                    minecraftUUID,
+                    '000000',
+                    `https://visage.surgeplay.com/bust/256/${minecraftUUID}`,
+                    'This user has not set a profile description.',
+                    '0'
+                ]);
+            }
         }
-    });
 
-    // Loop through linked accounts and create profiles if necessary
-    for (const discordId in linkedAccounts) {
-        const trimmedUUID = linkedAccounts[discordId].replace(/-/g, '');
-        const query = 'SELECT * FROM users WHERE discord_id = ?';
-
-        griggydb.get(query, [discordId], (err, row) => {
-            if (err) {
-                console.error(err.message);
-                return;
-            }
-
-            // If no profile exists, insert one with default values
-            if (!row) {
-                griggydb.run(
-                    'INSERT INTO users(discord_id, minecraft_uuid, profile_color, profile_image, profile_description, vouches) VALUES(?, ?, ?, ?, ?, ?)',
-                    [discordId, trimmedUUID, '000000', `https://visage.surgeplay.com/bust/256/${trimmedUUID}`, 'This user has not set a profile description.', '0'],
-                    function (err) {
-                        if (err) {
-                            console.error('Error inserting profile:', err.message);
-                        } else {
-                            console.log(`Profile created for Discord ID: ${discordId}`);
-                        }
-                    }
-                );
-            }
-        });
+        // Insert new profiles
+        if (newProfiles.length > 0) {
+            const placeholders = newProfiles.map(() => '(?, ?, ?, ?, ?, ?)').join(', ');
+            const flattenedValues = newProfiles.flat();
+            await queryDB(
+                databaseDir,
+                `INSERT INTO users (discord_id, minecraft_uuid, profile_color, profile_image, profile_description, vouches) VALUES ${placeholders}`,
+                flattenedValues
+            );
+            console.log(`Created ${newProfiles.length} new profiles.`);
+        } else {
+            console.log('No new profiles to create.');
+        }
+    } catch (error) {
+        console.error('Error processing profiles:', error);
     }
-
-    // Close the database connection
-    griggydb.close((err) => {
-        if (err) {
-            console.error('Error closing the database connection:', err.message);
-        }
-    });
 }
 
 module.exports = AutoProfile;

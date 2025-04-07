@@ -42,7 +42,6 @@ readdirSync('./src/commands/prefix').forEach(async (file) => {
 });
 
 // Read slash commands
-// eslint-disable-next-line no-unused-vars
 const slashcommands = [];
 readdirSync('./src/commands/slash').forEach(async (file) => {
 	const command = await require(`./src/commands/slash/${file}`);
@@ -72,9 +71,3 @@ process.on('uncaughtExceptionMonitor', (e) => {
 });
 
 client.login(token);
-
-// Periodically check for linked accounts and create profiles
-const AutoProfile = require('./src/events/autoprofile');
-setInterval(() => {
-    AutoProfile(client);
-}, 180000); // Runs every 3 minutes

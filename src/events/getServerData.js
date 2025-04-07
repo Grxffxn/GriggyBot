@@ -29,7 +29,6 @@ async function UpdateServerData() {
 
         const formattedSchedule = formatRestartSchedule(restartScheduleSanitized);
 
-        // Prepare data to write
         const serverData = {
             online: true,
             numberOnline: sanitizedNumberOnline,

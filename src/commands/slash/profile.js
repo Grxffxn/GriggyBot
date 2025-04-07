@@ -94,7 +94,7 @@ module.exports = {
 		const trimmedUUID = minecraftUUID.replace(/-/g, '');
 
 		// Check for existing profile in griggydb
-		const row = await queryDB(databaseDir, 'SELECT * FROM users WHERE discord_id = ?', [discordId]);
+		const row = await queryDB(databaseDir, 'SELECT * FROM users WHERE discord_id = ?', [discordId], true);
 		if (!row) {
 			await queryDB(databaseDir, 'INSERT INTO users(discord_id, minecraft_uuid, profile_color, profile_image, profile_description, vouches) VALUES(?, ?, ?, ?, ?, ?)', [discordId, trimmedUUID, '000000', `https://visage.surgeplay.com/bust/256/${trimmedUUID}`, 'This user has not set a profile description.', '0']);
 		}
@@ -145,7 +145,6 @@ module.exports = {
 		sql += ' WHERE discord_id = ?';
 		params.push(discordId);
 
-		// Run the SQL query
 		await queryDB(databaseDir, sql, params);
 
 		// Send confirmation message

@@ -6,10 +6,8 @@ module.exports = {
 		.setName('vote')
 		.setDescription('List of Voting Sites'),
 	async run(interaction) {
-		// Create an array of vote site names and URLs from config
 		const voteSites = Object.entries(config.voteSites);
 
-		// Format array for Discord embed
 		const map = voteSites.map(([siteName, siteURL], index) => {
 			return `${index + 1}. [${siteName}](${siteURL})`;
 		}).join('\n');

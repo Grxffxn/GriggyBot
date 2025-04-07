@@ -1,7 +1,7 @@
 // Create an interactive TODO list for staff
 // Any staff member can add, update, delete, view TODO items and update to different lists (To Do, In Progress, Completed)
 const { SlashCommandBuilder, ModalBuilder, TextInputBuilder, ActionRowBuilder, EmbedBuilder, TextInputStyle, MessageFlags } = require('discord.js');
-const sqlite3 = require('sqlite3').verbose();
+const { queryDB } = require('../../utils/databaseUtils');
 const griggyDatabaseDir = '/home/minecraft/GriggyBot/database.db';
 
 module.exports = {
@@ -77,8 +77,6 @@ module.exports = {
 		if (!member.roles.cache.some(role => staffRoles.includes(role.name.toLowerCase()))) {
 			return interaction.reply({ content: 'You do not have permission to use this command.', flags: MessageFlags.Ephemeral });
 		}
-		// Define database connection
-		const griggysdb = new sqlite3.Database(griggyDatabaseDir, sqlite3.OPEN_READWRITE);
 
 		// If all options are empty, get the low priority, standard to-do items from the database and format the result
 		if (interaction.options.getSubcommand() === 'view') {
@@ -102,16 +100,10 @@ module.exports = {
 			};
 
 			const fetchTodos = async (status, limit = null) => {
-				return new Promise((resolve, reject) => {
-					let query = `SELECT * FROM todo WHERE status = ? ORDER BY id DESC`;
-					if (limit) query += ` LIMIT ${limit}`;
-
-					griggysdb.all(query, [status], (err, rows) => {
-						if (err) reject(err);
-						else resolve(rows);
-					});
-				});
-			};
+                let query = `SELECT * FROM todo WHERE status = ? ORDER BY id DESC`;
+                if (limit) query += ` LIMIT ${limit}`;
+                return queryDB(griggyDatabaseDir, query, [status]);
+            };
 
 			const lists = Object.fromEntries(
 				await Promise.all(statuses.map(async status => [
@@ -217,23 +209,15 @@ module.exports = {
 			if (hyperlink) {
 				todoItem = `${todoItem} [Info](${hyperlink})`;
 			}
-			await new Promise((resolve, reject) => {
-				griggysdb.run('INSERT INTO todo (todo, status) VALUES (?, ?)', [todoItem, priority], (err) => {
-					err ? reject(err) : resolve();
-				});
-			});
+			await queryDB(griggyDatabaseDir, 'INSERT INTO todo (todo, status) VALUES (?, ?)', [todoItem, priority]);
+
 			return interaction.followUp({ content: `TODO item '${todoItem}' added to '${priority}' list.`, flags: MessageFlags.Ephemeral });
 		}
 
 		// /todo update <keyword>
 		if (interaction.options.getSubcommand() === 'update') {
 			const keyword = interaction.options.getString('keyword');
-			const todoItemResults = await new Promise((resolve, reject) => {
-				griggysdb.all('SELECT * FROM todo WHERE todo LIKE ? AND status != ?', [`%${keyword}%`, 'completed'], (err, row) => {
-					err ? reject(err) : resolve(row);
-				});
-			},
-			);
+			const todoItemResults = await queryDB(griggyDatabaseDir, 'SELECT * FROM todo WHERE todo LIKE ? AND status != ?', [`%${keyword}%`, 'completed']);
 			if (todoItemResults.length === 0) {
 				return interaction.reply({ content: `No TODO item found with keyword '${keyword}'.`, flags: MessageFlags.Ephemeral });
 			}
@@ -267,11 +251,7 @@ module.exports = {
 			updatedTodoItem += updatedHyperlink ? ` [Info](${updatedHyperlink})` : (hyperlink ? ` [Info](${hyperlink})` : '');
 
 			// Update the TODO item in the database
-			await new Promise((resolve, reject) => {
-				griggysdb.run('UPDATE todo SET todo = ?, status = ? WHERE id = ?', [updatedTodoItem, updatedPriority, todoItemResults[0].id], (err) => {
-					err ? reject(err) : resolve();
-				});
-			});
+			await queryDB(griggyDatabaseDir, 'UPDATE todo SET todo = ?, status = ? WHERE id = ?', [updatedTodoItem, updatedPriority, todoItemResults[0].id]);
 
 			return interaction.followUp({ content: `TODO item '${todoItemResults[0].todo}' updated to '${updatedTodoItem}' in '${updatedPriority}' list.`, flags: MessageFlags.Ephemeral });
 		}
@@ -280,11 +260,7 @@ module.exports = {
 		if (interaction.options.getSubcommand() === 'delete') {
 			const keyword = interaction.options.getString('keyword');
 			// Query the database for the TODO item
-			const todoItem = await new Promise((resolve, reject) => {
-				griggysdb.get('SELECT * FROM todo WHERE todo LIKE ? AND status != ?', [`%${keyword}%`, 'completed'], (err, row) => {
-					err ? reject(err) : resolve(row);
-				});
-			});
+			const todoItem = await queryDB(griggyDatabaseDir, 'SELECT * FROM todo WHERE todo LIKE ? AND status != ?', [`%${keyword}%`, 'completed'], true);
 			// No item found
 			if (!todoItem) {
 				return interaction.reply({ content: `No TODO item found with keyword '${keyword}'.`, flags: MessageFlags.Ephemeral });
@@ -304,11 +280,7 @@ module.exports = {
 			deletionReactionCollector.on('collect', async (reaction, user) => {
 				if (user.id !== interaction.user.id) return;
 				if (reaction.emoji.name === '✅') {
-					await new Promise((resolve, reject) => {
-						griggysdb.run('DELETE FROM todo WHERE id = ?', [todoItem.id], (err) => {
-							err ? reject(err) : resolve();
-						});
-					});
+					await queryDB(griggyDatabaseDir, 'DELETE FROM todo WHERE id = ?', [todoItem.id]);
 					return interaction.editReply({ content: `TODO item '${todoItem.todo}' deleted from '${todoItem.status}' list.`, embeds: [], flags: MessageFlags.Ephemeral });
 				} else {
 					return interaction.editReply({ content: 'TODO item deletion cancelled.', embeds: [], flags: MessageFlags.Ephemeral });
@@ -330,21 +302,13 @@ module.exports = {
 			const keyword = interaction.options.getString('keyword');
 			const assignedUser = interaction.options.getUser('user');
 			// Query the database for the TODO item
-			const todoItem = await new Promise((resolve, reject) => {
-				griggysdb.get('SELECT * FROM todo WHERE todo LIKE ? AND status != ?', [`%${keyword}%`, 'completed'], (err, row) => {
-					err ? reject(err) : resolve(row);
-				});
-			});
+			const todoItem = await queryDB(griggyDatabaseDir, 'SELECT * FROM todo WHERE todo LIKE ? AND status != ?', [`%${keyword}%`, 'completed'], true)
 			if (!todoItem) {
 				return interaction.reply({ content: `No TODO item found with keyword '${keyword}'.`, flags: MessageFlags.Ephemeral });
 			}
 			// If the TODO item is already assigned to the user, remove the assignment
 			if (todoItem.assignee === assignedUser.id) {
-				await new Promise((resolve, reject) => {
-					griggysdb.run('UPDATE todo SET assignee = ? WHERE id = ?', [null, todoItem.id], (err) => {
-						err ? reject(err) : resolve();
-					});
-				});
+				await queryDB(griggyDatabaseDir, 'UPDATE todo SET assignee = ? WHERE id = ?', [null, todoItem.id]);
 				return interaction.reply({ content: `TODO item '${todoItem.todo}' unassigned from ${assignedUser}.`, flags: MessageFlags.Ephemeral });
 			}
 			// Create an embed to confirm assignment
@@ -368,11 +332,7 @@ module.exports = {
 					} else {
 						assignee = assignedUser.id;
 					}
-					await new Promise((resolve, reject) => {
-						griggysdb.run('UPDATE todo SET assignee = ? WHERE id = ?', [assignee, todoItem.id], (err) => {
-							err ? reject(err) : resolve();
-						});
-					});
+					await queryDB(griggyDatabaseDir, 'UPDATE todo SET assignee = ? WHERE id = ?', [assignee, todoItem.id]);
 					return interaction.editReply({ content: `TODO item '${todoItem.todo}' assigned to ${assignedUser}.`, embeds: [], flags: MessageFlags.Ephemeral });
 				}
 				if (reaction.emoji.name === '❌') {

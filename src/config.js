@@ -108,71 +108,71 @@ module.exports = {
     commands: [
         {
             name: 'apply',
-            description: 'Description for the apply command',
+            description: 'Apply for in-game ranks',
         },
         {
             name: 'blackjack',
-            description: 'Description for the blackjack command',
+            description: 'Play a game of blackjack',
         },
         {
             name: 'bmap',
-            description: 'Description for the bmap command',
+            description: 'View the live 3D map',
         },
         {
             name: 'deleteapplication',
-            description: 'Description for the deleteapplication command',
+            description: 'Delete your active rank application',
         },
         {
             name: 'donate',
-            description: 'Description for the donate command',
+            description: 'View donation information',
         },
         {
             name: 'info',
-            description: 'Description for the info command',
+            description: 'View information about a player',
         },
         {
             name: 'leaderboard',
-            description: 'Description for the leaderboard command',
+            description: 'View the top 10 players by playtime',
         },
         {
             name: 'link',
-            description: 'Description for the link command',
+            description: 'Learn how to link your accounts',
         },
         {
             name: 'notstaff',
-            description: 'Description for the notstaff command',
+            description: 'View who is NOT staff',
         },
         {
             name: 'profile',
-            description: 'Description for the profile command',
+            description: 'Customize your profile',
         },
         {
             name: 'render',
-            description: 'Description for the render command',
+            description: 'View renderings of player skins',
         },
         {
             name: 'roulette',
-            description: 'Description for the roulette command',
+            description: 'Play a game of roulette',
         },
         {
             name: 'rps',
-            description: 'Description for the rps command',
+            description: 'Duel another player to rock-paper-scissors',
         },
         {
             name: 'server',
-            description: 'Description for the server command',
+            description: 'View server information',
         },
         {
             name: 'slots',
-            description: 'Description for the slots command',
+            description: 'Play a game of slots',
         },
         {
             name: 'vipperks',
-            description: 'Description for the vipperks command',
+            description: 'View VIP perks',
         },
         {
             name: 'vote',
-            description: 'Description for the vote command',
+            description: 'View voting links',
         },
     ],
 };

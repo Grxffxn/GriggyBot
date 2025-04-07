@@ -154,7 +154,7 @@ async function UpdateImage(client) {
             )
             .setImage('attachment://dynamicserverinfo.png');
 
-        await messageToEdit.edit({ content: '# <:_:1342069188931485707> Welcome to The Legend Continues!\n-# <:_:1355510503140753518> Founded in 2013. Co-owned by Nathanacus and Grxffxn.\n-# Maintained by our incredible staff team <a:_:762492571523219466>\n-# <:_:1353523579634843758> <:_:1353523822401421392> <:_:776297828678369300> <:_:1353524143177334846> <:_:1353524396060442685> <:_:1353524637530591273> <:_:1353524874668408953>', embeds: [rulesEmbed, dynamicEmbed], files: [attachment] });
+        await messageToEdit.edit({ content: `# <:_:1342069188931485707> Welcome to The Legend Continues!\n-# <:_:1355510503140753518> Founded in 2013. Co-owned by Nathanacus and Grxffxn.\n-# Maintained by our incredible staff team <a:_:762492571523219466>\n-# ${config.staffEmojisList}`, embeds: [rulesEmbed, dynamicEmbed], files: [attachment] });
     } catch (error) {
         console.error('Error updating image or message:', error);
     }

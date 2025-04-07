@@ -52,6 +52,10 @@ module.exports = {
     // URL for the BlueMap 3D map of your Minecraft server
     bluemapUrl: 'YOUR_BLUEMAP_URL_HERE',
 
+    // List of staff emojis used in updateImage.js
+    // EX: <:_:1234567891011121314> <:_:1516171819202122232>
+    staffEmojisList: '',
+
     // Array of automated messages to be sent periodically
     autoMessages: [
         {

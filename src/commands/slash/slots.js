@@ -1,11 +1,12 @@
 const { SlashCommandBuilder, MessageFlags } = require('discord.js');
 const config = require('../../config.js');
 const serverData = require('../../serverData.json');
-const sqlite3 = require('sqlite3').verbose();
+const { formatNumber, hyphenateUUID } = require('../../utils/formattingUtils.js');
+const { checkEnoughBalance, checkCooldown, setCooldown } = require('../../utils/gamblingUtils.js');
+const { checkLinked } = require('../../utils/roleCheckUtils.js');
+const { queryDB } = require('../../utils/databaseUtils.js');
 const cmiDatabaseDir = '/home/minecraft/Main/plugins/CMI/cmi.sqlite.db';
 const griggyDatabaseDir = '/home/minecraft/GriggyBot/database.db';
-const cooldowns = {};
-const globalCooldowns = {};
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -30,104 +31,31 @@ module.exports = {
                     { name: 'VIP', value: 'VIP' },
                 )),
     async run(interaction) {
-        // Check if gambling is enabled and server is online
-        if (!config.gamblingEnabled || !serverData.online) {
-            return interaction.reply({
-                content: 'Gambling is currently disabled, or TLC is offline.',
-                flags: MessageFlags.Ephemeral,
-            });
-        }
         const userId = interaction.user.id;
-        const consoleChannel = interaction.client.channels.cache.get(config.consoleChannelId);
-        const now = Date.now();
-        const cooldownTime = 5 * 60 * 1000; // 5 minutes in milliseconds
-        const globalCooldownTime = 5 * 1000; // 5 seconds in milliseconds
-        
-        // Check if the user is on cooldown
-        if (cooldowns[userId] && now - cooldowns[userId] < cooldownTime) {
-            const remainingTime = Math.ceil((cooldownTime - (now - cooldowns[userId])) / 1000 / 60);
-            return interaction.reply({
-                content: `You must wait ${remainingTime} more minute(s) before playing slots again.`,
-                flags: MessageFlags.Ephemeral,
-            });
-        }
-
-        // Check if the user is on the global 5-second cooldown
-        if (globalCooldowns[userId] && now - globalCooldowns[userId] < globalCooldownTime) {
-            const remainingTime = Math.ceil((globalCooldownTime - (now - globalCooldowns[userId])) / 1000);
-            return interaction.reply({
-                content: `Slow down! Please wait ${remainingTime} more second(s)! The server needs time to update.`,
-                flags: MessageFlags.Ephemeral,
-            });
-        }
-
-        globalCooldowns[userId] = now; // Set the global cooldown
-
-        function getUUIDFromDatabase(db, userId) {
-            return new Promise((resolve, reject) => {
-                db.get('SELECT minecraft_uuid FROM users WHERE discord_id = ?', [userId], (err, row) => {
-                    if (err) {
-                        return reject(err);
-                    }
-                    if (!row) {
-                        return reject(new Error('No linked account found.'));
-                    }
-                    resolve(row.minecraft_uuid);
-                });
-            });
-        }
-
-        function getDataFromDatabase(db, uuid) {
-            return new Promise((resolve, reject) => {
-                db.get('SELECT * FROM users WHERE player_uuid = ?', [uuid], (err, row) => {
-                    if (err) {
-                        return reject(err);
-                    }
-                    if (!row) {
-                        return reject(new Error('You must link your accounts to play slots.\n`/link`'));
-                    }
-                    resolve(row);
-                });
-            });
-        }
-
         const bet = interaction.options.getInteger('bet');
-        // Check if the user has the Linked role
-        const linkedRole = interaction.guild.roles.cache.find(role => role.name === 'Linked');
-        if (!interaction.member.roles.cache.has(linkedRole.id)) {
+        const consoleChannel = interaction.client.channels.cache.get(config.consoleChannelId);
+        // CHECK IF GAMBLING IS ENABLED AND SERVER IS ONLINE
+        if (!config.gamblingEnabled || !serverData.online) return interaction.reply({ content: 'Gambling is currently disabled, or TLC is offline.', flags: MessageFlags.Ephemeral, });
+        // CHECK LINKED
+        if (!checkLinked(interaction.member)) {
             return interaction.reply({ content: 'You must link your accounts to play slots.\n`/link`', flags: MessageFlags.Ephemeral });
         }
-        // Get the user's Minecraft username from GriggyDB
-        const griggydb = new sqlite3.Database(griggyDatabaseDir, sqlite3.OPEN_READWRITE, (err) => {
-            if (err) {
-                console.error(err.message);
-            }
-        });
+        // CHECK COOLDOWNS
+        const slotsCooldown = checkCooldown(userId, 'slots', config.gamblingWinCooldown);
+        const globalCooldown = checkCooldown(userId, 'global', config.gamblingGlobalCooldown);
+        if (slotsCooldown) return interaction.reply({ content: `You are on cooldown! Please wait ${Math.ceil(slotsCooldown / 60)} minutes before playing again.`, flags: MessageFlags.Ephemeral, });
+        if (globalCooldown) return interaction.reply({ content: `Slow down! Please wait ${globalCooldown} seconds before playing again! The server needs time to update.`, flags: MessageFlags.Ephemeral, });
 
         try {
-            const uuid = await getUUIDFromDatabase(griggydb, userId);
-            // Convert UUID to hyphenated format
-            const hyphenatedUUID = uuid.replace(/(.{8})(.{4})(.{4})(.{4})(.{12})/, '$1-$2-$3-$4-$5');
-            // Check if the user has enough balance via CMI's database
-            // Resolve with the user's balance from column Balance where player_uuid = hyphenatedUUID
-            const cmidb = new sqlite3.Database(cmiDatabaseDir, sqlite3.OPEN_READWRITE, (err) => {
-                if (err) {
-                    console.error(err.message);
-                }
-            });
-            const playerData = await getDataFromDatabase(cmidb, hyphenatedUUID);
+            // Get UUID, hyphenate it, and get player data (balance and username) then check if they have enough balance
+            const hyphenatedUUID = hyphenateUUID((await queryDB(griggyDatabaseDir, 'SELECT minecraft_uuid FROM users WHERE discord_id = ?', [userId])).minecraft_uuid);
+            const playerData = await queryDB(cmiDatabaseDir, 'SELECT * FROM users WHERE player_uuid = ?', [hyphenatedUUID]);
             const balance = playerData.Balance;
-            cmidb.close();
-            // Check if the user has enough balance
-            if (isNaN(balance)) {
-                return interaction.reply({ content: 'An error occurred while retrieving your balance.', flags: MessageFlags.Ephemeral });
-            }
-            if (balance < bet) {
-                return interaction.reply({ content: 'You do not have enough money to play slots.', flags: MessageFlags.Ephemeral });
-            }
+            if (!checkEnoughBalance(balance, bet)) return interaction.reply({ content: 'You do not have enough money to support your bet.', flags: MessageFlags.Ephemeral });
+
             // GAME START
-            // Choose 3 random emojis from the array
-            // Let the user select an emoji list (food, animals, etc.)
+            // SET GLOBAL COOLDOWN
+            setCooldown(userId, 'global');
             let emojis = [];
             if (!interaction.options.getString('theme')) {
                 emojis = ['🍒', '🍋', '🍊', '🍉', '🍇', '🍓', '🍈', '🍍', '🍌', '🍑'];
@@ -146,9 +74,8 @@ module.exports = {
             } else if (interaction.options.getString('theme') === 'VIP') {
                 emojis = ['<:_:776297828645470218>', '<:_:1353522852581605517>', '<:_:1353523579634843758>', '<:_:1353523822401421392>', '<:_:776297828678369300>', '<:_:1353524143177334846>', '<:_:1355689894575472791>', '<:_:1353524874668408953>', '<:_:1354650114236350664>', '<:_:1354987808477151292>'];
             }
-            if (emojis.length === 0) {
-                return interaction.reply({ content: 'An error occurred: Theme selection failed.', flags: MessageFlags.Ephemeral });
-            }
+
+            // CHOOSE 3 RANDOM EMOJIS
             const randomEmojis = [];
             for (let i = 0; i < 3; i++) {
                 const randomIndex = Math.floor(Math.random() * emojis.length);
@@ -165,11 +92,15 @@ module.exports = {
             }
             // Set the cooldown for the user
             if (allMatch || twoMatch) {
-                cooldowns[userId] = now;
+                setCooldown(userId, 'slots');
             }
             // Update the user's balance via Console Channel
             const updateBalance = (balance + winnings) - bet;
             await consoleChannel.send(`money set ${playerData.username} ${updateBalance}`);
+            // Format numbers with commas and round to the nearest hundredth
+            const formattedWinnings = formatNumber(winnings);
+            const formattedBet = formatNumber(bet);
+            const formattedUpdateBalance = formatNumber(updateBalance);
 
             // Response with delayed emoji reveal
             await interaction.reply(`# 🎰 Rolling the slots...\n-+-+-+-+-+-+-+-+-\n# ${randomEmojis[0]} ❓ ❓\n-+-+-+-+-+-+-+-+-`);
@@ -177,13 +108,6 @@ module.exports = {
             setTimeout(async () => {
                 await interaction.editReply(`# 🎰 Rolling the slots...\n-+-+-+-+-+-+-+-+-\n# ${randomEmojis[0]} ${randomEmojis[1]} ❓\n-+-+-+-+-+-+-+-+-`);
             }, 1000); // 1-second delay
-
-            // Format numbers with commas and round to the nearest hundredth
-            const formatNumber = (num) => new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(num);
-
-            const formattedWinnings = formatNumber(winnings);
-            const formattedBet = formatNumber(bet);
-            const formattedUpdateBalance = formatNumber(updateBalance);
 
             setTimeout(async () => {
                 if (allMatch) {
@@ -197,8 +121,6 @@ module.exports = {
         } catch (error) {
             console.error('Error:', error);
             interaction.reply({ content: 'An error occurred while processing your request.', flags: MessageFlags.Ephemeral });
-        } finally {
-            griggydb.close();
         }
     }
 }

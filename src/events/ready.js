@@ -5,6 +5,7 @@ const UpdateServerData = require('./getServerData.js');
 const AutoMsg = require('./automsg.js');
 const UpdateImage = require('./updateImage.js');
 const config = require('../config.js');
+const cron = require('node-cron');
 
 const {
 	DefaultWebSocketManagerOptions: {
@@ -29,10 +30,16 @@ module.exports = {
 
 		client.log(`${client.user.username} signed in as ${client.user.tag}! I\'m alive!`);
 
+		// Run UpdateServerData every 10 minutes
 		UpdateServerData(client);
 		setInterval(() => {
 			UpdateServerData(client);
 		}, 600000);
+
+		cron.schedule('30 4 * * *', () => {
+			console.log('Running UpdateServerData at 4:30 AM server time...');
+			UpdateServerData(client);
+		});
 
 		UpdateImage(client);
 		setInterval(() => {

@@ -52,12 +52,12 @@ module.exports = {
         }
         // CHECK LINKED
         if (!checkLinked(interaction.member)) {
-            return interaction.reply({ content: 'You must link your accounts to play slots.\n`/link`', flags: MessageFlags.Ephemeral });
+            return interaction.reply({ content: 'You must link your accounts to play roulette.\n`/link`', flags: MessageFlags.Ephemeral });
         }
         // CHECK COOLDOWNS
-        const slotsCooldown = checkCooldown(userId, 'roulette', config.gamblingWinCooldown);
+        const rouletteCooldown = checkCooldown(userId, 'roulette', config.gamblingWinCooldown);
         const globalCooldown = checkCooldown(userId, 'global', config.gamblingGlobalCooldown);
-        if (slotsCooldown) return interaction.reply({ content: `You are on cooldown! Please wait ${Math.ceil(slotsCooldown / 60)} minutes before playing again.`, flags: MessageFlags.Ephemeral, });
+        if (rouletteCooldown) return interaction.reply({ content: `You are on cooldown! Please wait ${Math.ceil(rouletteCooldown / 60)} minutes before playing again.`, flags: MessageFlags.Ephemeral, });
         if (globalCooldown) return interaction.reply({ content: `Slow down! Please wait ${globalCooldown} seconds before playing again! The server needs time to update.`, flags: MessageFlags.Ephemeral, });
 
         function calculatePayout(betAmount, colorBet, rangeBet, winningColor, winningRange) {

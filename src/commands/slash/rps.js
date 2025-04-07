@@ -37,7 +37,7 @@ module.exports = {
         if (targetedUser.id === userId || targetedUser.bot) return interaction.reply({ content: 'You cannot challenge yourself or a bot.', flags: MessageFlags.Ephemeral });
 
         // CHECK COOLDOWNS
-        if (checkCooldown(userId, 'rps', config.gamblingWinCooldown) || checkCooldown(targetedUser.id, 'rps', config.gamblingWinCooldown)) {
+        if (checkCooldown(userId, 'global', config.gamblingGlobalCooldown) || checkCooldown(targetedUser.id, 'global', config.gamblingGlobalCooldown)) {
             return interaction.reply({
                 content: 'You or your opponent are on cooldown! Please wait 30 seconds before playing again.',
                 flags: MessageFlags.Ephemeral,
@@ -109,8 +109,8 @@ module.exports = {
             if (!initialUserInteraction) return;
 
             // Set cooldown for both users after a successful game
-            setCooldown(userId, 'rps');
-            setCooldown(targetedUser.id, 'rps');
+            setCooldown(userId, 'global');
+            setCooldown(targetedUser.id, 'global');
 
             const initialUserChoice = choices.find((choice) => choice.name === initialUserInteraction.customId);
 

@@ -1,21 +1,9 @@
-/* eslint-disable no-unused-vars */
 const { SlashCommandBuilder, EmbedBuilder, ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder, MessageFlags } = require('discord.js');
 const fs = require('fs');
-
-// Define DB connections and queries
-const sqlite3 = require('sqlite3').verbose();
-const path = require('path');
+const { queryDB } = require('../../utils/databaseUtils.js');
 const databaseDir = '/home/minecraft/GriggyBot/database.db';
-const idquery = 'SELECT * FROM users WHERE discord_id = ?';
 
 // Define profile modal
-// Prompt user to customize 5 different values through a modal
-// 1. Profile Color
-// 2. Profile Image
-// 3. Profile Description
-// 4. Profile Title
-// 5. Favorite Game
-
 const profileColorTextInput = new TextInputBuilder()
 	.setCustomId('profileColorTextInput')
 	.setStyle(TextInputStyle.Short)
@@ -79,13 +67,6 @@ module.exports = {
 			return profileColor;
 		}
 
-		// Connect to GriggyDB
-		const griggydb = new sqlite3.Database(databaseDir, sqlite3.OPEN_READWRITE, (err) => {
-			if (err) {
-				console.error(err.message);
-			}
-		});
-
 		// Get the user's Discord ID
 		const discordId = interaction.user.id;
 
@@ -113,18 +94,11 @@ module.exports = {
 		const trimmedUUID = minecraftUUID.replace(/-/g, '');
 
 		// Check for existing profile in griggydb
-		griggydb.get(idquery, [discordId], (err, row) => {
-			if (err) {
-				console.error(err.message);
-				return;
-			}
-			// If there is no row, create one with default values in griggydb
-			if (!row) {
-				griggydb.run('INSERT INTO users(discord_id, minecraft_uuid, profile_color, profile_image, profile_description, vouches) VALUES(?, ?, ?, ?, ?, ?)', [discordId, trimmedUUID, '000000', `https://visage.surgeplay.com/bust/256/${trimmedUUID}`, 'This user has not set a profile description.', '0']);
-			}
-
-			return;
-		});
+		const row = await queryDB(databaseDir, 'SELECT * FROM users WHERE discord_id = ?', [discordId]);
+		if (!row) {
+			await queryDB(databaseDir, 'INSERT INTO users(discord_id, minecraft_uuid, profile_color, profile_image, profile_description, vouches) VALUES(?, ?, ?, ?, ?, ?)', [discordId, trimmedUUID, '000000', `https://visage.surgeplay.com/bust/256/${trimmedUUID}`, 'This user has not set a profile description.', '0']);
+		}
+		
 		// Show modal and await response
 
 		const profileModal = new ModalBuilder()
@@ -172,13 +146,7 @@ module.exports = {
 		params.push(discordId);
 
 		// Run the SQL query
-		griggydb.run(sql, params, function (err) {
-			if (err) {
-				interaction.reply({ content: 'An error occurred while updating your profile. Please try again.', flags: MessageFlags.Ephemeral });
-				return console.error(err.message);
-			}
-			console.log(`Rows updated: ${this.changes}`);
-		});
+		await queryDB(databaseDir, sql, params);
 
 		// Send confirmation message
 		const confirmationEmbed = new EmbedBuilder()

@@ -18,7 +18,6 @@ module.exports = {
 			title: 'The Legend Continues | Vote',
 			color: parseInt(config.defaultColor, 16),
 			description: map,
-			footer: { text: 'Run `/vote shop` in-game' },
 			timestamp: new Date(),
 			thumbnail: { url: `${config.logoImageUrl}` },
 		};

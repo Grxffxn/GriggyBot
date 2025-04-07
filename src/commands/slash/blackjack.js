@@ -26,12 +26,12 @@ module.exports = {
         if (!config.gamblingEnabled || !serverData.online) return interaction.reply({ content: 'Gambling is currently disabled, or TLC is offline.', flags: MessageFlags.Ephemeral, });
         // CHECK LINKED
         if (!checkLinked(interaction.member)) {
-            return interaction.reply({ content: 'You must link your accounts to play slots.\n`/link`', flags: MessageFlags.Ephemeral });
+            return interaction.reply({ content: 'You must link your accounts to play blackjack.\n`/link`', flags: MessageFlags.Ephemeral });
         }
         // CHECK COOLDOWNS
-        const slotsCooldown = checkCooldown(userId, 'slots', config.gamblingWinCooldown);
+        const blackjackCooldown = checkCooldown(userId, 'blackjack', config.gamblingWinCooldown);
         const globalCooldown = checkCooldown(userId, 'global', config.gamblingGlobalCooldown);
-        if (slotsCooldown) return interaction.reply({ content: `You are on cooldown! Please wait ${Math.ceil(slotsCooldown / 60)} minutes before playing again.`, flags: MessageFlags.Ephemeral, });
+        if (blackjackCooldown) return interaction.reply({ content: `You are on cooldown! Please wait ${Math.ceil(blackjackCooldown / 60)} minutes before playing again.`, flags: MessageFlags.Ephemeral, });
         if (globalCooldown) return interaction.reply({ content: `Slow down! Please wait ${globalCooldown} seconds before playing again! The server needs time to update.`, flags: MessageFlags.Ephemeral, });
 
         try {
@@ -50,7 +50,6 @@ module.exports = {
             const dealerCards = [Math.floor(Math.random() * 11) + 1, Math.floor(Math.random() * 11) + 1];
             const playerTotal = playerCards.reduce((a, b) => a + b, 0);
             // Let the player choose to hit or stand
-            // Use buttons to choose hit or stand
             const dynamicCustomId = Date.now();
             const hitButton = new ButtonBuilder()
                 .setCustomId(`hit-${userId}-${dynamicCustomId}`)
@@ -66,7 +65,7 @@ module.exports = {
                 content: `🃏 Your cards: **${playerCards.join(', ')}** (Total: ${playerTotal})\n` +
                     `Dealer's visible card: **${dealerCards[0]}**\n` +
                     `What would you like to do?`,
-                components: [row], // Add the "Hit" and "Stand" buttons
+                components: [row],
             });
             // Wait for the player's response
             const filter = (i) => (i.customId === `hit-${userId}-${dynamicCustomId}` || i.customId === `stand-${userId}-${dynamicCustomId}`) && i.user.id === userId;

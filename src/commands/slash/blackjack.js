@@ -1,12 +1,7 @@
 const { SlashCommandBuilder, MessageFlags, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const config = require('../../config.js');
-const serverData = require('../../serverData.json');
-const { formatNumber, hyphenateUUID } = require('../../utils/formattingUtils.js');
-const { checkEnoughBalance, checkCooldown, setCooldown } = require('../../utils/gamblingUtils.js');
-const { checkLinked } = require('../../utils/roleCheckUtils.js');
-const { queryDB } = require('../../utils/databaseUtils.js');
-const cmiDatabaseDir = '/home/minecraft/Main/plugins/CMI/cmi.sqlite.db';
-const griggyDatabaseDir = '/home/minecraft/GriggyBot/database.db';
+const { formatNumber } = require('../../utils/formattingUtils.js');
+const { setCooldown, preGameCheck } = require('../../utils/gamblingUtils.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -19,28 +14,15 @@ module.exports = {
                 .setMinValue(1)
                 .setMaxValue(5000)),
     async run(interaction) {
-        const userId = interaction.user.id;
-        const bet = interaction.options.getInteger('bet');
-        const consoleChannel = interaction.client.channels.cache.get(config.consoleChannelId);
-        // CHECK IF GAMBLING IS ENABLED AND SERVER IS ONLINE
-        if (!config.gamblingEnabled || !serverData.online) return interaction.reply({ content: 'Gambling is currently disabled, or TLC is offline.', flags: MessageFlags.Ephemeral, });
-        // CHECK LINKED
-        if (!checkLinked(interaction.member)) {
-            return interaction.reply({ content: 'You must link your accounts to play blackjack.\n`/link`', flags: MessageFlags.Ephemeral });
-        }
-        // CHECK COOLDOWNS
-        const blackjackCooldown = checkCooldown(userId, 'blackjack', config.gamblingWinCooldown);
-        const globalCooldown = checkCooldown(userId, 'global', config.gamblingGlobalCooldown);
-        if (blackjackCooldown) return interaction.reply({ content: `You are on cooldown! Please wait ${Math.ceil(blackjackCooldown / 60)} minutes before playing again.`, flags: MessageFlags.Ephemeral, });
-        if (globalCooldown) return interaction.reply({ content: `Slow down! Please wait ${globalCooldown} seconds before playing again! The server needs time to update.`, flags: MessageFlags.Ephemeral, });
-
         try {
-            // Get UUIDs, hyphenate them, and get player data (balances and usernames) then check if they have enough balance
-            const hyphenatedUUID = hyphenateUUID((await queryDB(griggyDatabaseDir, 'SELECT minecraft_uuid FROM users WHERE discord_id = ?', [userId], true)).minecraft_uuid);
-            const playerData = await queryDB(cmiDatabaseDir, 'SELECT * FROM users WHERE player_uuid = ?', [hyphenatedUUID], true);
+            const userId = interaction.user.id;
+            const bet = interaction.options.getInteger('bet');
+            const consoleChannel = interaction.client.channels.cache.get(config.consoleChannelId);
+            const { canProceed, playerData } = await preGameCheck(interaction, 'blackjack');
+            if (!canProceed) return;
+
             const balance = playerData.Balance;
             const username = playerData.username;
-            if (!checkEnoughBalance(balance, bet)) return interaction.reply({ content: 'You do not have enough money to support your bet.', flags: MessageFlags.Ephemeral });
 
             // GAME START
             // SET GLOBAL COOLDOWN

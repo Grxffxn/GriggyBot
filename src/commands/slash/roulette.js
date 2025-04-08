@@ -1,12 +1,7 @@
 const { SlashCommandBuilder, MessageFlags } = require('discord.js');
 const config = require('../../config.js');
-const serverData = require('../../serverData.json');
-const { formatNumber, hyphenateUUID } = require('../../utils/formattingUtils.js');
-const { checkEnoughBalance, checkCooldown, setCooldown } = require('../../utils/gamblingUtils.js');
-const { checkLinked } = require('../../utils/roleCheckUtils.js');
-const { queryDB } = require('../../utils/databaseUtils.js');
-const cmiDatabaseDir = '/home/minecraft/Main/plugins/CMI/cmi.sqlite.db';
-const griggyDatabaseDir = '/home/minecraft/GriggyBot/database.db';
+const { formatNumber } = require('../../utils/formattingUtils.js');
+const { setCooldown, preGameCheck } = require('../../utils/gamblingUtils.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -35,30 +30,6 @@ module.exports = {
                     { name: 'Low', value: 'low' },
                 )),
     async run(interaction) {
-        // CHECK IF GAMBLING IS ENABLED AND SERVER IS ONLINE
-        if (!config.gamblingEnabled || !serverData.online) return interaction.reply({ content: 'Gambling is currently disabled, or TLC is offline.', flags: MessageFlags.Ephemeral, });
-        const userId = interaction.user.id;
-        const consoleChannel = interaction.client.channels.cache.get(config.consoleChannelId);
-        const betAmount = interaction.options.getInteger('bet');
-        const colorBet = interaction.options.getString('color');
-        // Set rangeBet to null if colorBet is green
-        const rangeBet = colorBet === 'green' ? null : interaction.options.getString('range');
-        // If rangeBet is null and color is NOT green, cancel game and tell user to pick a range
-        if (!rangeBet && colorBet !== 'green') {
-            return interaction.reply({
-                content: 'You must pick a range if you are not betting on green.',
-                flags: MessageFlags.Ephemeral,
-            });
-        }
-        // CHECK LINKED
-        if (!checkLinked(interaction.member)) {
-            return interaction.reply({ content: 'You must link your accounts to play roulette.\n`/link`', flags: MessageFlags.Ephemeral });
-        }
-        // CHECK COOLDOWNS
-        const rouletteCooldown = checkCooldown(userId, 'roulette', config.gamblingWinCooldown);
-        const globalCooldown = checkCooldown(userId, 'global', config.gamblingGlobalCooldown);
-        if (rouletteCooldown) return interaction.reply({ content: `You are on cooldown! Please wait ${Math.ceil(rouletteCooldown / 60)} minutes before playing again.`, flags: MessageFlags.Ephemeral, });
-        if (globalCooldown) return interaction.reply({ content: `Slow down! Please wait ${globalCooldown} seconds before playing again! The server needs time to update.`, flags: MessageFlags.Ephemeral, });
 
         function calculatePayout(betAmount, colorBet, rangeBet, winningColor, winningRange) {
             let payoutMultiplier = 0;
@@ -94,11 +65,24 @@ module.exports = {
         }
 
         try {
-            // Get UUID, hyphenate it, and get player data (balance and username) then check if they have enough balance
-            const hyphenatedUUID = hyphenateUUID((await queryDB(griggyDatabaseDir, 'SELECT minecraft_uuid FROM users WHERE discord_id = ?', [userId], true)).minecraft_uuid);
-            const playerData = await queryDB(cmiDatabaseDir, 'SELECT * FROM users WHERE player_uuid = ?', [hyphenatedUUID], true);
+            const userId = interaction.user.id;
+            const consoleChannel = interaction.client.channels.cache.get(config.consoleChannelId);
+            const betAmount = interaction.options.getInteger('bet');
+            const colorBet = interaction.options.getString('color');
+            // Set rangeBet to null if colorBet is green
+            const rangeBet = colorBet === 'green' ? null : interaction.options.getString('range');
+            // If rangeBet is null and color is NOT green, cancel game and tell user to pick a range
+            if (!rangeBet && colorBet !== 'green') {
+                return interaction.reply({
+                    content: 'You must pick a range if you are not betting on green.',
+                    flags: MessageFlags.Ephemeral,
+                });
+            }
+
+            const { canProceed, playerData } = await preGameCheck(interaction, 'roulette');
+            if (!canProceed) return;
+
             const balance = playerData.Balance;
-            if (!checkEnoughBalance(balance, betAmount)) return interaction.reply({ content: 'You do not have enough money to support your bet.', flags: MessageFlags.Ephemeral });
 
             // GAME START
             // SET GLOBAL COOLDOWN

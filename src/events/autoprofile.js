@@ -59,8 +59,6 @@ async function AutoProfile(client) {
                 flattenedValues
             );
             console.log(`Created ${newProfiles.length} new profiles.`);
-        } else {
-            console.log('No new profiles to create.');
         }
     } catch (error) {
         console.error('Error processing profiles:', error);

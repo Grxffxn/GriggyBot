@@ -70,4 +70,10 @@ process.on('uncaughtExceptionMonitor', (e) => {
 	console.log(e);
 });
 
+// Shutdown listener
+process.on('SIGINT', () => {
+	console.log('Signal interrupted. Shutting down.');
+	process.exit(0);
+});
+
 client.login(token);

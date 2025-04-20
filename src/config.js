@@ -5,6 +5,12 @@ module.exports = {
     // The ID of the channel where automated messages should be sent
     automsgchannelid: 'YOUR_CHANNEL_ID_HERE',
 
+    // The ID of the channel to send chores to
+    chorechannelid: 'YOUR_CHANNEL_ID_HERE',
+
+    // The Role ID of the role which can approve chores
+    approverRoleId: 'YOUR_ROLE_ID_HERE',
+
     // The bot token from the Discord Developer Portal
     token: 'YOUR_DISCORD_BOT_TOKEN_HERE',
 

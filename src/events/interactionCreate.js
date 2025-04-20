@@ -1,6 +1,7 @@
 const { Events, InteractionType, MessageFlags } = require('discord.js');
 const Vouch = require('./vouch.js');
 const handleApplication = require('./handleApplication.js');
+const handleChoreApproval = require('./handleChoreApproval.js');
 
 module.exports = {
 	name: Events.InteractionCreate,
@@ -26,6 +27,9 @@ module.exports = {
 			}
 			if (interaction.customId.startsWith('approve-') || interaction.customId.startsWith('deny-') || interaction.customId.startsWith('refresh-')) {
 				handleApplication(interaction);
+			}
+			if (interaction.customId.startsWith('approve_')) {
+				handleChoreApproval(interaction);
 			}
 		}
 	},

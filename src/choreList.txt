@@ -1,2 +1,33 @@
-test chore entry 1, 50
-test chore entry 2, 50
+wash your sheets:5000
+do a load of laundry:4000
+take out the trash:3000
+empty/load the dishwasher OR do dishes:4000
+wipe down your mousepad:3000
+dust your keyboard:3000
+dust your pc:4000
+clean out your downloads folder:4000
+change a commonly used password OR enable 2fa on an account:5000
+clean your computer desk:4000
+clean the litter box OR clean your pet's food bowl:4000
+delete 50 unused screenshots from your photos:4000
+clean the bathroom:7000
+clean out your fridge:6000
+go on a walk and pick up 5 pieces of litter:10000
+organize your emails (unsubscribe from 3 mailing lists and/or delete 50 old emails):5000
+backup something important:3000
+clean your monitor:3000
+clean your phone/phone case:3000
+vacuum a room:5000
+clean out expired pantry items:4000
+cable manage something OR throw out useless/broken cables:6000
+test your nearest smoke detector:3000
+go through your browser bookmarks:4000
+clean doorknobs or light switches:3000
+water your plants:3000
+clean your kitchen sink:4000
+delete some unnecessary files from cloud storage:4000
+rename files like "askjfbdksfksd.png":4000
+cancel a subscription you don't use:4000
+share something positive about your day/week:3000
+clean your glasses/sunglasses:3000
+drink a glass of water:3000

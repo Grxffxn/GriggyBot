@@ -5,6 +5,7 @@ const UpdateServerData = require('./getServerData.js');
 const AutoMsg = require('./automsg.js');
 const UpdateImage = require('./updateImage.js');
 const AutoProfile = require('./autoprofile.js');
+const chores = require('./chores.js');
 const config = require('../config.js');
 const cron = require('node-cron');
 
@@ -37,8 +38,11 @@ module.exports = {
 		}, 600000);
 
 		cron.schedule('30 4 * * *', () => {
-			console.log('Running UpdateServerData at 4:30 AM server time...');
 			UpdateServerData(client);
+		});
+
+		cron.schedule('0 9 * * *', () => {
+			chores(client);
 		});
 
 		UpdateImage(client);

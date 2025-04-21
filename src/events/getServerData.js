@@ -29,7 +29,8 @@ async function UpdateServerData() {
 
         const formattedSchedule = formatRestartSchedule(restartScheduleSanitized);
 
-        const serverData = {
+        // New server data
+        const newServerData = {
             online: true,
             numberOnline: sanitizedNumberOnline,
             serverVersion: sanitizedServerVersion,
@@ -37,17 +38,37 @@ async function UpdateServerData() {
             restartSchedule: formattedSchedule
         };
 
-        // Write to serverData.json
-        fs.writeFileSync('./src/serverData.json', JSON.stringify(serverData, null, 4));
+        // Read existing serverData.json
+        let existingData = {};
+        try {
+            const rawData = fs.readFileSync('./src/serverData.json', 'utf8');
+            existingData = JSON.parse(rawData);
+        } catch (err) {
+            console.warn('No existing serverData.json found, creating a new one.');
+        }
+
+        // Merge existing data with new data
+        const mergedData = { ...existingData, ...newServerData };
+
+        // Write merged data to serverData.json
+        fs.writeFileSync('./src/serverData.json', JSON.stringify(mergedData, null, 4));
 
         rcon.end();
     } catch (error) {
         console.error('Error updating server data:', error);
 
-        const serverData = {
-            online: false
-        };
-        fs.writeFileSync('./src/serverData.json', JSON.stringify(serverData, null, 4));
+        // Preserve existing data but mark the server as offline
+        let existingData = {};
+        try {
+            const rawData = fs.readFileSync('./src/serverData.json', 'utf8');
+            existingData = JSON.parse(rawData);
+        } catch (err) {
+            console.warn('No existing serverData.json found, creating a new one.');
+        }
+
+        const offlineData = { ...existingData, online: false };
+
+        fs.writeFileSync('./src/serverData.json', JSON.stringify(offlineData, null, 4));
     }
 }
 

@@ -3,6 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const config = require('../config.js');
 const choreChannelId = config.chorechannelid;
+const serverData = require('../serverData.json');
 
 // This event will fire at 9AM server time once per day
 
@@ -15,7 +16,9 @@ function chooseChore() {
         const chores = fileContent.split('\n').filter(line => line.trim() !== '');
         const randomIndex = Math.floor(Math.random() * chores.length);
         const randomChore = chores[randomIndex];
-        const [description, reward] = randomChore.split(',');
+        const [description, reward] = randomChore.split(':');
+
+        setSelectedChore(randomIndex);
 
         return {
             description: description.trim(),
@@ -40,6 +43,29 @@ function choreToEmbed(dailyChore, dailyReward) {
     } catch (error) {
         console.error('Error formatting chore message:', error);
         return null;
+    }
+}
+
+// Function to update selected chore index in serverData.json
+function setSelectedChore(index) {
+    try {
+        // Read the existing serverData.json
+        let existingData = {};
+        const filePath = path.join(__dirname, '../serverData.json');
+        try {
+            const rawData = fs.readFileSync(filePath, 'utf8');
+            existingData = JSON.parse(rawData);
+        } catch (err) {
+            console.warn('No existing serverData.json found, creating a new one.');
+        }
+
+        // Update the selectedChoreIndex
+        const updatedData = { ...existingData, selectedChoreIndex: index };
+
+        // Write the merged data back to serverData.json
+        fs.writeFileSync(filePath, JSON.stringify(updatedData, null, 4), 'utf8');
+    } catch (error) {
+        console.error('Error updating selected chore index in serverData.json:', error);
     }
 }
 

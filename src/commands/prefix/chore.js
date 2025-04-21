@@ -1,13 +1,10 @@
 const { EmbedBuilder, ButtonBuilder, ActionRowBuilder } = require('discord.js');
 const config = require('../../config.js');
-const serverData = require('../../serverData.json');
 const fs = require('fs');
 const path = require('path');
 
 const filePath = path.join(__dirname, '../../choreList.txt');
-const fileContent = fs.readFileSync(filePath, 'utf8');
-
-const chores = fileContent.split('\n').filter(line => line.trim() !== '');
+const serverDataPath = path.join(__dirname, '../../serverData.json');
 
 module.exports = {
     name: 'chore',
@@ -25,6 +22,10 @@ module.exports = {
         }
 
         // Get the daily chore and its matching reward
+        const serverData = JSON.parse(fs.readFileSync(serverDataPath, 'utf8'));
+        const fileContent = fs.readFileSync(filePath, 'utf8');
+        const chores = fileContent.split('\n').filter(line => line.trim() !== '');
+
         const selectedChoreIndex = serverData.selectedChoreIndex;
         const choreEntry = chores[selectedChoreIndex];
         const [description, reward] = choreEntry.split(':');

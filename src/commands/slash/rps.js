@@ -5,6 +5,7 @@ const { formatNumber, hyphenateUUID } = require('../../utils/formattingUtils.js'
 const { checkEnoughBalance, checkCooldown, setCooldown } = require('../../utils/gamblingUtils.js');
 const { checkLinked } = require('../../utils/roleCheckUtils.js');
 const { queryDB } = require('../../utils/databaseUtils.js');
+const { sendMCCommand, logRCON } = require('../../utils/rconUtils.js');
 const cmiDatabaseDir = '/home/minecraft/Main/plugins/CMI/cmi.sqlite.db';
 const griggyDatabaseDir = '/home/minecraft/GriggyBot/database.db';
 
@@ -45,7 +46,6 @@ module.exports = {
         }
 
         const wager = interaction.options.getInteger('wager');
-        const consoleChannel = interaction.client.channels.cache.get(config.consoleChannelId);
         // Check if the users are linked
         const targetedMember = interaction.guild.members.cache.get(targetedUser.id) || await interaction.guild.members.fetch(targetedUser.id);
         if (!checkLinked(interaction.member) || !checkLinked(targetedMember)) {
@@ -118,12 +118,20 @@ module.exports = {
 
             if (targetedUserChoice.beats === initialUserChoice.name) {
                 result = `**${targetedUser} wins!** *+${formatNumber(wager)}*`;
-                consoleChannel.send(`money set ${targetedPlayerData.username} ${targetedPlayerData.Balance + wager}`);
-                consoleChannel.send(`money set ${playerData.username} ${playerData.Balance - wager}`);
+                const command1 = `cmi money set ${targetedPlayerData.username} ${targetedPlayerData.Balance + wager}`;
+                const command2 = `cmi money set ${playerData.username} ${playerData.Balance - wager}`;
+                const response1 = await sendMCCommand(command1);
+                const response2 = await sendMCCommand(command2);
+                logRCON(command1, response1);
+                logRCON(command2, response2);
             } else if (initialUserChoice.beats === targetedUserChoice.name) {
                 result = `**${interaction.user} wins!** *+${formatNumber(wager)}*`;
-                consoleChannel.send(`money set ${playerData.username} ${playerData.Balance + wager}`);
-                consoleChannel.send(`money set ${targetedPlayerData.username} ${targetedPlayerData.Balance - wager}`);
+                const command1 = `cmi money set ${playerData.username} ${playerData.Balance + wager}`;
+                const command2 = `cmi money set ${targetedPlayerData.username} ${targetedPlayerData.Balance - wager}`;
+                const response1 = await sendMCCommand(command1);
+                const response2 = await sendMCCommand(command2);
+                logRCON(command1, response1);
+                logRCON(command2, response2);
             } else {
                 result = 'It\'s a tie!';
             }

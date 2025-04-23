@@ -1,27 +1,20 @@
 const fs = require('fs');
-const { Rcon } = require('rcon-client');
-const config = require('../config.js');
+const { sendMCCommand } = require('../utils/rconUtils.js');
 
 async function UpdateServerData() {
     try {
-        const rcon = new Rcon({
-            host: config.rconIp,
-            port: config.rconPort,
-            password: config.rconPwd
-        });
-        await rcon.connect();
 
         // Fetch data via RCON
-        const numberOnline = await rcon.send('papi parse --null %cmi_server_online%');
+        const numberOnline = await sendMCCommand('papi parse --null %cmi_server_online%');
         const sanitizedNumberOnline = numberOnline.replace(/\n/g, '').trim();
 
-        const serverVersion = await rcon.send('papi parse --null %server_version%');
+        const serverVersion = await sendMCCommand('papi parse --null %server_version%');
         const sanitizedServerVersion = serverVersion.replace(/\n/g, '').trim();
 
-        const tpsRaw = await rcon.send('papi parse --null %cmi_tps_300%');
+        const tpsRaw = await sendMCCommand('papi parse --null %cmi_tps_300%');
         const tps = tpsRaw.replace(/\n/g, '').trim();
 
-        const restartScheduleRaw = await rcon.send('papi parse --null %cmi_schedule_nextin_StopServer%');
+        const restartScheduleRaw = await sendMCCommand('papi parse --null %cmi_schedule_nextin_StopServer%');
         const restartScheduleSanitized = restartScheduleRaw
             .replace(/§(?:[0-9a-fr]|x(?:§[0-9a-f]){6})/g, '')
             .replace(/\n/g, '')
@@ -53,7 +46,6 @@ async function UpdateServerData() {
         // Write merged data to serverData.json
         fs.writeFileSync('./src/serverData.json', JSON.stringify(mergedData, null, 4));
 
-        rcon.end();
     } catch (error) {
         console.error('Error updating server data:', error);
 

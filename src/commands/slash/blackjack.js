@@ -1,7 +1,7 @@
 const { SlashCommandBuilder, MessageFlags, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
-const config = require('../../config.js');
 const { formatNumber } = require('../../utils/formattingUtils.js');
 const { setCooldown, preGameCheck } = require('../../utils/gamblingUtils.js');
+const { sendMCCommand, logRCON } = require('../../utils/rconUtils.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -17,7 +17,6 @@ module.exports = {
         try {
             const userId = interaction.user.id;
             const bet = interaction.options.getInteger('bet');
-            const consoleChannel = interaction.client.channels.cache.get(config.consoleChannelId);
             const { canProceed, playerData } = await preGameCheck(interaction, 'blackjack');
             if (!canProceed) return;
 
@@ -62,7 +61,9 @@ module.exports = {
                     if (playerTotal > 21) {
                         // Player busts
                         const newBalance = balance - bet; // Deduct the bet from the player's balance
-                        await consoleChannel.send(`money set ${username} ${newBalance}`);
+                        const command = `cmi money set ${username} ${newBalance}`;
+                        const response = await sendMCCommand(command);
+                        await logRCON(command, response);
                         await interaction.editReply({
                             content: `🃏 You drew a **${newCard}**. Your cards: **${playerCards.join(', ')}** (Total: ${playerTotal})\n` +
                                 `You busted! Dealer wins! <:_:774859143495417867>\nNew balance: **$${formatNumber(newBalance)}**`,
@@ -72,7 +73,9 @@ module.exports = {
                     } else if (playerTotal === 21) {
                         // Player hits blackjack
                         const newBalance = balance + bet; // Add the bet to the player's balance
-                        await consoleChannel.send(`money set ${username} ${newBalance}`);
+                        const command = `cmi money set ${username} ${newBalance}`;
+                        const response = await sendMCCommand(command);
+                        await logRCON(command, response);
                         await interaction.editReply({
                             content: `🃏 You drew a **${newCard}**. Your cards: **${playerCards.join(', ')}** (Total: ${playerTotal})\n` +
                                 `You hit blackjack! You win! <a:_:774429683876888576>\nNew balance: **$${formatNumber(newBalance)}**`,
@@ -124,7 +127,9 @@ module.exports = {
                     await interaction.editReply({ content: resultMessage, components: [] });
                     // If it's a tie, do not update balance
                     if (playerTotal !== dealerTotal) {
-                        await consoleChannel.send(`money set ${username} ${newBalance}`);
+                        const command = `cmi money set ${username} ${newBalance}`;
+                        const response = await sendMCCommand(command);
+                        await logRCON(command, response);
                     }
                     collector.stop('game_over');
                 }

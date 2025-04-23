@@ -25,6 +25,9 @@ module.exports = {
     rconPwd: 'YOUR_RCON_PASSWORD_HERE',
     rconPort: 25575, // Default RCON port; replace if different
 
+    // Thread ID used for RCON command logging
+    rconLogThreadId: '',
+
     // Delay for automated messages in milliseconds (e.g., 7200000 = 2 hours)
     automsgdelay: 7200000,
 

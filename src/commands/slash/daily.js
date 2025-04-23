@@ -2,7 +2,7 @@ const { SlashCommandBuilder, MessageFlags } = require('discord.js');
 const { queryDB } = require('../../utils/databaseUtils.js');
 const { formatNumber, hyphenateUUID } = require('../../utils/formattingUtils.js');
 const { checkLinked } = require('../../utils/roleCheckUtils.js');
-const config = require('../../config.js');
+const { sendMCCommand, logRCON } = require('../../utils/rconUtils.js');
 
 const griggyDatabaseDir = '/home/minecraft/GriggyBot/database.db';
 const cmiDatabaseDir = '/home/minecraft/Main/plugins/CMI/cmi.sqlite.db';
@@ -14,7 +14,6 @@ module.exports = {
     async run(interaction) {
         try {
             const userId = interaction.user.id;
-            const consoleChannel = interaction.client.channels.cache.get(config.consoleChannelId);
             const now = Math.floor(Date.now() / 1000);
             const dailyReward = 1000;
             const streakBonus = 50; // +10 per streak level
@@ -34,8 +33,6 @@ module.exports = {
             }
             const username = cmiUserRow.username;
 
-            // TODO: Get consoleChannel and send messages there on successful claim
-
             let userStreakData = await queryDB( // Get streak data
                 griggyDatabaseDir,
                 'SELECT streak, last_claimed FROM daily_streaks WHERE user_id = ?',
@@ -50,7 +47,9 @@ module.exports = {
                     [userId, 1, now]
                 );
 
-                await consoleChannel.send(`money add ${username} ${dailyReward}`);
+                const command = `cmi money add ${username} ${dailyReward}`;
+                const response = await sendMCCommand(command);
+                logRCON(command, response);
 
                 return interaction.reply({
                     content: `Congrats on your first daily reward of **$${formatNumber(dailyReward)}**! Start building your streak for increased rewards!`,
@@ -86,7 +85,9 @@ module.exports = {
                 [newStreak, now, userId]
             );
 
-            await consoleChannel.send(`money add ${username} ${reward}`);
+            const command = `cmi money add ${username} ${reward}`;
+            const response = await sendMCCommand(command);
+            logRCON(command, response);
 
             return interaction.reply({
                 content: `EZ **$${formatNumber(reward)}**\nYour current streak is **${newStreak}** days.\n-# How long can you keep it up?`,

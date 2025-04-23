@@ -2,6 +2,7 @@ const { SlashCommandBuilder, MessageFlags } = require('discord.js');
 const config = require('../../config.js');
 const { formatNumber } = require('../../utils/formattingUtils.js');
 const { setCooldown, preGameCheck } = require('../../utils/gamblingUtils.js');
+const { sendMCCommand, logRCON } = require('../../utils/rconUtils.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -66,7 +67,6 @@ module.exports = {
 
         try {
             const userId = interaction.user.id;
-            const consoleChannel = interaction.client.channels.cache.get(config.consoleChannelId);
             const betAmount = interaction.options.getInteger('bet');
             const colorBet = interaction.options.getString('color');
             // Set rangeBet to null if colorBet is green
@@ -95,7 +95,9 @@ module.exports = {
             let newBalance = balance - betAmount + (betAmount * payoutMultiplier);
             // If payoutMultiplier is not equal to 1, update balance, otherwise leave it alone
             if (payoutMultiplier !== 1) {
-                await consoleChannel.send(`money set ${playerData.username} ${newBalance}`);
+                const command = `cmi money set ${playerData.username} ${newBalance}`;
+                const response = await sendMCCommand(command);
+                logRCON(command, response);
             }
             // If payoutMultiplier is greater than 0 (win), add user to cooldown. Otherwise do not.
             if (payoutMultiplier > 0) {

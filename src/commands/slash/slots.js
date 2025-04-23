@@ -1,7 +1,7 @@
 const { SlashCommandBuilder, MessageFlags } = require('discord.js');
-const config = require('../../config.js');
 const { formatNumber } = require('../../utils/formattingUtils.js');
 const { setCooldown, preGameCheck } = require('../../utils/gamblingUtils.js');
+const { sendMCCommand, logRCON } = require('../../utils/rconUtils.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -47,7 +47,6 @@ module.exports = {
 
             const userId = interaction.user.id;
             const bet = interaction.options.getInteger('bet');
-            const consoleChannel = interaction.client.channels.cache.get(config.consoleChannelId);
             const balance = playerData.Balance;
 
             // GAME START
@@ -77,7 +76,9 @@ module.exports = {
                 setCooldown(userId, 'slots');
             }
             // UPDATE BALANCE
-            await consoleChannel.send(`money set ${playerData.username} ${updateBalance}`);
+            const command = `cmi money set ${playerData.username} ${updateBalance}`;
+            const response = await sendMCCommand(command);
+            logRCON(command, response);
 
             // REVEAL 1 EMOJI AT A TIME
             await interaction.reply(`# 🎰 Rolling the slots...\n-+-+-+-+-+-+-+-+-\n# ${randomEmojis[0]} ❓ ❓\n-+-+-+-+-+-+-+-+-`);

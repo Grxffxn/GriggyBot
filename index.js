@@ -6,6 +6,7 @@ const client = new Client({
 });
 const config = require('./src/config.js');
 const { readdirSync } = require('node:fs');
+const { closeRCON } = require('./src/utils/rconUtils.js');
 
 const token = config.token;
 
@@ -71,8 +72,16 @@ process.on('uncaughtExceptionMonitor', (e) => {
 });
 
 // Shutdown listener
-process.on('SIGINT', () => {
+process.on('SIGINT', async () => {
 	console.log('Signal interrupted. Shutting down.');
+	
+	try {
+        await closeRCON();
+        console.log('RCON connection closed successfully.');
+    } catch (error) {
+        console.error('Error while closing RCON connection:', error);
+    }
+
 	process.exit(0);
 });
 

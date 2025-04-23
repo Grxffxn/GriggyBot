@@ -5,7 +5,7 @@ const cmiDatabaseDir = '/home/minecraft/Main/plugins/CMI/cmi.sqlite.db';
 const requiredPoints = { fabled: 5, heroic: 10, mythical: 15, apocryphal: 20, legend: 30 };
 const requiredStaffReactions = { fabled: 1, heroic: 1, mythical: 2, apocryphal: 3, legend: 4 };
 const config = require('../config.js');
-const { Rcon } = require('rcon-client');
+const { sendMCCommand, logRCON } = require('../utils/rconUtils.js');
 
 async function fetchUserPoints(username) {
     const sanitizedUsername = username.trim();
@@ -39,11 +39,6 @@ function createButtons(vouchingFor, rank, data) {
 }
 
 async function handleApplication(interaction) {
-    const rcon = new Rcon({
-        host: config.rconIp,
-        port: config.rconPort,
-        password: config.rconPwd
-    });
 
     const [action, vouchingFor, rank] = interaction.customId.split('-');
 
@@ -82,14 +77,14 @@ async function handleApplication(interaction) {
                     if (member) {
                         const role = guild.roles.cache.find(r => r.name.toLowerCase() === rank.toLowerCase());
                         if (role) {
-                            await rcon.connect();
                             await member.roles.add(role);
                             await interaction.followUp({ content: `<@${vouchingFor}> has met the criteria and has been granted the ${rank} role!` });
                             await interaction.channel.send(`Your application has been approved, congratulations <@${member.id}>! <a:_:774429683876888576>`);
                             await interaction.channel.setLocked(true);
-                            await rcon.send(`lp user ${application.player_name} promote player`);
+                            const command = `lp user ${application.player_name} promote player`;
+                            const response = await sendMCCommand(command);
+                            logRCON(command, response);
                             await queryDB(databaseDir, 'UPDATE applications SET status = ? WHERE discord_id = ?', ['approved', vouchingFor]);
-                            rcon.end();
                         } else {
                             await interaction.followUp({ content: `Role "${rank}" not found in the server. Please check role setup.`, flags: MessageFlags.Ephemeral });
                         }

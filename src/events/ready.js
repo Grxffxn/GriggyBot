@@ -8,6 +8,7 @@ const AutoProfile = require('./autoprofile.js');
 const chores = require('./chores.js');
 const config = require('../config.js');
 const cron = require('node-cron');
+const { initializeRCONUtils, startRCON } = require('../utils/rconUtils.js');
 
 const {
 	DefaultWebSocketManagerOptions: {
@@ -32,7 +33,6 @@ module.exports = {
 
 		client.log(`${client.user.username} signed in as ${client.user.tag}! I\'m alive!`);
 
-		UpdateServerData(client);
 		setInterval(() => {
 			UpdateServerData(client);
 		}, 600000);
@@ -57,6 +57,12 @@ module.exports = {
 		setInterval(() => {
 			AutoProfile(client);
 		}, 180000);
+
+		initializeRCONUtils(client);
+
+		await startRCON();
+
+		UpdateServerData(client);
 
 		try {
 			await (async () => {

@@ -3,6 +3,7 @@ const { checkLinked } = require('../utils/roleCheckUtils.js');
 const { hyphenateUUID } = require('../utils/formattingUtils.js');
 const { queryDB } = require('../utils/databaseUtils.js');
 const config = require('../config.js');
+const { sendMCCommand, logRCON } = require('../utils/rconUtils.js');
 
 const griggyDatabaseDir = '/home/minecraft/GriggyBot/database.db';
 const cmiDatabaseDir = '/home/minecraft/Main/plugins/CMI/cmi.sqlite.db';
@@ -59,17 +60,12 @@ async function handleChoreApproval(interaction) {
 
         const submitterUsername = playerData.username;
 
-        // Fetch console channel
-        const consoleChannel = await interaction.guild.channels.fetch(config.consoleChannelId).catch(() => null);
-        if (!consoleChannel) {
-            console.error('Console channel not found or inaccessible:', config.consoleChannelId);
-            return interaction.reply({ content: 'Console channel not found. Please contact an admin.', flags: MessageFlags.Ephemeral });
-        }
-
         // Check if the user is linked
         const isLinked = checkLinked(submitter);
         if (isLinked) {
-            await consoleChannel.send(`cmi money give ${submitterUsername} ${choreReward}`);
+            const command = `cmi money give ${submitterUsername} ${choreReward}`;
+            const response = await sendMCCommand(command);
+            logRCON(command, response);
             await interaction.reply({ content: `Successfully approved ${submitter}'s chore submission!`, flags: MessageFlags.Ephemeral });
         } else {
             await interaction.reply({ content: `${submitter}, your submission was approved but you weren't rewarded any in-game currency because your accounts are not linked. For information on how to link, run \`/link\` on Discord.` });

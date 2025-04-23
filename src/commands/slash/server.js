@@ -1,6 +1,5 @@
 const { SlashCommandBuilder } = require('@discordjs/builders');
-const { Rcon } = require('rcon-client');
-const config = require('../../config.js');
+const { sendMCCommand } = require('../../utils/rconUtils.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -8,12 +7,6 @@ module.exports = {
         .setDescription('Various Server Info'),
 
     async run(interaction) {
-        // Open RCON Connection
-        const rcon = new Rcon({
-            host: config.rconIp,
-            port: config.rconPort,
-            password: config.rconPwd
-        });
 
         function sanitizeInput(input) {
             return input.replace(/\n/g, '').trim(); // Removes \n and excess whitespace
@@ -53,19 +46,16 @@ module.exports = {
             return `\u001b[2;37m${strippedText}\u001b[0m`;
         }
 
-        // Get TPS and Top Voter placeholders
         try {
-            await rcon.connect();
-
             // Retrieve data from Minecraft server
-            const tpsParsed = await rcon.send('papi parse Grxffxn %cmi_tps_300_colored%');
-            const topVoterParsed = await rcon.send('papi parse Grxffxn %cmi_votetop_1%');
-            const topVoterCount = await rcon.send('papi parse Grxffxn %cmi_votetopcount_1%')
-            const topPlaytimeUser = await rcon.send('papi parse Grxffxn %cmi_playtimetop_name_1%');
-            const topPlaytimeTime = await rcon.send('papi parse Grxffxn %cmi_playtimetop_time_1%');
-            const serverUptime = await rcon.send('papi parse Grxffxn %cmi_server_uptime%');
-            const onlinePlayerList = await rcon.send('papi parse Grxffxn %cmi_onlineplayers_names%');
-            const numberOnline = await rcon.send('papi parse Grxffxn %cmi_server_online%')
+            const tpsParsed = await sendMCCommand('papi parse --null %cmi_tps_300_colored%');
+            const topVoterParsed = await sendMCCommand('papi parse --null %cmi_votetop_1%');
+            const topVoterCount = await sendMCCommand('papi parse --null %cmi_votetopcount_1%')
+            const topPlaytimeUser = await sendMCCommand('papi parse --null %cmi_playtimetop_name_1%');
+            const topPlaytimeTime = await sendMCCommand('papi parse --null %cmi_playtimetop_time_1%');
+            const serverUptime = await sendMCCommand('papi parse --null %cmi_server_uptime%');
+            const onlinePlayerList = await sendMCCommand('papi parse --null %cmi_onlineplayers_names%');
+            const numberOnline = await sendMCCommand('papi parse --null %cmi_server_online%');
 
             // Reply with formatted output
             return interaction.reply(
@@ -76,8 +66,6 @@ module.exports = {
 
             // Send an error reply
             return interaction.reply(`\`\`\`Error occurred: ${error.message}\`\`\``);
-        } finally {
-            rcon.end();
         }
     },
 };

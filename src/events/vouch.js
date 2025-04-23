@@ -1,5 +1,6 @@
 const { EmbedBuilder, MessageFlags } = require('discord.js');
 const { queryDB } = require('../utils/databaseUtils');
+const { sendMCCommand, logRCON } = require('../utils/rconUtils');
 const databaseDir = '/home/minecraft/GriggyBot/database.db';
 const cmiDatabaseDir = '/home/minecraft/Main/plugins/CMI/cmi.sqlite.db';
 
@@ -69,8 +70,9 @@ async function Vouch(interaction) {
         await interaction.followUp({ content: 'Success' });
         await interaction.channel.send({ embeds: [vouchEmbed] });
 
-        const consoleChannel = interaction.guild.channels.cache.get('766095682741862431');
-        await consoleChannel.send(`cmi usermeta ${vouchingForMCUsername} increment points 1`);
+        const command = `cmi usermeta ${vouchingForMCUsername} increment points 1`;
+        const response = await sendMCCommand(command);
+        logRCON(command, response);
     } catch (error) {
         console.error('Error processing vouch:', error.message);
         return interaction.followUp({ content: 'An error occurred while processing your vouch. Please try again later.' });

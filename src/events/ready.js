@@ -1,7 +1,7 @@
 const { ActivityType, Events } = require('discord.js');
 const { REST } = require('@discordjs/rest');
 const { Routes } = require('discord-api-types/v10');
-const UpdateServerData = require('./getServerData.js');
+const getServerData = require('./getServerData.js');
 const AutoMsg = require('./automsg.js');
 const UpdateImage = require('./updateImage.js');
 const AutoProfile = require('./autoprofile.js');
@@ -34,18 +34,17 @@ module.exports = {
 		client.log(`${client.user.username} signed in as ${client.user.tag}! I\'m alive!`);
 
 		setInterval(() => {
-			UpdateServerData(client);
+			getServerData(client);
 		}, 600000);
 
 		cron.schedule('30 4 * * *', () => {
-			UpdateServerData(client);
+			getServerData(client);
 		});
 
 		cron.schedule('0 9 * * *', () => {
 			chores(client);
 		});
 
-		UpdateImage(client);
 		setInterval(() => {
 			UpdateImage(client);
 		}, 600000);
@@ -62,7 +61,8 @@ module.exports = {
 
 		await startRCON();
 
-		UpdateServerData(client);
+		getServerData(client);
+		UpdateImage(client);
 
 		try {
 			await (async () => {

@@ -4,7 +4,6 @@ const databaseDir = '/home/minecraft/GriggyBot/database.db';
 const cmiDatabaseDir = '/home/minecraft/Main/plugins/CMI/cmi.sqlite.db';
 const requiredPoints = { fabled: 5, heroic: 10, mythical: 15, apocryphal: 20, legend: 30 };
 const requiredStaffReactions = { fabled: 1, heroic: 1, mythical: 2, apocryphal: 3, legend: 4 };
-const config = require('../config.js');
 const { sendMCCommand, logRCON } = require('../utils/rconUtils.js');
 
 async function fetchUserPoints(username) {

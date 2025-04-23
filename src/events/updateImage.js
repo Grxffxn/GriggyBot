@@ -1,4 +1,5 @@
 const config = require('../config.js');
+const { parseServerData } = require('../utils/serverDataUtils.js');
 const { AttachmentBuilder, EmbedBuilder } = require('discord.js');
 const nodeHtmlToImage = require('node-html-to-image');
 const path = require('path');
@@ -115,18 +116,8 @@ async function UpdateImage(client) {
         }
     }
 
-    function getServerData() {
-        try {
-            const data = fs.readFileSync('./src/serverData.json');
-            return JSON.parse(data);
-        } catch (error) {
-            console.error('Error reading server data:', error);
-            return null;
-        }
-    }
-
     try {
-        const serverData = getServerData();
+        const serverData = parseServerData();
         const sanitizedNumberOnline = serverData.numberOnline;
         const sanitizedServerVersion = serverData.serverVersion;
         const tps = serverData.tps;

@@ -2,10 +2,10 @@ const fs = require('fs');
 const path = require('path');
 const config = require('../config.js');
 const { MessageFlags } = require('discord.js');
-const serverData = require('../serverData.json');
 const { queryDB } = require('./databaseUtils.js');
 const { checkLinked } = require('./roleCheckUtils.js');
 const { hyphenateUUID } = require('./formattingUtils.js');
+const { parseServerData } = require('./serverDataUtils.js');
 const cooldownFilePath = path.resolve(__dirname, '../cooldowns.json');
 const griggyDatabaseDir = '/home/minecraft/GriggyBot/database.db';
 const cmiDatabaseDir = '/home/minecraft/Main/plugins/CMI/cmi.sqlite.db';
@@ -41,6 +41,7 @@ function setCooldown(userId, commandName) {
 async function preGameCheck(interaction, gameName) {
     const userId = interaction.user.id;
     const bet = interaction.options.getInteger('bet');
+    const serverData = parseServerData();
     // CHECK LINKED
     if (!config.gamblingEnabled || !serverData.online) {
         await interaction.reply({ content: 'Gambling is currently disabled, or TLC is offline.', flags: MessageFlags.Ephemeral, });

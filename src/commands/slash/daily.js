@@ -2,7 +2,7 @@ const { SlashCommandBuilder, MessageFlags } = require('discord.js');
 const { queryDB } = require('../../utils/databaseUtils.js');
 const { formatNumber, hyphenateUUID } = require('../../utils/formattingUtils.js');
 const { checkLinked } = require('../../utils/roleCheckUtils.js');
-const { sendMCCommand, logRCON } = require('../../utils/rconUtils.js');
+const { updateBalance } = require('../../utils/gamblingUtils.js');
 
 const griggyDatabaseDir = '/home/minecraft/GriggyBot/database.db';
 const cmiDatabaseDir = '/home/minecraft/Main/plugins/CMI/cmi.sqlite.db';
@@ -48,8 +48,7 @@ module.exports = {
                 );
 
                 const command = `cmi money add ${username} ${dailyReward}`;
-                const response = await sendMCCommand(command);
-                logRCON(command, response);
+                await updateBalance(interaction, command);
 
                 return interaction.reply({
                     content: `Congrats on your first daily reward of **$${formatNumber(dailyReward)}**! Start building your streak for increased rewards!`,
@@ -86,8 +85,7 @@ module.exports = {
             );
 
             const command = `cmi money add ${username} ${reward}`;
-            const response = await sendMCCommand(command);
-            logRCON(command, response);
+            await updateBalance(interaction, command);
 
             return interaction.reply({
                 content: `EZ **$${formatNumber(reward)}**\nYour current streak is **${newStreak}** days.\n-# How long can you keep it up?`,

@@ -1,5 +1,5 @@
 const { sendMCCommand } = require('../utils/rconUtils.js');
-const { parseServerData, updateServerData } = require('../utils/serverDataUtils.js');
+const { updateServerData } = require('../utils/serverDataUtils.js');
 
 function formatRestartSchedule(restartScheduleSanitized) {
     const parts = restartScheduleSanitized.split(' ');

@@ -76,14 +76,19 @@ async function handleApplication(interaction) {
                     if (member) {
                         const role = guild.roles.cache.find(r => r.name.toLowerCase() === rank.toLowerCase());
                         if (role) {
-                            await member.roles.add(role);
-                            await interaction.followUp({ content: `<@${vouchingFor}> has met the criteria and has been granted the ${rank} role!` });
-                            await interaction.channel.send(`Your application has been approved, congratulations <@${member.id}>! <a:_:774429683876888576>`);
-                            await interaction.channel.setLocked(true);
                             const command = `lp user ${application.player_name} promote player`;
-                            const response = await sendMCCommand(command);
-                            logRCON(command, response);
-                            await queryDB(databaseDir, 'UPDATE applications SET status = ? WHERE discord_id = ?', ['approved', vouchingFor]);
+                            try {
+                                const response = await sendMCCommand(command);
+                                logRCON(command, response);
+                                await member.roles.add(role);
+                                await interaction.followUp({ content: `<@${vouchingFor}> has met the criteria and has been granted the ${rank} role!` });
+                                await interaction.channel.send(`Your application has been approved, congratulations <@${member.id}>! <a:_:774429683876888576>`);
+                                await interaction.channel.setLocked(true);
+                                await queryDB(databaseDir, 'UPDATE applications SET status = ? WHERE discord_id = ?', ['approved', vouchingFor]);
+                            } catch (error) {
+                                await interaction.followUp({ content: 'Can\'t reach TLC, please try again later.', flags: MessageFlags.Ephemeral });
+                                return;
+                            }
                         } else {
                             await interaction.followUp({ content: `Role "${rank}" not found in the server. Please check role setup.`, flags: MessageFlags.Ephemeral });
                         }

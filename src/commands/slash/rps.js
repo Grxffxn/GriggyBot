@@ -2,10 +2,9 @@ const { SlashCommandBuilder, MessageFlags, ActionRowBuilder, ButtonBuilder, Butt
 const config = require('../../config.js');
 const serverData = require('../../serverData.json');
 const { formatNumber, hyphenateUUID } = require('../../utils/formattingUtils.js');
-const { checkEnoughBalance, checkCooldown, setCooldown } = require('../../utils/gamblingUtils.js');
+const { checkEnoughBalance, checkCooldown, setCooldown, updateBalance } = require('../../utils/gamblingUtils.js');
 const { checkLinked } = require('../../utils/roleCheckUtils.js');
 const { queryDB } = require('../../utils/databaseUtils.js');
-const { sendMCCommand, logRCON } = require('../../utils/rconUtils.js');
 const cmiDatabaseDir = '/home/minecraft/Main/plugins/CMI/cmi.sqlite.db';
 const griggyDatabaseDir = '/home/minecraft/GriggyBot/database.db';
 
@@ -120,18 +119,14 @@ module.exports = {
                 result = `**${targetedUser} wins!** *+${formatNumber(wager)}*`;
                 const command1 = `cmi money set ${targetedPlayerData.username} ${targetedPlayerData.Balance + wager}`;
                 const command2 = `cmi money set ${playerData.username} ${playerData.Balance - wager}`;
-                const response1 = await sendMCCommand(command1);
-                const response2 = await sendMCCommand(command2);
-                logRCON(command1, response1);
-                logRCON(command2, response2);
+                await updateBalance(interaction, command1);
+                await updateBalance(interaction, command2);
             } else if (initialUserChoice.beats === targetedUserChoice.name) {
                 result = `**${interaction.user} wins!** *+${formatNumber(wager)}*`;
                 const command1 = `cmi money set ${playerData.username} ${playerData.Balance + wager}`;
                 const command2 = `cmi money set ${targetedPlayerData.username} ${targetedPlayerData.Balance - wager}`;
-                const response1 = await sendMCCommand(command1);
-                const response2 = await sendMCCommand(command2);
-                logRCON(command1, response1);
-                logRCON(command2, response2);
+                await updateBalance(interaction, command1);
+                await updateBalance(interaction, command2);
             } else {
                 result = 'It\'s a tie!';
             }

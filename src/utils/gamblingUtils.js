@@ -6,6 +6,7 @@ const { queryDB } = require('./databaseUtils.js');
 const { checkLinked } = require('./roleCheckUtils.js');
 const { hyphenateUUID } = require('./formattingUtils.js');
 const { parseServerData } = require('./serverDataUtils.js');
+const { sendMCCommand, logRCON, logRCONError } = require('./rconUtils.js');
 const cooldownFilePath = path.resolve(__dirname, '../cooldowns.json');
 const griggyDatabaseDir = '/home/minecraft/GriggyBot/database.db';
 const cmiDatabaseDir = '/home/minecraft/Main/plugins/CMI/cmi.sqlite.db';
@@ -83,4 +84,16 @@ async function preGameCheck(interaction, gameName) {
     return { canProceed: true, playerData };
 }
 
-module.exports = { checkEnoughBalance, checkCooldown, setCooldown, preGameCheck };
+async function updateBalance(interaction, command) {
+    try {
+        const response = await sendMCCommand(command);
+        await logRCON(command, response);
+    } catch (error) {
+        const botspamChannel = await interaction.guild.channels.fetch(config.botspamChannelId);
+        console.error(`Error updating player balance >.< RCON failed`);
+        await logRCONError(command);
+        await botspamChannel.send(`${interaction.user} This is awkward... I can't reach TLC >.<\nI've alerted the staff, and someone will update the balance soon.\nIn the meantime, please refrain from any other balance changes.`);
+    }
+}
+
+module.exports = { checkEnoughBalance, checkCooldown, setCooldown, preGameCheck, updateBalance };

@@ -1,8 +1,6 @@
 const { SlashCommandBuilder, MessageFlags } = require('discord.js');
-const config = require('../../config.js');
 const { formatNumber } = require('../../utils/formattingUtils.js');
-const { setCooldown, preGameCheck } = require('../../utils/gamblingUtils.js');
-const { sendMCCommand, logRCON } = require('../../utils/rconUtils.js');
+const { setCooldown, preGameCheck, updateBalance } = require('../../utils/gamblingUtils.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -96,8 +94,7 @@ module.exports = {
             // If payoutMultiplier is not equal to 1, update balance, otherwise leave it alone
             if (payoutMultiplier !== 1) {
                 const command = `cmi money set ${playerData.username} ${newBalance}`;
-                const response = await sendMCCommand(command);
-                logRCON(command, response);
+                await updateBalance(interaction, command);
             }
             // If payoutMultiplier is greater than 0 (win), add user to cooldown. Otherwise do not.
             if (payoutMultiplier > 0) {

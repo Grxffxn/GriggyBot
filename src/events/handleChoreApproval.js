@@ -3,7 +3,7 @@ const { checkLinked } = require('../utils/roleCheckUtils.js');
 const { hyphenateUUID } = require('../utils/formattingUtils.js');
 const { queryDB } = require('../utils/databaseUtils.js');
 const config = require('../config.js');
-const { sendMCCommand, logRCON } = require('../utils/rconUtils.js');
+const { updateBalance } = require('../utils/gamblingUtils.js');
 
 const griggyDatabaseDir = '/home/minecraft/GriggyBot/database.db';
 const cmiDatabaseDir = '/home/minecraft/Main/plugins/CMI/cmi.sqlite.db';
@@ -64,8 +64,7 @@ async function handleChoreApproval(interaction) {
         const isLinked = checkLinked(submitter);
         if (isLinked) {
             const command = `cmi money give ${submitterUsername} ${choreReward}`;
-            const response = await sendMCCommand(command);
-            logRCON(command, response);
+            await updateBalance(interaction, command);
             await interaction.reply({ content: `Successfully approved ${submitter}'s chore submission!`, flags: MessageFlags.Ephemeral });
         } else {
             await interaction.reply({ content: `${submitter}, your submission was approved but you weren't rewarded any in-game currency because your accounts are not linked. For information on how to link, run \`/link\` on Discord.` });

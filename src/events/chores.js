@@ -1,9 +1,8 @@
-const { EmbedBuilder, MessageFlags } = require('discord.js');
+const { EmbedBuilder } = require('discord.js');
 const fs = require('fs');
 const path = require('path');
 const config = require('../config.js');
 const choreChannelId = config.chorechannelid;
-const serverData = require('../serverData.json');
 
 // This event will fire at 9AM server time once per day
 

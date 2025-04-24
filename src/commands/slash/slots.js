@@ -1,7 +1,6 @@
 const { SlashCommandBuilder, MessageFlags } = require('discord.js');
 const { formatNumber } = require('../../utils/formattingUtils.js');
-const { setCooldown, preGameCheck } = require('../../utils/gamblingUtils.js');
-const { sendMCCommand, logRCON } = require('../../utils/rconUtils.js');
+const { setCooldown, preGameCheck, updateBalance } = require('../../utils/gamblingUtils.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -64,21 +63,20 @@ module.exports = {
             // Result logic
             const allMatch = randomEmojis.every((val, i, arr) => val === arr[0]);
             const twoMatch = randomEmojis[0] === randomEmojis[1] || randomEmojis[1] === randomEmojis[2] || randomEmojis[0] === randomEmojis[2];
-            let updateBalance = balance - bet;
-            let resultMsg = `# <:_:774859143495417867> Better luck next time!\n-+-+-+-+-+-+-+-+-\n# ${randomEmojis.join(' ')}\n-+-+-+-+-+-+-+-+-\nYou lost **$${formatNumber(bet)}!**\nYour new balance is **$${formatNumber(updateBalance)}**\n-# You may roll again with no cooldown!`;
+            let updatedBalance = balance - bet;
+            let resultMsg = `# <:_:774859143495417867> Better luck next time!\n-+-+-+-+-+-+-+-+-\n# ${randomEmojis.join(' ')}\n-+-+-+-+-+-+-+-+-\nYou lost **$${formatNumber(bet)}!**\nYour new balance is **$${formatNumber(updatedBalance)}**\n-# You may roll again with no cooldown!`;
             if (allMatch) { // WIN 10x
-                updateBalance = (balance + (bet * 10)) - bet;
-                resultMsg = `# <a:_:774429683876888576> You hit the jackpot! <a:_:780596404044955651>\n-+-+-+-+-+-+-+-+-\n# ${randomEmojis.join(' ')}\n-+-+-+-+-+-+-+-+-\nYou won **$${formatNumber(bet * 10)}!**\nYour new balance is **$${formatNumber(updateBalance)}**`;
+                updatedBalance = (balance + (bet * 10)) - bet;
+                resultMsg = `# <a:_:774429683876888576> You hit the jackpot! <a:_:780596404044955651>\n-+-+-+-+-+-+-+-+-\n# ${randomEmojis.join(' ')}\n-+-+-+-+-+-+-+-+-\nYou won **$${formatNumber(bet * 10)}!**\nYour new balance is **$${formatNumber(updatedBalance)}**`;
                 setCooldown(userId, 'slots');
             } else if (twoMatch) { // WIN 2x
-                updateBalance = (balance + (bet * 2)) - bet;
-                resultMsg = `# <:_:1162276681323642890> You won **$${formatNumber(bet * 2)}!**\n-+-+-+-+-+-+-+-+-\n# ${randomEmojis.join(' ')}\n-+-+-+-+-+-+-+-+-\nYour new balance is **$${formatNumber(updateBalance)}**`;
+                updatedBalance = (balance + (bet * 2)) - bet;
+                resultMsg = `# <:_:1162276681323642890> You won **$${formatNumber(bet * 2)}!**\n-+-+-+-+-+-+-+-+-\n# ${randomEmojis.join(' ')}\n-+-+-+-+-+-+-+-+-\nYour new balance is **$${formatNumber(updatedBalance)}**`;
                 setCooldown(userId, 'slots');
             }
             // UPDATE BALANCE
-            const command = `cmi money set ${playerData.username} ${updateBalance}`;
-            const response = await sendMCCommand(command);
-            logRCON(command, response);
+            const command = `cmi money set ${playerData.username} ${updatedBalance}`;
+            await updateBalance(interaction, command);
 
             // REVEAL 1 EMOJI AT A TIME
             await interaction.reply(`# 🎰 Rolling the slots...\n-+-+-+-+-+-+-+-+-\n# ${randomEmojis[0]} ❓ ❓\n-+-+-+-+-+-+-+-+-`);

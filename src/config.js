@@ -5,6 +5,9 @@ module.exports = {
     // The ID of the channel where automated messages should be sent
     automsgchannelid: 'YOUR_CHANNEL_ID_HERE',
 
+    // The ID of your "botspam" channel
+    botspamChannelId: 'YOUR_CHANNEL_ID_HERE',
+
     // The ID of the channel to send chores to
     chorechannelid: 'YOUR_CHANNEL_ID_HERE',
 
@@ -26,7 +29,7 @@ module.exports = {
     rconPort: 25575, // Default RCON port; replace if different
 
     // Thread ID used for RCON command logging
-    rconLogThreadId: '',
+    rconLogThreadId: 'YOUR_THREAD_ID_HERE',
 
     // Delay for automated messages in milliseconds (e.g., 7200000 = 2 hours)
     automsgdelay: 7200000,

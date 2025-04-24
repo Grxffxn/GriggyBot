@@ -6,7 +6,7 @@ const cmiDatabaseDir = '/home/minecraft/Main/plugins/CMI/cmi.sqlite.db';
 
 async function Vouch(interaction) {
     try {
-        sendMCCommand('list');
+        await sendMCCommand('list');
     } catch (error) {
         await interaction.reply('Can\'t reach TLC, please try again later.');
         return;

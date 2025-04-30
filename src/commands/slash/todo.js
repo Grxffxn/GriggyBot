@@ -2,6 +2,7 @@
 // Any staff member can add, update, delete, view TODO items and update to different lists (To Do, In Progress, Completed)
 const { SlashCommandBuilder, ModalBuilder, TextInputBuilder, ActionRowBuilder, EmbedBuilder, TextInputStyle, MessageFlags } = require('discord.js');
 const { queryDB } = require('../../utils/databaseUtils');
+const { checkStaff } = require('../../utils/roleCheckUtils');
 const griggyDatabaseDir = '/home/minecraft/GriggyBot/database.db';
 
 module.exports = {
@@ -72,9 +73,8 @@ module.exports = {
 
 	async run(interaction) {
 		// Check if the user is staff
-		const staffRoles = ['moderator', 'admin', 'owner', 'engineer'];
-		const member = await interaction.guild.members.fetch(interaction.user.id);
-		if (!member.roles.cache.some(role => staffRoles.includes(role.name.toLowerCase()))) {
+		const isStaff = checkStaff(interaction.user);
+		if (!isStaff) {
 			return interaction.reply({ content: 'You do not have permission to use this command.', flags: MessageFlags.Ephemeral });
 		}
 

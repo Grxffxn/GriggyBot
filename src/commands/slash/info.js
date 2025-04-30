@@ -1,6 +1,7 @@
 const { SlashCommandBuilder, EmbedBuilder, ButtonBuilder, ActionRowBuilder, MessageFlags } = require('discord.js');
 const axios = require('axios');
 const { queryDB } = require('../../utils/databaseUtils.js');
+const { getConfig } = require('../../utils/configUtils.js');
 
 const griggyDatabaseDir = '/home/minecraft/GriggyBot/database.db';
 const cmiDatabasePath = '/home/minecraft/Main/plugins/CMI/cmi.sqlite.db';
@@ -17,6 +18,7 @@ module.exports = {
 
     async run(interaction) {
         try {
+            const config = await getConfig();
             await interaction.deferReply();
             const username = interaction.options.getString('username');
             const { data } = await axios.get(`https://api.geysermc.org/v2/utils/uuid/bedrock_or_java/${username}?prefix=.`);
@@ -93,24 +95,34 @@ module.exports = {
                 .setTitle(finalTitle)
                 .setDescription(finalDescription)
                 .setColor(finalColor)
-                .setThumbnail(finalUrl)
-                .setFields(
-                    { name: 'Vouches', value: finalVouches.toString(), inline: true },
-                    { name: 'Rank Points', value: finalRankPoints.toString(), inline: true },
-                    { name: 'Total Points', value: totalPoints.toString(), inline: true },
-                    { name: 'Discord Account', value: finalAccountStatus, inline: true },
-                    { name: 'Favorite Game', value: finalFavoriteGame }
-                );
+                .setThumbnail(finalUrl);
 
-            if (linkedDiscordAccount) {
+            if (config.enableVouch) {
+                embed.addFields({ name: 'Vouches', value: finalVouches.toString(), inline: true });
+            }
+            if (config.enableRankPoints) {
+                embed.addFields({ name: 'Rank Points', value: finalRankPoints.toString(), inline: true });
+            }
+            if (config.enableVouch && config.enableRankPoints) {
+                embed.addFields({ name: 'Total Points', value: totalPoints.toString(), inline: true });
+            }
+
+            embed.addFields(
+                { name: 'Discord Account', value: finalAccountStatus, inline: true },
+                { name: 'Favorite Game', value: finalFavoriteGame }
+            )
+
+            if (linkedDiscordAccount && config.enableVouch) {
                 interaction.followUp({ embeds: [embed], components: [actionRow] });
-            } else {
+            } else if (!linkedDiscordAccount && config.enableVouch) {
                 interaction.followUp({ embeds: [embed], components: [unlinkedActionRow] });
+            } else {
+                interaction.followUp({ embeds: [embed] });
             }
 
         } catch (err) {
             interaction.client.log('/info command failure:', 'ERROR', err);
-            interaction.followUp({ content: 'Command failed </3 Try again or ping Griggy\nPlayer data could be formatted improperly.', flags: MessageFlags.Ephemeral });
+            interaction.followUp({ content: 'Command failed </3 Try again or contact an admin.\nPlayer data could be formatted improperly.', flags: MessageFlags.Ephemeral });
         }
     }
 };

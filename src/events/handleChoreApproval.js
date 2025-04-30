@@ -1,5 +1,5 @@
 const { MessageFlags, EmbedBuilder } = require('discord.js');
-const { checkLinked } = require('../utils/roleCheckUtils.js');
+const { checkLinked, checkStaff } = require('../utils/roleCheckUtils.js');
 const { hyphenateUUID } = require('../utils/formattingUtils.js');
 const { queryDB } = require('../utils/databaseUtils.js');
 const { getConfig } = require('../utils/configUtils');
@@ -14,7 +14,8 @@ async function handleChoreApproval(interaction) {
         const approver = interaction.member;
         const requiredRole = config.approverRoleId;
 
-        if (!approver.roles.cache.has(requiredRole)) {
+        const isStaff = checkStaff(approver);
+        if (!approver.roles.cache.has(requiredRole) && (!config.allowStaffApproveChores || !isStaff)) {
             return interaction.reply({ content: 'You\'re not a mom! No perms to approve chores', flags: MessageFlags.Ephemeral });
         }
 

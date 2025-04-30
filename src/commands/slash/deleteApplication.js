@@ -1,5 +1,6 @@
 const { SlashCommandBuilder, EmbedBuilder, MessageFlags } = require('discord.js');
 const { queryDB } = require('../../utils/databaseUtils');
+const { checkStaff } = require('../../utils/roleCheckUtils');
 const databaseDir = '/home/minecraft/GriggyBot/database.db';
 
 module.exports = {
@@ -33,8 +34,7 @@ module.exports = {
             return;
         }
 
-        const allowedRoles = ['Moderator', 'Engineer', 'Admin', 'Owner'];
-        const isStaff = interaction.member.roles.cache.some(role => allowedRoles.includes(role.name));
+        const isStaff = checkStaff(interaction.user);
         if (interaction.user.id !== row.discord_id && !isStaff) {
             await interaction.reply({ content: 'You are not authorized to delete this application.', flags: MessageFlags.Ephemeral });
             return;

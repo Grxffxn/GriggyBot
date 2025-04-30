@@ -1,36 +1,30 @@
 const { ButtonBuilder, ActionRowBuilder, MessageFlags } = require('discord.js');
 const { getConfig } = require('../utils/configUtils');
 const { queryDB } = require('../utils/databaseUtils');
-const databaseDir = '/home/minecraft/GriggyBot/database.db';
-const cmiDatabaseDir = '/home/minecraft/Main/plugins/CMI/cmi.sqlite.db';
-const requiredPoints = { fabled: 5, heroic: 10, mythical: 15, apocryphal: 20, legend: 30 };
-const requiredStaffReactions = { fabled: 1, heroic: 1, mythical: 2, apocryphal: 3, legend: 4 };
 const { sendMCCommand, logRCON } = require('../utils/rconUtils.js');
+const { checkStaff } = require('../utils/roleCheckUtils.js');
 
-async function fetchUserPoints(username, interaction) {
-    const sanitizedUsername = username.trim();
-    const sql = 'SELECT UserMeta FROM users WHERE username = ? COLLATE NOCASE';
-    try {
-        const row = await queryDB(cmiDatabaseDir, sql, [sanitizedUsername], true);
-        if (!row?.UserMeta?.includes('%%')) {
-            interaction.client.log(`Invalid or missing UserMeta for username ${sanitizedUsername}:`, 'WARN');
-            return 0;
-        }
-        const [, points] = row.UserMeta.split('%%');
-        return parseFloat(points) || 0;
-    } catch (err) {
-        interaction.client.log(`Error fetching points for ${sanitizedUsername}:`, 'ERROR', err);
-        return 0;
-    }
-}
+const config = getConfig();
+const ranks = config.ranks || [];
+const staffRoleIds = config.staffRoleIds || [];
+const databasePaths = config.databasePaths || {};
 
 function createButtons(vouchingFor, rank, data) {
     const buttons = [
         { id: `approve-${vouchingFor}-${rank}`, label: `Approve (${data.approvals}/${data.requiredApprovals})`, style: 'Primary' },
-        { id: `vouchButton-${vouchingFor}`, label: `Vouch (${data.vouches} Received)`, style: 'Success' },
-        { id: `accumulatedPts-${vouchingFor}-${rank}`, label: `Points: ${data.userPoints}/${data.requiredPts}`, style: 'Secondary', disabled: true },
-        { id: `refresh-${vouchingFor}-${rank}`, label: 'Refresh', style: 'Secondary' },
     ];
+
+    if (config.enableVouch) {
+        buttons.push({ id: `vouchButton-${vouchingFor}`, label: `Vouch (${data.vouches} Received)`, style: 'Success' });
+    }
+
+    if (config.enableRankPoints) {
+        buttons.push({ id: `accumulatedPts-${vouchingFor}-${rank}`, label: `Points: ${data.userPoints}/${data.requiredPts}`, style: 'Secondary', disabled: true });
+    }
+
+    // Always include the refresh button
+    buttons.push({ id: `refresh-${vouchingFor}-${rank}`, label: 'Refresh', style: 'Secondary' });
+
     const row = new ActionRowBuilder();
     buttons.forEach(({ id, label, style, disabled = false }) => {
         row.addComponents(new ButtonBuilder().setCustomId(id).setLabel(label).setStyle(style).setDisabled(disabled));
@@ -39,104 +33,109 @@ function createButtons(vouchingFor, rank, data) {
 }
 
 async function handleApplication(interaction) {
-
     const [action, vouchingFor, rank] = interaction.customId.split('-');
+    const rankConfig = ranks.find(r => r.name === rank);
+
+    if (!rankConfig) {
+        await interaction.reply({ content: `The rank "${rank}" is not configured.`, flags: MessageFlags.Ephemeral });
+        return;
+    }
 
     try {
         await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
         if (action === 'refresh') {
             const application = await queryDB(
-                databaseDir, 
+                databasePaths.main,
                 `
                 SELECT * FROM applications
                 WHERE discord_id = ? AND status = ?
                 ORDER BY id DESC
                 LIMIT 1
                 `,
-                [vouchingFor, 'active'], true);
+                [vouchingFor, 'active'], true
+            );
+
             if (!application) {
-                await interaction.editReply({ content: `No active application found for <@${vouchingFor}>` });
+                await interaction.editReply({ content: `No active application found for <@${vouchingFor}>.` });
                 return;
             }
 
             const { approvals = 0 } = application;
-            const { vouches = 0 } = await queryDB(databaseDir, 'SELECT * FROM users WHERE discord_id = ?', [vouchingFor], true) || {};
-            const userPoints = await fetchUserPoints(application.player_name, interaction);
+            const { vouches = 0 } = await queryDB(databasePaths.main, 'SELECT * FROM users WHERE discord_id = ?', [vouchingFor], true) || {};
+            const userPoints = config.enableRankPoints
+                ? await queryDB(databasePaths.cmi, 'SELECT UserMeta FROM users WHERE username = ? COLLATE NOCASE', [application.player_name], true)
+                      .then(row => parseFloat((row.UserMeta || '').split('%%')[1], 10) || 0)
+                : 0;
 
             const buttonRow = createButtons(vouchingFor, rank, {
                 approvals,
-                requiredApprovals: requiredStaffReactions[rank],
-                requiredPts: requiredPoints[rank],
+                requiredApprovals: rankConfig.requiredStaffApprovals,
+                requiredPts: rankConfig.requiredPoints,
                 vouches,
-                userPoints
+                userPoints,
             });
 
-            try {
-                const submissionMessage = await interaction.channel.messages.fetch(application.message_id);
-                if (!submissionMessage) {
-                    await interaction.editReply({ content: 'Error: The application message could not be found. It may have been deleted.' });
-                    return;
-                }
+            const submissionMessage = await interaction.channel.messages.fetch(application.message_id).catch(() => null);
+            if (!submissionMessage) {
+                await interaction.editReply({ content: 'Error: The application message could not be found. It may have been deleted.' });
+                return;
+            }
 
-                if (approvals >= requiredStaffReactions[rank] && userPoints >= requiredPoints[rank]) {
-                    const guild = interaction.guild;
-                    const member = await guild.members.fetch(vouchingFor).catch(() => null);
-                    if (member) {
-                        const role = guild.roles.cache.find(r => r.name.toLowerCase() === rank.toLowerCase());
-                        if (role) {
-                            const command = `lp user ${application.player_name} promote player`;
-                            try {
-                                const response = await sendMCCommand(command);
-                                logRCON(command, response);
-                                await member.roles.add(role);
-                                await interaction.followUp({ content: `<@${vouchingFor}> has met the criteria and has been granted the ${rank} role!` });
-                                await interaction.channel.send(`Your application has been approved, congratulations <@${member.id}>! <a:_:774429683876888576>`);
-                                await interaction.channel.setLocked(true);
-                                await queryDB(databaseDir, 'UPDATE applications SET status = ? WHERE discord_id = ?', ['approved', vouchingFor]);
-                            } catch (error) {
-                                const config = getConfig();
-                                await interaction.followUp({ content: `Can't reach ${config.serverAcronym || config.serverName}, please try again later.`, flags: MessageFlags.Ephemeral });
-                                return;
-                            }
-                        } else {
-                            await interaction.followUp({ content: `Role "${rank}" not found in the server. Please check role setup.`, flags: MessageFlags.Ephemeral });
+            if (
+                approvals >= rankConfig.requiredStaffApprovals &&
+                (config.enableRankPoints ? userPoints >= rankConfig.requiredPoints : true)
+            ) {
+                const guild = interaction.guild;
+                const member = await guild.members.fetch(vouchingFor).catch(() => null);
+                if (member) {
+                    const role = guild.roles.cache.find(r => r.name.toLowerCase() === rank.toLowerCase());
+                    if (role) {
+                        const command = `lp user ${application.player_name} promote player`;
+                        try {
+                            const response = await sendMCCommand(command);
+                            logRCON(command, response);
+                            await member.roles.add(role);
+                            await interaction.followUp({ content: `<@${vouchingFor}> has met the criteria and has been granted the ${rankConfig.displayName} role!` });
+                            await interaction.channel.send(`Your application has been approved, congratulations <@${member.id}>! 🎉`);
+                            await interaction.channel.setLocked(true);
+                            await queryDB(databasePaths.main, 'UPDATE applications SET status = ? WHERE discord_id = ?', ['approved', vouchingFor]);
+                        } catch (error) {
+                            await interaction.followUp({ content: `An error occurred while promoting the user. Please try again later.`, flags: MessageFlags.Ephemeral });
+                            return;
                         }
                     } else {
-                        await interaction.followUp({ content: `Could not fetch member <@${vouchingFor}>. They might not be in the server.`, flags: MessageFlags.Ephemeral });
+                        await interaction.followUp({ content: `Role "${rank}" not found in the server. Please check role setup.`, flags: MessageFlags.Ephemeral });
                     }
+                } else {
+                    await interaction.followUp({ content: `Could not fetch member <@${vouchingFor}>. They might not be in the server.`, flags: MessageFlags.Ephemeral });
                 }
+            }
 
-                await submissionMessage.edit({ components: [buttonRow] });
-                if (approvals < requiredStaffReactions[rank] || userPoints < requiredPoints[rank]) {
-                    await interaction.editReply({ content: 'Buttons have been refreshed.' });
-                }
-            } catch (err) {
-                interaction.client.log('Error editing submission message:', 'ERROR', err);
-                await interaction.editReply({ content: 'An error occurred while refreshing the buttons.' });
+            await submissionMessage.edit({ components: [buttonRow] });
+            if (approvals < rankConfig.requiredStaffApprovals || (config.enableRankPoints && userPoints < rankConfig.requiredPoints)) {
+                await interaction.editReply({ content: 'Buttons have been refreshed.' });
             }
         }
 
         if (action === 'approve') {
-            const member = interaction.guild.members.cache.get(interaction.user.id);
-            const allowedRoles = ['Moderator', 'Engineer', 'Admin', 'Owner'];
-            const hasPermission = member.roles.cache.some(role => allowedRoles.includes(role.name));
-            if (!hasPermission) {
-                await interaction.editReply({ content: 'You do not have the required permissions to approve applications.' });
+            const isStaff = checkStaff(interaction.user);
+            if (!isStaff) {
+                await interaction.editReply({ content: 'You do not have permission to approve applications.', flags: MessageFlags.Ephemeral });
                 return;
             }
 
-            const application = await queryDB(databaseDir, 'SELECT * FROM applications WHERE discord_id = ? AND status = ?', [vouchingFor, 'active'], true);
+            const application = await queryDB(databasePaths.main, 'SELECT * FROM applications WHERE discord_id = ? AND status = ?', [vouchingFor, 'active'], true);
             if (!application) {
-                await interaction.editReply({ content: `No active application found for <@${vouchingFor}>` });
+                await interaction.editReply({ content: `No active application found for <@${vouchingFor}>.` });
                 return;
             }
 
             const approvals = parseInt(application.approvals || 0, 10);
             const updatedApprovals = approvals + 1;
-            await queryDB(databaseDir, 'UPDATE applications SET approvals = ? WHERE discord_id = ?', [updatedApprovals, vouchingFor]);
+            await queryDB(databasePaths.main, 'UPDATE applications SET approvals = ? WHERE discord_id = ?', [updatedApprovals, vouchingFor]);
 
-            await interaction.editReply({ content: 'Your reaction has been recorded.' });
+            await interaction.editReply({ content: 'Your approval has been recorded.' });
             await interaction.channel.send({ content: `<@${interaction.user.id}> has approved this application. Multiple approvals may be required for higher ranks.` });
         }
     } catch (err) {

@@ -22,8 +22,10 @@ serverIp: ""
 # Discord ID of the user who can run /shutdown (shuts down GriggyBot)
 botOwner: ""
 
-# Role IDs of all your staff roles (used for /todo, /deleteapplication, approving chores, approving rank applications)
-staffRoleIds: ""
+# Role IDs of all your staff roles (used for /todo, /deleteapplication, /reload, /editconfig, etc.)
+staffRoleIds:
+  - ""
+  - ""
 
 # The prefix for bot commands (e.g., "?chore" or "!chore")
 prefix: "!"
@@ -34,6 +36,16 @@ discordsrvBotId: ""
 # Default color for embeds (hexadecimal format, e.g., "9c89ff")
 # This is meant to be your server color theme
 defaultColor: "9c89ff"
+
+rules:
+  - rule: "No hacked clients."
+    description: "Using hacked clients or cheats will result in a ban."
+  - rule: "No spamming or advertising."
+    description: "Spamming or advertising other servers will result in a mute."
+  - rule: "No harassment or hate speech."
+    description: "Harassment or hate speech will result in a ban."
+  - rule: "Have fun!"
+    description: "Enjoy your time on the server and make new friends!"
 
 # URL for the live map of your Minecraft server
 mapUrl: ""
@@ -48,24 +60,36 @@ donateLinks:
 approverRoleId: "YOUR_ROLE_ID_HERE"
 allowStaffApproveChores: true
 
-# List of staff emojis used in updateImage.js
-# Feel free to leave this blank. These will show in the auto-updating #welcome message.
-staffEmojisList: ""
-
-# Ranks and their requirements (used in /apply)
+# application questions, ranks and their requirements (used in /apply)
 # Points are the sum of rank points and earned vouches
 # See GitHub for help setting this up
 # Disabled by default
+applicationQuestions:
+  - "IN-GAME HOURS (/PLAYTIME)"
+  - "COMMUNITY INVOLVEMENT"
+  - "WHY DO YOU WANT TO RANK UP?"
+
 ranks:
-  - name: newcomer
+  - name: "fabled"
+    displayName: "I. Fabled"
     requiredStaffApprovals: 1
     requiredPoints: 5
-  - name: amateur
+  - name: "heroic"
+    displayName: "II. Heroic"
     requiredStaffApprovals: 2
     requiredPoints: 10
-  - name: veteran
+  - name: "mythical"
+    displayName: "III. Mythical"
     requiredStaffApprovals: 3
     requiredPoints: 15
+  - name: "apocryphal"
+    displayName: "IV. Apocryphal"
+    requiredStaffApprovals: 4
+    requiredPoints: 20
+  - name: "legend"
+    displayName: "V. Legend"
+    requiredStaffApprovals: 5
+    requiredPoints: 25
 
 # Array of automated messages to be sent periodically (see automsgdelay)
 autoMessages:
@@ -119,6 +143,21 @@ vipTiers:
       Access to ALL **/procosmetics**
       Access to ALL **/disguises**
 
+# Welcome message settings
+# Not necessary if you've disabled 'enableUpdatingImage', and can be left blank either way.
+welcomeIntro: "# <:_:1342069188931485707> Welcome to the server!\n-# <:_:1355510503140753518> Founded in 2077. Co-owned by Joe and Mama.\n-# Maintained by our incredible staff team <3"
+# List of staff emojis used in the welcome message. Feel free to leave this blank.
+staffEmojisList: ""
+useRulesInWelcomeMessage: true
+rulesFooter: "❗ Please also read the rules at spawn when you join for the first time."
+welcomeServerInfoTitle: 'Server Info'
+# Welcome message server info fields. You can add or remove fields as needed.
+welcomeServerInfoFields:
+  - name: "🧭 View the live map"
+    value: "🗺️ [BlueMap](http://mc.thelegendcontinues.info:8123/)"
+  - name: "<a:_:1162277213090107472> Become a donor"
+    value: "💵 [Patreon](https://www.patreon.com/)"
+
 # ENABLE/DISABLE FEATURES & COMMANDS
 
 enableApply: false
@@ -126,10 +165,12 @@ enableChore: true
 enableDaily: true
 enableDeleteapplication: true
 enableDonate: true
+enableEditconfig: true
 enableInfo: true
 enableLeaderboard: true
 enableMap: true
 enableProfile: true
+enableReload: true
 enableRender: true
 enableTodo: true
 enableVipperks: true
@@ -145,6 +186,8 @@ enableSlots: true
 enableAutoMsg: true
 enableUpdatingImage: false
 enableVouch: false
+enableRankPoints: false
+enableApplicationNotifications: true
 
 # GriggyBot will attempt to handle the rest
 # You probably don't need to change anything below this.
@@ -166,26 +209,39 @@ gamblingGlobalCooldown: 15000
 # Auto-populated values during setup. Can be modified.
 
 # The guild (server) ID where your bot is primarily used
-guildId: "YOUR_GUILD_ID_HERE"
+guildId: ""
 
 # URL for your server logo (link should end in .png or other valid image type)
-logoImageUrl: "YOUR_LOGO_IMAGE_URL_HERE"
+logoImageUrl: ""
 
 # Thread ID used for RCON command logging
-rconLogThreadId: "YOUR_THREAD_ID_HERE"
+rconLogThreadId: ""
 
 # #welcome channel ID, and the ID of the message to update (see updateImage.js)
-welcomeChannelId: "YOUR_CHANNEL_ID_HERE"
-welcomeMessageId: "YOUR_MESSAGE_ID_HERE"
+welcomeChannelId: ""
+welcomeMessageId: ""
 
 # The ID of the channel where automated messages should be sent
-automsgchannelid: "YOUR_CHANNEL_ID_HERE"
+automsgchannelid: ""
 
 # The ID of your "botspam" channel
-botspamChannelId: "YOUR_CHANNEL_ID_HERE"
+botspamChannelId: ""
+
+# The ID of your minecraft chat channel
+mcChatChannelId: ""
 
 # The ID of the channel to send chores to
-chorechannelid: "YOUR_CHANNEL_ID_HERE"
+chorechannelid: ""
 
 # The ID of the channel where GriggyBot will create the RCON log thread
-consoleChannelId: "YOUR_CHANNEL_ID_HERE"
+consoleChannelId: ""
+
+# The ID of the channel where the bot will send applications
+rankSubmissionChannelId: ""
+
+# Database Paths
+databasePaths:
+  griggybot: "YOUR_DATABASE_PATH_HERE"
+  cmi: "YOUR_DATABASE_PATH_HERE"
+  discordsrv: "YOUR_DATABASE_PATH_HERE"
+  luckperms: "YOUR_DATABASE_PATH_HERE"

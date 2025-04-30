@@ -30,7 +30,7 @@ async function firstRun(client) {
     };
 
     // GUILD ID
-    if (config.guildId === 'YOUR_GUILD_ID_HERE') {
+    if (!config.guildId) {
         const firstGuild = client.guilds.cache.first();
         if (firstGuild) {
             updatedValues.guildId = firstGuild.id;
@@ -43,7 +43,7 @@ async function firstRun(client) {
     }
 
     // GUILD LOGO
-    if (config.logoImageUrl === 'YOUR_LOGO_IMAGE_URL_HERE') {
+    if (!config.logoImageUrl) {
         const guild = client.guilds.cache.get(updatedValues.guildId || config.guildId);
         const logo = guild?.iconURL({ format: 'png', size: 512 });
         if (logo) {
@@ -56,7 +56,7 @@ async function firstRun(client) {
     }
 
     // CONSOLE CHANNEL & RCON THREAD
-    if (config.consoleChannelId === 'YOUR_CHANNEL_ID_HERE') {
+    if (!config.consoleChannelId) {
         const guild = client.guilds.cache.get(updatedValues.guildId || config.guildId);
         const consoleChannel = guild?.channels.cache.find(c =>
             c.name.toLowerCase().includes('console') && c.isTextBased()
@@ -80,8 +80,25 @@ async function firstRun(client) {
         isFirstRun = true;
     }
 
+    if (config.consoleChannelId && !config.rconLogThreadId) {
+        const guild = client.guilds.cache.get(updatedValues.guildId || config.guildId);
+        const consoleChannel = guild?.channels.cache.get(config.consoleChannelId);
+        if (consoleChannel) {
+            const thread = await consoleChannel.threads.create({
+                name: 'RCON',
+                autoArchiveDuration: 4320,
+                reason: 'RCON logging',
+            });
+            updatedValues.rconLogThreadId = thread.id;
+            client.log(`Created RCON thread in console channel: ${consoleChannel.name} (${consoleChannel.id})`, 'SUCCESS');
+        } else {
+            client.log('No console channel found.', 'WARN');
+        }
+        isFirstRun = true;
+    }
+
     // WELCOME CHANNEL
-    if (config.welcomeChannelId === 'YOUR_CHANNEL_ID_HERE') {
+    if (!config.welcomeChannelId) {
         const guild = client.guilds.cache.get(updatedValues.guildId || config.guildId);
         const welcomeChannel = guild?.channels.cache.find(c =>
             c.name.toLowerCase().includes('welcome') && c.isTextBased()
@@ -97,8 +114,23 @@ async function firstRun(client) {
         isFirstRun = true;
     }
 
+    // INIT. WELCOME MESSAGE
+    if (!config.welcomeMessageId && (config.welcomeChannelId || updatedValues.welcomeChannelId)) {
+        const channelId = updatedValues.welcomeChannelId || config.welcomeChannelId;
+        const guild = client.guilds.cache.get(updatedValues.guildId || config.guildId);
+        const welcomeChannel = guild?.channels.cache.get(channelId);
+        if (welcomeChannel) {
+            const welcomeMessage = await welcomeChannel.send('Hello world! (please don\'t delete me)');
+            updatedValues.welcomeMessageId = welcomeMessage.id;
+            client.log(`Sent initial welcome message, if you delete it, you'll need to clear welcomeMessageId in config and restart the bot. (${welcomeMessage.id})`, 'SUCCESS');
+        } else {
+            client.log('No welcome channel found, please check config and restart.', 'WARN');
+        }
+        isFirstRun = true;
+    }
+
     // BOTSPAM, CHORE, AUTOMSG CHANNELS
-    if (config.botspamChannelId === 'YOUR_CHANNEL_ID_HERE') {
+    if (config.botspamChannelId) {
         const guild = client.guilds.cache.get(updatedValues.guildId || config.guildId);
         const botspamChannel = guild?.channels.cache.find(c =>
             c.name.toLowerCase().includes('botspam') && c.isTextBased()
@@ -106,15 +138,48 @@ async function firstRun(client) {
 
         if (botspamChannel) {
             const id = botspamChannel.id;
-            updatedValues.botspamChannelId = id;
-            updatedValues.automsgchannelid = id;
-            updatedValues.chorechannelid = id;
+            updatedValues.botspamChannelId = updatedValues.automsgchannelid = updatedValues.chorechannelid = id;
             client.log(`Detected botspam channel: ${botspamChannel.name} (${id})`, 'SUCCESS');
         } else {
             client.log('No botspam channel found.', 'WARN');
             const manualId = await askForId('a channel ID for botspam/automsg/chore', config.botspamChannelId);
             updatedValues.botspamChannelId = updatedValues.automsgchannelid = updatedValues.chorechannelid = manualId;
         }
+        isFirstRun = true;
+    }
+
+    // MC CHAT CHANNEL
+    if (!config.mcChatChannelId && config.enableApply && config.enableApplicationNotifications) {
+        const guild = client.guilds.cache.get(updatedValues.guildId || config.guildId);
+        const mcChatChannel = guild?.channels.cache.find(c =>
+            c.name.toLowerCase().includes('minecraft') && c.isTextBased()
+        );
+
+        if (mcChatChannel) {
+            updatedValues.mcChatChannelId = mcChatChannel.id;
+            client.log(`Detected DiscordSRV chat channel: ${mcChatChannel.name} (${mcChatChannel.id})`, 'SUCCESS');
+        } else {
+            client.log('No DiscordSRV chat channel found.', 'WARN');
+            updatedValues.mcChatChannelId = await askForId('mcChatChannelId', config.mcChatChannelId);
+        }
+        isFirstRun = true;
+    }
+
+    // RANK-APPLICATIONS CHANNEL
+    if (config.enableApply && !config.rankSubmissionChannelId) {
+        const guild = client.guilds.cache.get(updatedValues.guildId || config.guildId);
+        const rankApplicationsChannel = guild?.channels.cache.find(c =>
+            c.name.toLowerCase().includes('rank-applications') && c.isTextBased()
+        );
+
+        if (rankApplicationsChannel) {
+            updatedValues.rankSubmissionChannelId = rankApplicationsChannel.id;
+            client.log(`Detected rank applications channel: ${rankApplicationsChannel.name} (${rankApplicationsChannel.id})`, 'SUCCESS');
+        } else {
+            client.log('No rank applications channel found. Please create one to use /apply', 'WARN');
+            updatedValues.rankSubmissionChannelId = await askForId('rankSubmissionChannelId', config.rankSubmissionChannelId);
+        }
+        client.log('Once setup has completed, restart the bot to apply this change or /apply will not work properly.', 'WARN');
         isFirstRun = true;
     }
 
@@ -126,11 +191,20 @@ async function firstRun(client) {
         isFirstRun = true;
     }
 
+    // CHECK CONFIG CONFLICTS
+    if (config.enableVouch && !config.enableRankPoints) {
+        client.log('enableVouch is enabled, but enableRankPoints is not. I have enabled rank points as it is required for vouching.', 'WARN');
+        client.log('Please restart the bot to apply this change, otherwise rank applications may not work properly.', 'WARN');
+        updatedValues.enableRankPoints = true;
+        isFirstRun = true;
+    }
+
     // SAVE AND RELOAD
     if (isFirstRun) {
         saveConfig(updatedValues, client);
         reloadConfig(client);
-        client.log('First run setup complete!', 'SUCCESS');
+        client.log('Setup complete!', 'SUCCESS');
+        client.log('REMINDER: CMI blocks RCON commands by default. In CMI\'s config.yml, set "AllowRconCommands:" and "CleanRconCommands:" to true.', 'WARN');
         client.log('I\'ve spent hundreds of hours on this project, please consider supporting further development <3');
         client.log('https://ko-fi.com/grxffxn');
     }

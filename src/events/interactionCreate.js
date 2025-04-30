@@ -14,11 +14,11 @@ module.exports = {
 				if (command && command.run) {
 					command.run(interaction);
 				} else {
-					console.error(`Command ${interaction.commandName} not found or does not have a run method.`);
+					interaction.client.log(`Command ${interaction.commandName} not found or does not have a run method.`, 'ERROR');
 					interaction.reply({ content: ':no_entry_sign: Command is not valid.\nI think something just exploded...', flags: MessageFlags.Ephemeral });
 				}
-			} catch (e) {
-				console.error(e);
+			} catch (err) {
+				interaction.client.log('Error processing slash command:', 'ERROR', err);
 				interaction.reply({ content: ':dizzy_face: Uh oh! There was an error processing your slash command.', flags: MessageFlags.Ephemeral });
 			}
 		} else if (interaction.type === InteractionType.MessageComponent) {

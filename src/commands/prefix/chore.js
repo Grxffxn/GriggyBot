@@ -1,5 +1,5 @@
 const { EmbedBuilder, ButtonBuilder, ActionRowBuilder } = require('discord.js');
-const config = require('../../config.js');
+const { getConfig } = require('../../utils/configUtils');
 const fs = require('fs');
 const path = require('path');
 
@@ -11,6 +11,8 @@ module.exports = {
     description: 'Submit proof for the daily chore',
     aliases: ['submitchore'],
     async run(client, message, args) {
+        const config = getConfig();
+        if (!config.enableChore) return message.reply('The server owner has disabled the chores feature.');
         const proof = args.join(' ').trim();
         if (!proof && message.attachments.size === 0) {
             return message.reply('Please provide proof of your chore completion (text or attachments).');

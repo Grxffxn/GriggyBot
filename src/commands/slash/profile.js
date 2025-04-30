@@ -151,8 +151,7 @@ module.exports = {
 		const confirmationEmbed = new EmbedBuilder()
 			.setTitle('Profile Customization')
 			.setDescription('Your profile has been updated!')
-			.setColor('77dd77')
-			.setFooter({ text: 'The Legend Continues' });
+			.setColor('77dd77');
 
 		return interaction.followUp({ embeds: [confirmationEmbed] });
 

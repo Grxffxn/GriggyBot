@@ -1,4 +1,5 @@
 const { ButtonBuilder, ActionRowBuilder, MessageFlags } = require('discord.js');
+const { getConfig } = require('../utils/configUtils');
 const { queryDB } = require('../utils/databaseUtils');
 const databaseDir = '/home/minecraft/GriggyBot/database.db';
 const cmiDatabaseDir = '/home/minecraft/Main/plugins/CMI/cmi.sqlite.db';
@@ -6,19 +7,19 @@ const requiredPoints = { fabled: 5, heroic: 10, mythical: 15, apocryphal: 20, le
 const requiredStaffReactions = { fabled: 1, heroic: 1, mythical: 2, apocryphal: 3, legend: 4 };
 const { sendMCCommand, logRCON } = require('../utils/rconUtils.js');
 
-async function fetchUserPoints(username) {
+async function fetchUserPoints(username, interaction) {
     const sanitizedUsername = username.trim();
     const sql = 'SELECT UserMeta FROM users WHERE username = ? COLLATE NOCASE';
     try {
         const row = await queryDB(cmiDatabaseDir, sql, [sanitizedUsername], true);
         if (!row?.UserMeta?.includes('%%')) {
-            console.warn(`Invalid or missing UserMeta for username: ${sanitizedUsername}`);
+            interaction.client.log(`Invalid or missing UserMeta for username ${sanitizedUsername}:`, 'WARN');
             return 0;
         }
         const [, points] = row.UserMeta.split('%%');
         return parseFloat(points) || 0;
-    } catch (error) {
-        console.error(`Error fetching points for ${sanitizedUsername}:`, error.message);
+    } catch (err) {
+        interaction.client.log(`Error fetching points for ${sanitizedUsername}:`, 'ERROR', err);
         return 0;
     }
 }
@@ -45,7 +46,15 @@ async function handleApplication(interaction) {
         await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
         if (action === 'refresh') {
-            const application = await queryDB(databaseDir, 'SELECT * FROM applications WHERE discord_id = ? AND status = ?', [vouchingFor, 'active'], true);
+            const application = await queryDB(
+                databaseDir, 
+                `
+                SELECT * FROM applications
+                WHERE discord_id = ? AND status = ?
+                ORDER BY id DESC
+                LIMIT 1
+                `,
+                [vouchingFor, 'active'], true);
             if (!application) {
                 await interaction.editReply({ content: `No active application found for <@${vouchingFor}>` });
                 return;
@@ -53,7 +62,7 @@ async function handleApplication(interaction) {
 
             const { approvals = 0 } = application;
             const { vouches = 0 } = await queryDB(databaseDir, 'SELECT * FROM users WHERE discord_id = ?', [vouchingFor], true) || {};
-            const userPoints = await fetchUserPoints(application.player_name);
+            const userPoints = await fetchUserPoints(application.player_name, interaction);
 
             const buttonRow = createButtons(vouchingFor, rank, {
                 approvals,
@@ -86,7 +95,8 @@ async function handleApplication(interaction) {
                                 await interaction.channel.setLocked(true);
                                 await queryDB(databaseDir, 'UPDATE applications SET status = ? WHERE discord_id = ?', ['approved', vouchingFor]);
                             } catch (error) {
-                                await interaction.followUp({ content: 'Can\'t reach TLC, please try again later.', flags: MessageFlags.Ephemeral });
+                                const config = getConfig();
+                                await interaction.followUp({ content: `Can't reach ${config.serverAcronym || config.serverName}, please try again later.`, flags: MessageFlags.Ephemeral });
                                 return;
                             }
                         } else {
@@ -102,7 +112,7 @@ async function handleApplication(interaction) {
                     await interaction.editReply({ content: 'Buttons have been refreshed.' });
                 }
             } catch (err) {
-                console.error('Error editing submission message:', err);
+                interaction.client.log('Error editing submission message:', 'ERROR', err);
                 await interaction.editReply({ content: 'An error occurred while refreshing the buttons.' });
             }
         }
@@ -129,8 +139,8 @@ async function handleApplication(interaction) {
             await interaction.editReply({ content: 'Your reaction has been recorded.' });
             await interaction.channel.send({ content: `<@${interaction.user.id}> has approved this application. Multiple approvals may be required for higher ranks.` });
         }
-    } catch (error) {
-        console.error('Error processing interaction:', error.message);
+    } catch (err) {
+        interaction.client.log('Error processing interaction:', 'ERROR', err);
         await interaction.editReply({ content: 'An error occurred while processing your request.' });
     }
 }

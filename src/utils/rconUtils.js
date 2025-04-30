@@ -1,5 +1,7 @@
-const config = require('../config.js');
+const { getConfig } = require('../utils/configUtils');
 const { Rcon } = require('rcon-client');
+
+const config = getConfig();
 
 const rcon = new Rcon({
     host: config.rconIp,
@@ -16,29 +18,29 @@ async function initializeRCONUtils(client) {
 async function startRCON() {
     try {
         await rcon.connect();
-        console.log(`RCON Authenticated: ${rcon.authenticated}`);
+        botClient.log(`RCON Authenticated: ${rcon.authenticated}`, 'SUCCESS');
 
         // HEARTBEAT
         setInterval(async () => {
             try {
                 await rcon.send('list');
-            } catch (error) {
-                console.error('RCON heartbeat failed:', error);
+            } catch (err) {
+                botClient.log('RCON heartbeat failed:', 'ERROR', err);
             }
         }, 4 * 60 * 1000);
-    } catch (error) {
-        console.error('Error connecting to RCON:', error);
+    } catch (err) {
+        botClient.log('Error connecting to RCON:', 'ERROR', err);
         await attemptReconnection();
     }
 
     // Listen for connection loss
     rcon.on('end', async () => {
-        console.warn('RCON connection ended. Attempting to reconnect...');
+        botClient.log('RCON connection ended. Attempting to reconnect...', 'WARN');
         await attemptReconnection();
     });
 
-    rcon.on('error', async (error) => {
-        console.error('RCON connection error:', error);
+    rcon.on('error', async (err) => {
+        botClient.log('RCON connection error:', 'ERROR', err);
         await attemptReconnection();
     });
 }
@@ -48,19 +50,19 @@ async function attemptReconnection() {
 
     do {
         try {
-            console.log('Attempting to reconnect to RCON...');
+            botClient.log('Attempting to reconnect to RCON...');
             await rcon.connect();
             connected = rcon.authenticated;
 
             if (connected) {
-                console.log('RCON reconnected successfully.');
+                botClient.log('RCON reconnected successfully.', 'SUCCESS');
             }
-        } catch (error) {
-            console.error('Reconnection attempt failed:', error);
+        } catch (err) {
+            botClient.log('Reconnection attempt failed:', 'ERROR', err);
         }
 
         if (!connected) {
-            console.log('Retrying in 30 seconds...');
+            botClient.log('Retrying in 30 seconds...');
             await new Promise((resolve) => setTimeout(resolve, 30 * 1000));
         }
     } while (!connected);
@@ -70,9 +72,9 @@ async function sendMCCommand(command) {
     try {
         const response = await rcon.send(command);
         return response;
-    } catch (error) {
-        console.error(`Error sending command: ${command}`, error.message);
-        throw error;
+    } catch (err) {
+        botClient.log(`Error sending command: ${command}`, 'ERROR', err);
+        throw err;
     }
 }
 
@@ -80,14 +82,14 @@ async function logRCON(command, response) {
     try {
         const thread = await botClient.channels.fetch(config.rconLogThreadId);
         if (!thread || !thread.isThread()) {
-            console.error('The RCON log thread ID defined in config.js is invalid :(');
+            botClient.log('The RCON log thread ID defined in config.js is invalid :( Logging unavailable', 'ERROR');
             return;
         }
 
         const formattedLogMsg = `\`\`\`ansi\n\u001b[2;34m>\u001b[0m \u001b[2;33m${command}\u001b[0m\n\u001b[2;34m↪\u001b[0m \u001b[2;32m${response}\u001b[0m\n\`\`\``
         thread.send(formattedLogMsg);
-    } catch (error) {
-        console.error('Error logging RCON response:', error);
+    } catch (err) {
+        botClient.log('Error logging RCON response:', 'ERROR', err);
     }
 }
 
@@ -95,14 +97,14 @@ async function logRCONError(command) {
     try {
         const thread = await botClient.channels.fetch(config.rconLogThreadId);
         if (!thread || !thread.isThread()) {
-            console.error('The RCON log thread ID defined in config.js is invalid :(');
+            botClient.log('The RCON log thread ID defined in config.js is invalid :( Logging unavailable', 'ERROR');
             return;
         }
 
         const formattedErrorMsg = `<:tlcerror:1350727115015716865> The following command failed because GriggyBot couldn't reach TLC\n\`\`\`ansi\n\u001b[2;31m${command}\u001b[0m\n\`\`\``;
         thread.send(formattedErrorMsg);
-    } catch (error) {
-        console.error('Error logging error message... How ironic', error);
+    } catch (err) {
+        botClient.log('Error logging error message... How ironic', 'ERROR', err);
     }
 }
 

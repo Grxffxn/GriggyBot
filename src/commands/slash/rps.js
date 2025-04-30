@@ -1,5 +1,5 @@
 const { SlashCommandBuilder, MessageFlags, ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder } = require('discord.js');
-const config = require('../../config.js');
+const { getConfig } = require('../../utils/configUtils');
 const serverData = require('../../serverData.json');
 const { formatNumber, hyphenateUUID } = require('../../utils/formattingUtils.js');
 const { checkEnoughBalance, checkCooldown, setCooldown, updateBalance } = require('../../utils/gamblingUtils.js');
@@ -17,7 +17,7 @@ const choices = [
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('rps')
-        .setDescription('Challenge another user to a game of Rock Paper Scissors')
+        .setDescription('Challenge a user to Rock Paper Scissors')
         .addIntegerOption(option =>
             option.setName('wager')
                 .setDescription('The amount of money you want to wager')
@@ -29,8 +29,9 @@ module.exports = {
                 .setDescription('The user you want to challenge')
                 .setRequired(true)),
     async run(interaction) {
+        const config = getConfig();
         // Check if gambling is enabled and server is online
-        if (!config.gamblingEnabled || !serverData.online) return interaction.reply({ content: 'Gambling is currently disabled, or TLC is offline.', flags: MessageFlags.Ephemeral, });
+        if (!serverData.online) return interaction.reply({ content: 'Gambling disabled while server is offline.', flags: MessageFlags.Ephemeral, });
         const userId = interaction.user.id;
         // Check if the targeted user is the same as the user OR is a bot
         const targetedUser = interaction.options.getUser('opponent');
@@ -138,8 +139,8 @@ module.exports = {
             );
 
             message.edit({ embeds: [embed], components: [] });
-        } catch (error) {
-            console.error(error);
+        } catch (err) {
+            interaction.client.log('Error within /rps:', 'ERROR', err);
             interaction.reply({ content: 'An error occurred while processing your request.', flags: MessageFlags.Ephemeral });
         }
     }

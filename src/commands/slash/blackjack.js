@@ -5,7 +5,7 @@ const { setCooldown, preGameCheck, updateBalance } = require('../../utils/gambli
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('blackjack')
-        .setDescription('Play a game of blackjack!')
+        .setDescription('Play a game of blackjack')
         .addIntegerOption(option =>
             option.setName('bet')
                 .setDescription('The amount of money to bet')
@@ -148,8 +148,8 @@ module.exports = {
                 }
             });
 
-        } catch (error) {
-            console.error(error);
+        } catch (err) {
+            interaction.client.log('An error occurred:', 'ERROR', err);
             return interaction.reply({ content: 'An error occurred, sorry!', flags: MessageFlags.Ephemeral });
         }
     },

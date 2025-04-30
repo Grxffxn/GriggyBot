@@ -1,14 +1,17 @@
 const { EmbedBuilder, MessageFlags } = require('discord.js');
 const { queryDB } = require('../utils/databaseUtils');
 const { sendMCCommand, logRCON } = require('../utils/rconUtils');
+const { getConfig } = require('../utils/configUtils');
 const databaseDir = '/home/minecraft/GriggyBot/database.db';
 const cmiDatabaseDir = '/home/minecraft/Main/plugins/CMI/cmi.sqlite.db';
 
 async function Vouch(interaction) {
+    const config = getConfig();
+    if (!config.enableVouch) return interaction.reply({ content: `Vouching has been disabled by the server owner.`, flags: MessageFlags.Ephemeral });
     try {
         await sendMCCommand('list');
     } catch (error) {
-        await interaction.reply('Can\'t reach TLC, please try again later.');
+        await interaction.reply(`Can't reach ${config.serverAcronym || config.serverName}, please try again later.`);
         return;
     }
     await interaction.deferReply({ flags: MessageFlags.Ephemeral });
@@ -79,8 +82,8 @@ async function Vouch(interaction) {
         const command = `cmi usermeta ${vouchingForMCUsername} increment points 1`;
         const response = await sendMCCommand(command);
         logRCON(command, response);
-    } catch (error) {
-        console.error('Error processing vouch:', error.message);
+    } catch (err) {
+        interaction.client.log('Error processing vouch:', 'ERROR', err);
         return interaction.followUp({ content: 'An error occurred while processing your vouch. Please try again later.' });
     }
 }

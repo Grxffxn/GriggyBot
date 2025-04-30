@@ -1,20 +1,22 @@
 const { SlashCommandBuilder, EmbedBuilder, MessageFlags } = require('discord.js');
+const { getConfig } = require('../../utils/configUtils');
 
 module.exports = {
 	data: new SlashCommandBuilder()
 		.setName('link')
-		.setDescription('Find out how to link your MC & Discord accounts')
+		.setDescription('Information on linking MC & Discord accounts')
 		.addStringOption(option =>
 			option.setName('message')
 				.setDescription('The message link to respond to')
 				.setRequired(false)
 		),
 	async run(interaction) {
+		const config = getConfig();
 		const messageLink = interaction.options.getString('message');
 		const linkingEmbed = new EmbedBuilder()
 			.setTitle('**How do I link my Minecraft and Discord accounts?**')
-			.setDescription('Linking your accounts earns you your first rank, Linked, and allows you to vouch for players, create rank applications, and customize your server profile on Discord.\n\n**Step 1**\nRun the command `/discord link` in-game and take note of the 4-digit code\n\n**Step 2**\nDM the code to <@766093637511151627>\n\n**This should work.** If it doesn\'t, you\'ve likely DM\'d an incorrect code or DM\'d the wrong bot. Reach out in <#631513362915917865> if you\'re having issues.')
-			.setColor(0x9c89ff);
+			.setDescription(`Linking your accounts earns you your first rank, Linked, and allows you to vouch for players, create rank applications, and customize your server profile on Discord.\n\n**Step 1**\nRun the command \`/discord link\` in-game and take note of the 4-digit code\n\n**Step 2**\nDM the code to ${config.discordsrvBotId ? `<@${config.discordsrvBotId}>.` : 'the DiscordSRV linking bot.'}\n\n**This should work.** If it doesn't, you've likely DM'd an incorrect code or DM'd the wrong bot. Reach out for support if you're having issues.`)
+			.setColor(config.defaultColor);
 		if (messageLink) {
 
 			// Extract guild, channel, and message IDs
@@ -35,8 +37,8 @@ module.exports = {
 
 				await message.reply({ embeds: [linkingEmbed] });
 				return interaction.reply({ content: `Replied to ${messageLink} with the linking instructions.`, flags: MessageFlags.Ephemeral });
-			} catch (error) {
-				console.error(error);
+			} catch (err) {
+				interaction.client.log('An error occurred within the /link command:', 'ERROR', err);
 				return interaction.reply({ content: '<:_:1353522852581605517> can\'t find that message. Please check the link and try again.\n-# Maybe I\'m going blind?', flags: MessageFlags.Ephemeral });
 			}
 		} else {

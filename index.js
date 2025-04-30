@@ -4,9 +4,11 @@ const client = new Client({
 	partials: [Partials.Message, Partials.Channel, Partials.GuildMember, Partials.Reaction, Partials.GuildScheduledEvent, Partials.User, Partials.ThreadMember],
 	shards: 'auto',
 });
-const config = require('./src/config.js');
+const { getConfig } = require('./src/utils/configUtils.js');
 const { readdirSync } = require('node:fs');
 const { closeRCON } = require('./src/utils/rconUtils.js');
+
+const config = getConfig();
 
 const token = config.token;
 
@@ -15,21 +17,39 @@ client.commands = new Collection();
 client.slashcommands = new Collection();
 client.slashdatas = [];
 
-function log(message) {
-    const now = new Date();
-    const formattedDate = now.toLocaleString('en-GB', { 
-        day: '2-digit', 
-        month: '2-digit', 
-        year: 'numeric', 
-        hour: '2-digit', 
-        minute: '2-digit', 
-        second: '2-digit' 
-    }).replace(',', ''); // Remove the comma between date and time
-    console.log(`[${formattedDate}] ${message}`);
+function log(message, level = 'INFO', extra = null) {
+	const now = new Date();
+	const formattedDate = now.toLocaleString('en-GB', {
+		day: '2-digit',
+		month: '2-digit',
+		year: 'numeric',
+		hour: '2-digit',
+		minute: '2-digit',
+		second: '2-digit'
+	}).replace(',', '');
+
+	const color = {
+		INFO: '\x1b[36m',
+		WARN: '\x1b[33m',
+		ERROR: '\x1b[31m',
+		SUCCESS: '\x1b[32m'
+	}[level.toUpperCase()] || '\x1b[0m';
+
+	const label = `[${formattedDate}] [${level.toUpperCase()}]`;
+	console.log(`${color}${label} ${message}\x1b[0m`);
+
+	if (extra) {
+		if (extra instanceof Error) {
+			console.error(extra.stack);
+		} else {
+			console.log(extra);
+		}
+	}
 }
+
 client.log = log;
 
-// Read prefix commands
+// prefix commands
 readdirSync('./src/commands/prefix').forEach(async (file) => {
 	const command = await require(`./src/commands/prefix/${file}`);
 	if (command) {

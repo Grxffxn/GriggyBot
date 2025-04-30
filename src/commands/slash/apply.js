@@ -58,7 +58,7 @@ const activeModalHandlers = new Map();
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('apply')
-        .setDescription('Apply for a specific rank.')
+        .setDescription('Apply for ranks')
         .addStringOption(option =>
             option.setName('rank')
                 .setDescription('The rank you want to apply for.')
@@ -213,14 +213,14 @@ async function startApplicationProcess(interaction, rank, playerName) {
 
         // Save application to database
         await queryDB(databaseDir, 'INSERT INTO applications (message_id, player_name, role, answers, status, discord_id, approvals, thread_id) VALUES (?, ?, ?, ?, ?, ?, 0, ?)', [sentMessage.id, playerName, rank, JSON.stringify(answers), 'active', interaction.user.id, thread.id]);
-    } catch (error) {
-        if (error.name === 'TimeoutError') {
+    } catch (err) {
+        if (err.name === 'TimeoutError') {
             await interaction.followUp({
                 content: 'Your application process timed out. Please try again.',
                 flags: MessageFlags.Ephemeral,
             });
         } else {
-            console.error('An error occurred:', error.message);
+            interaction.client.log('An error occurred:', 'ERROR', err);
             await interaction.followUp({
                 content: 'An error occurred during the application process. Please try again.',
                 flags: MessageFlags.Ephemeral,

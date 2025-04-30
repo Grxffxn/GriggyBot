@@ -1,11 +1,12 @@
 const { SlashCommandBuilder } = require('discord.js');
-const config = require('../../config.js');
+const { getConfig } = require('../../utils/configUtils');
 
 module.exports = {
 	data: new SlashCommandBuilder()
 		.setName('vote')
-		.setDescription('List of Voting Sites'),
+		.setDescription('List of voting sites'),
 	async run(interaction) {
+		const config = getConfig();
 		const voteSites = Object.entries(config.voteSites);
 
 		const map = voteSites.map(([siteName, siteURL], index) => {
@@ -13,7 +14,7 @@ module.exports = {
 		}).join('\n');
 
 		const embed = {
-			title: 'The Legend Continues | Vote',
+			title: `${config.serverName} | Vote`,
 			color: parseInt(config.defaultColor, 16),
 			description: map,
 			timestamp: new Date(),

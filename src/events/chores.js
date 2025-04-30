@@ -1,13 +1,12 @@
 const { EmbedBuilder } = require('discord.js');
 const fs = require('fs');
 const path = require('path');
-const config = require('../config.js');
-const choreChannelId = config.chorechannelid;
+const { getConfig } = require('../utils/configUtils');
 
 // This event will fire at 9AM server time once per day
 
 // Function to choose a random chore and its matching reward from choreList.txt
-function chooseChore() {
+function chooseChore(client) {
     try {
         const filePath = path.join(__dirname, '../choreList.txt');
         const fileContent = fs.readFileSync(filePath, 'utf8');
@@ -17,20 +16,20 @@ function chooseChore() {
         const randomChore = chores[randomIndex];
         const [description, reward] = randomChore.split(':');
 
-        setSelectedChore(randomIndex);
+        setSelectedChore(randomIndex, client);
 
         return {
             description: description.trim(),
             reward: parseInt(reward.trim(), 10),
         };
-    } catch (error) {
-        console.error('Error reading or parsing choreList.txt:', error);
+    } catch (err) {
+        client.log('Error reading or parsing choreList.txt:', 'ERROR', err);
         return null;
     }
 }
 
 // Function to create a formatted message to send to chores channel
-function choreToEmbed(dailyChore, dailyReward) {
+function choreToEmbed(dailyChore, dailyReward, config, client) {
     try {
         const choreEmbed = new EmbedBuilder()
             .setTitle('Daily Chore')
@@ -39,14 +38,14 @@ function choreToEmbed(dailyChore, dailyReward) {
             .setFooter({ text: 'Use `!chore` to submit your proof' });
 
         return choreEmbed;
-    } catch (error) {
-        console.error('Error formatting chore message:', error);
+    } catch (err) {
+        client.log('Error formatting chore message:', 'ERROR', err);
         return null;
     }
 }
 
 // Function to update selected chore index in serverData.json
-function setSelectedChore(index) {
+function setSelectedChore(index, client) {
     try {
         // Read the existing serverData.json
         let existingData = {};
@@ -63,32 +62,34 @@ function setSelectedChore(index) {
 
         // Write the merged data back to serverData.json
         fs.writeFileSync(filePath, JSON.stringify(updatedData, null, 4), 'utf8');
-    } catch (error) {
-        console.error('Error updating selected chore index in serverData.json:', error);
+    } catch (err) {
+        client.log('Error updating selected chore index in serverData.json:', 'ERROR', err);
     }
 }
 
 module.exports = async (client) => {
+    const config = getConfig();
+    const choreChannelId = config.chorechannelid;
     const choreChannel = client.channels.cache.get(choreChannelId);
     if (!choreChannel) {
-        console.error('Chore channel not found >.<');
+        client.log('Chore channel not found >.<', 'ERROR');
         return;
     }
 
-    const { description: dailyChore, reward: dailyReward } = chooseChore();
+    const { description: dailyChore, reward: dailyReward } = chooseChore(client);
     if (!dailyChore || !dailyReward) {
-        console.error('Failed to select a daily chore or reward >.<');
+        client.log('Failed to select a daily chore/reward >.<', 'ERROR');
         return;
     }
-    const choreEmbed = choreToEmbed(dailyChore, dailyReward);
+    const choreEmbed = choreToEmbed(dailyChore, dailyReward, config, client);
     if (!choreEmbed) {
-        console.error('Failed to generate the chore embed >.<');
+        client.log('Failed to generate the chore embed >.<', 'ERROR');
         return;
     }
 
     try {
         await choreChannel.send({ embeds: [choreEmbed] });
-    } catch (error) {
-        console.error('Failed to send chore embed:', error);
+    } catch (err) {
+        client.log('Failed to send the chore embed >.<', 'ERROR', err);
     }
 }

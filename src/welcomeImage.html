@@ -1,0 +1,77 @@
+<html>
+    <head>
+        <style>
+            @font-face {
+                font-family: 'Minecraft';
+                src: url("{{fontBase64}}") format('truetype');
+            }
+            body {
+                font-family: 'Minecraft', Arial, sans-serif;
+                letter-spacing: 2px;
+                margin: 0;
+                padding: 0;
+                width: 800px;
+                height: 600px;
+            }
+            .container {
+                position: absolute;
+                top: 10px;
+                right: 10px;
+                text-align: right;
+                color: white;
+            }
+            .online-count {
+                font-size: 32px;
+                margin: 0;
+            }
+            .server-version {
+                font-size: 24px;
+                margin: 0;
+                margin-top: 5px;
+            }
+            .tps-field {
+                position: absolute;
+                top: 10px;
+                left: 10px;
+                font-size: 30px;
+                font-weight: bold;
+                color: {{tpsColor}};
+            }
+            .restart-schedule {
+                position: absolute;
+                top: 50px;
+                left: 10px;
+                font-size: 20px;
+                color: white;
+            }
+            .footer-text {
+                position: absolute;
+                bottom: 10px;
+                left: 50%;
+                transform: translateX(-50%);
+                text-align: center;
+                font-size: 30px;
+                color: white;
+            }
+        </style>
+    </head>
+    <body style="background: url('{{backgroundImage}}') no-repeat center center; background-size: cover;">
+        <div class="tps-field">
+            TPS: {{tps}}
+        </div>
+        <div class="restart-schedule">
+            Restart in {{formattedSchedule}}
+        </div>
+        <div class="container">
+            <div class="online-count">
+                Players Online: {{numberOnline}}
+            </div>
+            <div class="server-version">
+                Server Version: {{serverVersion}}
+            </div>
+        </div>
+        <div class="footer-text">
+            {{serverIp}}
+        </div>
+    </body>
+</html>

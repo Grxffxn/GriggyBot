@@ -1,35 +1,46 @@
 const { SlashCommandBuilder } = require('discord.js');
-const config = require('../../config.js');
+const { getConfig } = require('../../utils/configUtils');
 
 module.exports = {
 	data: new SlashCommandBuilder()
 		.setName('vipperks')
-		.setDescription('Display premium perks for Minecraft server VIP tiers.'),
+		.setDescription('Display perks for VIP tiers'),
 	async run(interaction) {
-		const vipPerks = {
-			color: 0xA682FF,
-			title: 'VIP:',
-			description: config.vipPerksDescription,
-			fields: config.vipPerksFields,
-		};
+		// Function to generate increasingly brighter colors, for aesthetics :D
+		function brightenColor(hex, factor) {
+			const num = parseInt(hex.replace('#', ''), 16);
+			const r = Math.min(255, Math.floor((num >> 16) * factor));
+			const g = Math.min(255, Math.floor(((num >> 8) & 0x00ff) * factor));
+            const b = Math.min(255, Math.floor((num & 0x0000ff) * factor));
+			return (r << 16) + (g << 8) + b;
+		}
 
-		const vipPlusPerks = {
-			color: 0x715AFF,
-			title: 'VIP+:',
-			description: config.vipPlusPerksDescription,
-			fields: config.vipPlusPerksFields,
-		};
+		const config = getConfig();
 
-		const vipPlusPlusPerks = {
-			color: 0xDB2763,
-			title: 'VIP++:',
-			description: config.vipPlusPlusPerksDescription,
-			thumbnail: {
-				url: `${config.logoImageUrl}`,
-			},
-			fields: config.vipPlusPlusPerksFields,
-		};
+		// Create multiple embeds based on how many are listed in config.vipTiers
+		const embeds = config.vipTiers.map((tier, index) => {
+			let description = '';
+			if (tier.discordPerks) {
+				description += `## Discord\n${tier.discordPerks}\n`;
+			}
+			if (tier.minecraftPerks) {
+				description += `## Minecraft\n${tier.minecraftPerks}`;
+			}
 
-		await interaction.reply({ embeds: [vipPerks, vipPlusPerks, vipPlusPlusPerks] });
+			const embedColor = tier.color && tier.color.trim()
+				? parseInt(tier.color.replace('#', ''), 16)
+				: brightenColor(config.defaultColor, 1 + index * 0.1);
+
+			return {
+				color: embedColor,
+				title: `${tier.name}`,
+				description: description || 'No perks listed',
+			}
+		});
+
+		// Add server logo to the last embed
+		embeds[embeds.length - 1].thumbnail = { url: config.logoImageUrl };
+
+		await interaction.reply({ embeds });
 	},
 };

@@ -9,7 +9,7 @@ const luckPermsDatabasePath = '/home/minecraft/Main/plugins/LuckPerms/luckperms-
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('info')
-        .setDescription('View Minecraft Player Information')
+        .setDescription('View Minecraft player information')
         .addStringOption(option =>
             option.setName('username')
                 .setDescription('Minecraft Username')
@@ -109,7 +109,7 @@ module.exports = {
             }
 
         } catch (err) {
-            console.error(err);
+            interaction.client.log('/info command failure:', 'ERROR', err);
             interaction.followUp({ content: 'Command failed </3 Try again or ping Griggy\nPlayer data could be formatted improperly.', flags: MessageFlags.Ephemeral });
         }
     }

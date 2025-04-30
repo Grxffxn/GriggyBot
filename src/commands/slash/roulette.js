@@ -105,8 +105,9 @@ module.exports = {
             return interaction.reply({
                 content: `# ${winningNumberEmoji} **${winningNumber}**\n${payoutMessage}\nYour new balance is **${formatNumber(newBalance)}**`,
             });
-        } catch (error) {
-            console.error('Error:', error);
+        } catch (err) {
+            interaction.client.log('Error within /roulette:', 'ERROR', err);
+
             return interaction.reply({
                 content: 'An error occurred while processing your request.',
                 flags: MessageFlags.Ephemeral,

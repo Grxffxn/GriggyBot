@@ -1,118 +1,43 @@
-const config = require('../config.js');
+const { getConfig } = require('../utils/configUtils');
 const { parseServerData } = require('../utils/serverDataUtils.js');
 const { AttachmentBuilder, EmbedBuilder } = require('discord.js');
 const nodeHtmlToImage = require('node-html-to-image');
 const path = require('path');
 const fs = require('fs');
-const base64Image = fs.readFileSync('assets/16-9-tlclogo.png').toString('base64');
+const base64Image = fs.readFileSync('assets/16-9-logo.png').toString('base64');
 const base64DataUrl = `data:image/png;base64,${base64Image}`;
+
 const fontPath = path.resolve(__dirname, '../../assets/fonts/Minecraft.ttf');
 
 async function UpdateImage(client) {
-    const imageChannel = client.channels.cache.get('763692491374723132');
-    const messageToEdit = await imageChannel.messages.fetch('1355513787196768400');
+    const config = getConfig();
+    const imageChannel = client.channels.cache.get(config.welcomeMessageId);
+    const messageToEdit = await imageChannel.messages.fetch(config.welcomeMessageId);
 
     async function generateImage(sanitizedNumberOnline, sanitizedServerVersion, tps, formattedSchedule) {
         try {
             const fontData = fs.readFileSync(fontPath).toString('base64');
             const fontBase64 = `data:font/ttf;base64,${fontData}`;
-            // Generate the image
+            const htmlTemplatePath = path.resolve(__dirname, '../welcomeImage.html');
+            let htmlTemplate = fs.readFileSync(htmlTemplatePath, 'utf8');
+    
+            htmlTemplate = htmlTemplate
+                .replace('{{fontBase64}}', fontBase64)
+                .replace('{{backgroundImage}}', base64DataUrl)
+                .replace('{{numberOnline}}', sanitizedNumberOnline)
+                .replace('{{serverVersion}}', sanitizedServerVersion)
+                .replace('{{tps}}', tps)
+                .replace('{{tpsColor}}', tps >= 17 ? 'green' : tps >= 13 ? 'yellow' : 'red')
+                .replace('{{formattedSchedule}}', formattedSchedule)
+                .replace('{{serverIp}}', config.serverIp);
+    
             await nodeHtmlToImage({
                 output: 'assets/dynamicserverinfo.png',
-                html: `
-<html>
-    <head>
-        <style>
-            @font-face {
-                font-family: 'Minecraft';
-                src: url("${fontBase64}") format('truetype');
-            }
-            body {
-                font-family: 'Minecraft', Arial, sans-serif;
-                letter-spacing: 2px;
-                margin: 0;
-                padding: 0;
-                width: 800px;
-                height: 600px;
-            }
-            .container {
-                position: absolute;
-                top: 10px;
-                right: 10px;
-                text-align: right;
-                color: white;
-            }
-            .online-count {
-                font-size: 32px;
-                margin: 0;
-            }
-            .server-version {
-                font-size: 24px;
-                margin: 0;
-                margin-top: 5px;
-            }
-            .tps-field {
-                position: absolute;
-                top: 10px; /* Align to top */
-                left: 10px; /* Align to left */
-                font-size: 30px;
-                font-weight: bold;
-                color: ${tps >= 17
-                        ? 'green'
-                        : tps >= 13
-                            ? 'yellow'
-                            : 'red'
-                    }; /* Color formatting logic for TPS value */
-            }
-            .restart-schedule {
-                position: absolute;
-                top: 50px; /* Adjust positioning below the TPS field */
-                left: 10px; /* Align to left */
-                font-size: 20px;
-                color: white; /* Static white color, no formatting */
-            }
-            .footer-text {
-                position: absolute;
-                bottom: 10px;
-                left: 50%;
-                transform: translateX(-50%);
-                text-align: center;
-                font-size: 30px;
-                color: white;
-            }
-        </style>
-    </head>
-    <body style="background: url('${base64DataUrl}') no-repeat center center; background-size: cover;">
-        <!-- TPS Field (top-left corner) -->
-        <div class="tps-field">
-            TPS: ${tps}
-        </div>
-        <!-- Restart Schedule Field (below TPS) -->
-        <div class="restart-schedule">
-            Restart in ${formattedSchedule}
-        </div>
-        
-        <!-- Main Container (top-right corner) -->
-        <div class="container">
-            <div class="online-count">
-                Players Online: ${sanitizedNumberOnline}
-            </div>
-            <div class="server-version">
-                Server Version: ${sanitizedServerVersion}
-            </div>
-        </div>
-        
-        <!-- Footer (center-bottom) -->
-        <div class="footer-text">
-            mc.thelegendcontinues.info
-        </div>
-    </body>
-</html>
-                `,
-                transparent: true
+                html: htmlTemplate,
+                transparent: true,
             });
-        } catch (error) {
-            console.error('Error generating image:', error);
+        } catch (err) {
+            client.log('Error processing welcome image:', 'ERROR', err);
         }
     }
 
@@ -146,8 +71,8 @@ async function UpdateImage(client) {
             .setImage('attachment://dynamicserverinfo.png');
 
         await messageToEdit.edit({ content: `# <:_:1342069188931485707> Welcome to The Legend Continues!\n-# <:_:1355510503140753518> Founded in 2013. Co-owned by Nathanacus and Grxffxn.\n-# Maintained by our incredible staff team <a:_:762492571523219466>\n-# ${config.staffEmojisList}`, embeds: [rulesEmbed, dynamicEmbed], files: [attachment] });
-    } catch (error) {
-        console.error('Error updating image or message:', error);
+    } catch (err) {
+        client.log('Error updating welcome image or message:', 'ERROR', err);
     }
 }
 

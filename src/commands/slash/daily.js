@@ -91,8 +91,8 @@ module.exports = {
                 content: `EZ **$${formatNumber(reward)}**\nYour current streak is **${newStreak}** days.\n-# How long can you keep it up?`,
                 flags: MessageFlags.Ephemeral
             });
-        } catch (error) {
-            console.error('Error processing /daily command:', error);
+        } catch (err) {
+            interaction.client.log('Error processing /daily command:', 'ERROR', err);
             return interaction.reply({
                 content: 'An error occurred while processing your daily reward. Please try again later.',
                 flags: MessageFlags.Ephemeral

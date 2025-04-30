@@ -1,6 +1,6 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const { queryDB } = require('../../utils/databaseUtils.js');
-const config = require('../../config.js');
+const { getConfig } = require('../../utils/configUtils');
 
 const databasePath = '/home/minecraft/Main/plugins/CMI/cmi.sqlite.db';
 
@@ -10,6 +10,7 @@ module.exports = {
         .setDescription('View the rank score leaderboard'),
     async run(interaction) {
         try {
+            const config = getConfig();
             // Query the leaderboard
             const leaderboardQuery = `
                 SELECT username, TotalPlayTime 
@@ -32,14 +33,14 @@ module.exports = {
                 .join('\n');
 
             const embed = new EmbedBuilder()
-                .setTitle('TLC | Leaderboard')
+                .setTitle(`${config.serverAcronym || config.serverName} | Leaderboard`)
                 .setColor(`${config.defaultColor}`)
                 .setDescription(leaderboardDescription)
                 .setThumbnail(`${config.logoImageUrl}`);
 
             interaction.reply({ embeds: [embed] });
         } catch (err) {
-            console.error(err);
+            interaction.client.log('An error occurred while querying the leaderboard:', 'ERROR', err);
             interaction.reply('An error occurred while querying the leaderboard.');
         }
     },

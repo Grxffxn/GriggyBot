@@ -1,0 +1,191 @@
+# You must manually populate these first several fields.
+# I recommend customizing as many values in this document as you can.
+# If you disable the feature, you do not need to populate the field.
+# Please follow my setup guide on GitHub if you have any issues :)
+
+# * The bot token and client ID from the Discord Developer Portal
+token: "YOUR_DISCORD_BOT_TOKEN_HERE"
+clientId: "YOUR_CLIENT_ID_HERE"
+
+# * RCON connection details for your Minecraft server
+# These values are found in your server.properties file
+# You may need to manually add 'rcon.ip=127.0.0.1' to your server.properties
+rconIp: "127.0.0.1"
+rconPwd: "YOUR_RCON_PASSWORD_HERE"
+rconPort: 25575  # Default RCON port, replace if different
+
+# * Server information (acronym can be left blank)
+serverName: "The Legend Continues"
+serverAcronym: ""
+serverIp: ""
+
+# Discord ID of the user who can run /shutdown (shuts down GriggyBot)
+botOwner: ""
+
+# Role IDs of all your staff roles (used for /todo, /deleteapplication, approving chores, approving rank applications)
+staffRoleIds: ""
+
+# The prefix for bot commands (e.g., "?chore" or "!chore")
+prefix: "!"
+
+# Discord ID of the DiscordSRV bot that you send codes to for linking
+discordsrvBotId: ""
+
+# Default color for embeds (hexadecimal format, e.g., "9c89ff")
+# This is meant to be your server color theme
+defaultColor: "9c89ff"
+
+# URL for the live map of your Minecraft server
+mapUrl: ""
+
+# Links for donations (e.g., Patreon, PayPal)
+# Make your primary donation site the first entry, used in the auto-updating welcome message
+donateLinks:
+  Patreon: "YOUR_PATREON_LINK_HERE"
+  PayPal: "YOUR_PAYPAL_LINK_HERE"
+
+# The Role ID of the role which can approve chores
+approverRoleId: "YOUR_ROLE_ID_HERE"
+allowStaffApproveChores: true
+
+# List of staff emojis used in updateImage.js
+# Feel free to leave this blank. These will show in the auto-updating #welcome message.
+staffEmojisList: ""
+
+# Ranks and their requirements (used in /apply)
+# Points are the sum of rank points and earned vouches
+# See GitHub for help setting this up
+# Disabled by default
+ranks:
+  - name: newcomer
+    requiredStaffApprovals: 1
+    requiredPoints: 5
+  - name: amateur
+    requiredStaffApprovals: 2
+    requiredPoints: 10
+  - name: veteran
+    requiredStaffApprovals: 3
+    requiredPoints: 15
+
+# Array of automated messages to be sent periodically (see automsgdelay)
+autoMessages:
+  - description: |
+      **Have you voted yet today?**
+      Run the command `/vote` to vote for rewards in-game!
+  - description: |
+      **Profile Customization**
+      Players who have linked their Discord and Minecraft accounts now have access to custom profiles with `/profile`.
+      Set a custom profile color and use Discord text formatting to create something unique.
+
+      View your profile with `/info <username>`
+    footer:
+      text: "/profile"
+
+# Voting links
+voteSites:
+  PlanetMinecraft: "YOUR_PLANET_MINECRAFT_VOTE_LINK_HERE"
+  Minecraft Servers: "YOUR_MINECRAFT_SERVERS_VOTE_LINK_HERE"
+
+# VIP descriptions for /vipperks
+# You can define a color for each tier, but it is not necessary and can be left blank/deleted.
+vipTiers:
+  - name: "VIP"
+    discordPerks: |
+      Access to **#donors**
+      Access to donor voice channels
+    minecraftPerks: |
+      **Color Formatting** in Anvil, Nickname, & Signs
+      **/nick** - Change your nickname
+      **/hat** - Use an item as a cosmetic hat
+      **/hologram** - Create a cosmetic hologram
+      **/disguise** - Transform into basic mobs
+      **/flyc** - Purchase the power of flight
+      **/glow** - Make your Minecraft character glow different colors
+    color: "B0D0D3"
+
+  - name: "VIP+"
+    discordPerks: ""
+    minecraftPerks: |
+      **Everything from VIP**
+      Ability to create more custom image maps
+      Ability to summon all mini pet types
+      Ability to customize mini pet
+      Access to additional cosmetics including banners, death effects, gadgets, miniatures, and music
+
+  - name: "VIP++"
+    discordPerks: ""
+    minecraftPerks: |
+      **Everything from VIP, VIP+**
+      Access to ALL **/procosmetics**
+      Access to ALL **/disguises**
+
+# ENABLE/DISABLE FEATURES & COMMANDS
+
+enableApply: false
+enableChore: true
+enableDaily: true
+enableDeleteapplication: true
+enableDonate: true
+enableInfo: true
+enableLeaderboard: true
+enableMap: true
+enableProfile: true
+enableRender: true
+enableTodo: true
+enableVipperks: true
+enableVote: true
+
+# Gambling Features
+enableBlackjack: true
+enableRoulette: true
+enableRps: true
+enableSlots: true
+
+# Events
+enableAutoMsg: true
+enableUpdatingImage: false
+enableVouch: false
+
+# GriggyBot will attempt to handle the rest
+# You probably don't need to change anything below this.
+
+# Delay for automated messages in milliseconds (e.g., 7200000 = 2 hours)
+automsgdelay: 7200000
+
+# Base URL for rendering Minecraft player skins
+baseRenderUrl: "https://visage.surgeplay.com/"
+
+# GAMBLING SETTINGS
+
+# Cooldown for gambling wins in milliseconds (e.g., 300000 = 5 minutes)
+gamblingWinCooldown: 300000
+
+# Global cooldown for gambling commands in milliseconds (e.g., 15000 = 15 seconds)
+gamblingGlobalCooldown: 15000
+
+# Auto-populated values during setup. Can be modified.
+
+# The guild (server) ID where your bot is primarily used
+guildId: "YOUR_GUILD_ID_HERE"
+
+# URL for your server logo (link should end in .png or other valid image type)
+logoImageUrl: "YOUR_LOGO_IMAGE_URL_HERE"
+
+# Thread ID used for RCON command logging
+rconLogThreadId: "YOUR_THREAD_ID_HERE"
+
+# #welcome channel ID, and the ID of the message to update (see updateImage.js)
+welcomeChannelId: "YOUR_CHANNEL_ID_HERE"
+welcomeMessageId: "YOUR_MESSAGE_ID_HERE"
+
+# The ID of the channel where automated messages should be sent
+automsgchannelid: "YOUR_CHANNEL_ID_HERE"
+
+# The ID of your "botspam" channel
+botspamChannelId: "YOUR_CHANNEL_ID_HERE"
+
+# The ID of the channel to send chores to
+chorechannelid: "YOUR_CHANNEL_ID_HERE"
+
+# The ID of the channel where GriggyBot will create the RCON log thread
+consoleChannelId: "YOUR_CHANNEL_ID_HERE"

@@ -1,5 +1,5 @@
 const { ChannelType, Collection, Events } = require('discord.js');
-const config = require('../config.js');
+const { getConfig } = require('../utils/configUtils');
 const ms = require('ms');
 const cooldown = new Collection();
 
@@ -8,10 +8,11 @@ const emojiList = ['776295367036633117', '1162276681323642890', '774429683876888
 module.exports = {
 	name: Events.MessageCreate,
 	execute: async (message) => {
+		const config = getConfig();
 		const client = message.client;
 		if (message.author.bot) return;
 		if (message.channel.type === ChannelType.DM) {
-			message.reply('Did you mean to DM the code to <@766093637511151627>?');
+			message.reply(`Did you mean to DM the code to ${config.discordsrvBotId ? `<@${config.discordsrvBotId}>.` : 'the DiscordSRV linking bot'}?`);
 		}
 		// Auto react stuff
 		if (message.content.toLowerCase().includes('yay')) {

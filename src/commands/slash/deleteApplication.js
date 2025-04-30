@@ -47,7 +47,7 @@ module.exports = {
 
         const confirmationMessage = await interaction.reply({ embeds: [embed], fetchReply: true });
 
-        confirmationMessage.react('✅').catch(console.error);
+        confirmationMessage.react('✅').catch(err => interaction.client.log('Failed to react:', 'ERROR', err));
 
         const filter = (reaction, user) => reaction.emoji.name === '✅' && user.id === interaction.user.id;
         const collector = confirmationMessage.createReactionCollector({ filter, time: 30000 });
@@ -57,21 +57,21 @@ module.exports = {
                 const applicationThread = await interaction.guild.channels.fetch(row.thread_id);
 
                 // Delete the thread
-                await applicationThread.delete().catch(console.error);
+                await applicationThread.delete().catch(err => interaction.client.log('Failed to delete application thread:', 'ERROR', err));
 
                 // Delete the application record from the database
                 await queryDB(databaseDir, `DELETE FROM applications WHERE discord_id = ? AND role = ? AND status = ?`, [row.discord_id, rank, 'active']);
                 interaction.followUp({ content: `The application for **${playerName}** (${rank}) and its associated thread/message have been successfully deleted.`, flags: MessageFlags.Ephemeral });
                 collector.stop();
-            } catch (error) {
-                console.error(error);
+            } catch (err) {
+                interaction.client.log('Failed to delete application:', 'ERROR', err);
                 await interaction.followUp({ content: 'Failed to delete the application thread.', flags: MessageFlags.Ephemeral });
             }
         });
 
         collector.on('end', (_, reason) => {
             if (reason !== 'messageDelete') {
-                confirmationMessage.reactions.removeAll().catch(console.error);
+                confirmationMessage.reactions.removeAll().catch(err => interaction.client.log('Failed to remove reactions:', 'ERROR', err));
             }
         });
     }

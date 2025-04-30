@@ -1,13 +1,13 @@
 const { SlashCommandBuilder } = require('discord.js');
 const axios = require('axios');
-const { baseRenderUrl } = require('../../config.js');
+const { getConfig } = require('../../utils/configUtils');
 
 const defaultSkinType = 'wide';
 
 module.exports = {
 	data : new SlashCommandBuilder()
 		.setName('render')
-		.setDescription('Player Renders')
+		.setDescription('Player renders')
 		.addStringOption(option =>
 			option.setName('render_type')
 				.setDescription('Type of render')
@@ -51,15 +51,16 @@ module.exports = {
 			const playerUUID = response.data.id;
 			const trimmedUUID = playerUUID.replace(/-/g, '');
 
+			const config = getConfig();
 			let renderUrl = '';
-			if (rendertype === 'body') renderUrl = `${baseRenderUrl}full/384/${trimmedUUID}?${skintype}`;
-			if (rendertype === 'head') renderUrl = `${baseRenderUrl}head/256/${trimmedUUID}?${skintype}`;
-			if (rendertype === 'avatar') renderUrl = `${baseRenderUrl}face/256/${trimmedUUID}?${skintype}`;
-			if (rendertype === 'bust') renderUrl = `${baseRenderUrl}bust/256/${trimmedUUID}?${skintype}`;
+			if (rendertype === 'body') renderUrl = `${config.baseRenderUrl}full/384/${trimmedUUID}?${skintype}`;
+			if (rendertype === 'head') renderUrl = `${config.baseRenderUrl}head/256/${trimmedUUID}?${skintype}`;
+			if (rendertype === 'avatar') renderUrl = `${config.baseRenderUrl}face/256/${trimmedUUID}?${skintype}`;
+			if (rendertype === 'bust') renderUrl = `${config.baseRenderUrl}bust/256/${trimmedUUID}?${skintype}`;
 
 			interaction.reply({ content: renderUrl });
-		} catch (error) {
-			console.error(error);
+		} catch (err) {
+			interaction.client.log('Error fetching player data:', 'ERROR', err);
 			interaction.reply('An error occurred while fetching player data.');
 		}
 	},

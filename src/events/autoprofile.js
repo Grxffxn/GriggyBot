@@ -9,8 +9,8 @@ async function AutoProfile(client) {
     let linkedAccountsData;
     try {
         linkedAccountsData = fs.readFileSync(accountsFilePath, 'utf8');
-    } catch (error) {
-        console.error('Error reading accounts.aof file:', error);
+    } catch (err) {
+        client.log('Error reading accounts.aof file:', 'ERROR', err);
         return;
     }
 
@@ -58,10 +58,10 @@ async function AutoProfile(client) {
                 `INSERT INTO users (discord_id, minecraft_uuid, profile_color, profile_image, profile_description, vouches) VALUES ${placeholders}`,
                 flattenedValues
             );
-            console.log(`Created ${newProfiles.length} new profiles.`);
+            client.log(`Created ${newProfiles.length} new profiles.`, 'SUCCESS');
         }
-    } catch (error) {
-        console.error('Error processing profiles:', error);
+    } catch (err) {
+        client.log('Error processing profiles:', 'ERROR', err);
     }
 }
 

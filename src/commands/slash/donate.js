@@ -1,19 +1,22 @@
 const { SlashCommandBuilder } = require('discord.js');
-const config = require('../../config.js');
+const { getConfig } = require('../../utils/configUtils');
 
 module.exports = {
 	data: new SlashCommandBuilder()
 		.setName('donate')
-		.setDescription('TLC Donation Info'),
+		.setDescription('Donation info'),
 	async run(interaction) {
-		const embedDescription = `Visit [our Patreon](${config.donateLinks.Patreon}) for VIP ranks\n\nFor one-time donations, visit [our PayPal](${config.donateLinks.PayPal}).`;
+		const config = getConfig();
+		const embedDescription = Object.entries(config.donateLinks)
+			.map(([site, url]) => `- [${site}](${url})`)
+			.join('\n');
 
 		await interaction.reply({
 			embeds: [{
 				color: parseInt(config.defaultColor, 16),
-				title: 'The Legend Continues | Donate',
-				description: embedDescription,
-				footer: { text: 'Thank you for your interest in supporting TLC' },
+				title: `${config.serverName} | Donate`,
+				description: embedDescription || 'No donation links set.',
+				footer: { text: `Thank you for your interest in supporting ${config.serverAcronym || config.serverName}` },
 				thumbnail: { url: `${config.logoImageUrl}` },
 			}],
 		});

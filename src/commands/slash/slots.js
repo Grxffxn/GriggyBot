@@ -88,8 +88,8 @@ module.exports = {
             setTimeout(async () => {
                 await interaction.editReply(resultMsg);
             }, 2000); // 2-second delay
-        } catch (error) {
-            console.error('Error:', error);
+        } catch (err) {
+            interaction.client.log('Error within /slots:', 'ERROR', err);
             interaction.reply({ content: 'An error occurred while processing your request.', flags: MessageFlags.Ephemeral });
         }
     }

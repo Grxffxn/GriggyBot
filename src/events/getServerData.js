@@ -8,7 +8,7 @@ function formatRestartSchedule(restartScheduleSanitized) {
     return `${hours}h${minutes}m`;
 }
 
-async function getServerData() {
+async function getServerData(client) {
     try {
         // Fetch data via RCON
         const numberOnline = await sendMCCommand('papi parse --null %cmi_server_online%');
@@ -35,14 +35,14 @@ async function getServerData() {
         updateServerData('tps', tps);
         updateServerData('restartSchedule', formattedSchedule);
 
-    } catch (error) {
-        console.error('Error updating server data:', error);
+    } catch (err) {
+        client.log('Error updating server data:', 'ERROR', err);
 
         // Preserve existing data but mark the server as offline
         try {
             updateServerData('online', false);
         } catch (err) {
-            console.warn('Failed to mark server as offline. Ensure serverData.json exists.');
+            client.log('Failed to mark server as offline:', 'ERROR', err);
         }
     }
 }

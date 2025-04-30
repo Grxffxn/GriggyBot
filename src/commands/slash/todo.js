@@ -7,7 +7,7 @@ const griggyDatabaseDir = '/home/minecraft/GriggyBot/database.db';
 module.exports = {
 	data: new SlashCommandBuilder()
 		.setName('todo')
-		.setDescription('Modify the TODO list.')
+		.setDescription('Modify the TODO list')
 		.addSubcommand(subcommand =>
 			subcommand
 				.setName('add')

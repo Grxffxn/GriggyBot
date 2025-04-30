@@ -1,6 +1,6 @@
 const fs = require('fs');
 const path = require('path');
-const config = require('../config.js');
+const { getConfig } = require('./configUtils.js');
 const { MessageFlags } = require('discord.js');
 const { queryDB } = require('./databaseUtils.js');
 const { checkLinked } = require('./roleCheckUtils.js');
@@ -42,10 +42,11 @@ function setCooldown(userId, commandName) {
 async function preGameCheck(interaction, gameName) {
     const userId = interaction.user.id;
     const bet = interaction.options.getInteger('bet');
+    const config = getConfig();
     const serverData = parseServerData();
     // CHECK LINKED
-    if (!config.gamblingEnabled || !serverData.online) {
-        await interaction.reply({ content: 'Gambling is currently disabled, or TLC is offline.', flags: MessageFlags.Ephemeral, });
+    if (!serverData.online) {
+        await interaction.reply({ content: `${config.serverAcronym || config.serverName} is offline, cannot gamble right now.`, flags: MessageFlags.Ephemeral, });
         return { canProceed: false };
     }
     if (!checkLinked(interaction.member)) {
@@ -88,11 +89,12 @@ async function updateBalance(interaction, command) {
     try {
         const response = await sendMCCommand(command);
         await logRCON(command, response);
-    } catch (error) {
+    } catch (err) {
+        const config = getConfig();
         const botspamChannel = await interaction.guild.channels.fetch(config.botspamChannelId);
-        console.error(`Error updating player balance >.< RCON failed`);
+        interaction.client.log('Error updating player balance >.< RCON failed', 'ERROR', err);
         await logRCONError(command);
-        await botspamChannel.send(`${interaction.user} This is awkward... I can't reach TLC >.<\nI've alerted the staff, and someone will update the balance soon.\nIn the meantime, please refrain from any other balance changes.`);
+        await botspamChannel.send(`${interaction.user} This is awkward... I can't reach ${config.serverAcronym || config.serverName} >.<\nI've alerted the staff, and someone will update the balance soon.\nIn the meantime, please refrain from any other balance changes.`);
     }
 }
 

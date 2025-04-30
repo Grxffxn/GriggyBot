@@ -1,10 +1,52 @@
+
 # GriggyBot
-Custom bot made for The Legend Continues' Discord server.
-Created by Griggy
+GriggyBot is a Discord bot originally designed for **The Legend Continues** Minecraft server. It integrates with the server to provide interactive features such as rank applications, chore submissions, gambling games, and more. The bot is tailored to work with plugins like **LuckPerms**, **DiscordSRV**, and **CMI**.
 
-GriggyBot is a Discord bot that pulls information from our Minecraft server and uses it to create interactive commands like rank applications, gambling, and more.
-I'm working towards making this bot useable by anyone running LuckPerms, DiscordSRV, and CMI on their Minecraft server, though this is not my priority.
+[![MIT License](https://img.shields.io/badge/License-MIT-green.svg)](https://choosealicense.com/licenses/mit/)
+![GitHub Created At](https://img.shields.io/github/created-at/Grxffxn/GriggyBot)
+![Discord](https://img.shields.io/discord/202157448776253441)
 
-Join our Discord! We're a close community of friends and we're always welcoming new players.
-Discord: https://discord.gg/GS5kz6r
-Minecraft Server IP: mc.thelegendcontinues.info
+
+## Features
+
+**Minecraft Server Integration**
+- **Dynamic Welcome Image**: Automatically updates the welcome message with server stats like TPS, player count, and restart schedule.
+- **RCON Integration**: Executes server commands and logs responses directly in Discord.
+
+**Player Interaction**
+- **Rank Applications**: Players can apply for ranks using `/apply`. Staff can approve applications based on points and vouches.
+- **Daily Rewards**: Players can claim daily rewards with `/daily`, with streak bonuses for consecutive claims.
+- **Chore Submissions**: Submit proof of completed chores for in-game rewards using `!chore`.
+- **Custom Profiles**: Players can customize their profiles with `/profile`, including colors, descriptions, and images.
+
+**Gambling Games**
+- **Slots, Blackjack, Roulette, and Rock-Paper-Scissors**: Players can wager in-game currency on fun games.
+- **Cooldowns and Balances**: Ensures fair play with cooldowns and real-time balance updates.
+
+**Automated Features**
+- **Auto Messages**: Periodic messages to keep the community engaged.
+- **Daily Chores**: Randomly selects a daily task for players to complete for rewards.
+
+**Staff Tools**
+- **Interactive TODO List**: Staff can manage tasks with `/todo` commands.
+- **Application Management**: Approve or delete rank applications with ease.
+## Installation
+
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/Grxffxn/GriggyBot.git
+   cd GriggyBot
+   ```
+
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+
+3. Configure the bot:
+   - Edit the [`src/config.yml`](src/config.yml) file with your server and bot details.
+
+4. Run the bot:
+   ```bash
+   node index.js
+   ```

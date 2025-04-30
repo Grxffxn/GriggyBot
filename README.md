@@ -30,6 +30,19 @@ GriggyBot is a Discord bot originally designed for **The Legend Continues** Mine
 **Staff Tools**
 - **Interactive TODO List**: Staff can manage tasks with `/todo` commands.
 - **Application Management**: Approve or delete rank applications with ease.
+
+## Prerequisites
+
+Before installing and running GriggyBot, ensure you have the following:
+
+1. **Node.js**: Install the latest version of Node.js from [nodejs.org](https://nodejs.org/).
+2. **Discord Bot Token**: Create a bot on the [Discord Developer Portal](https://discord.com/developers/applications) and obtain the token and client ID.
+3. **Minecraft Server Plugins**:
+   - **LuckPerms**
+   - **DiscordSRV**
+   - **CMI**
+4. **RCON**: Enable RCON in your `server.properties` file and configure the IP, port, and password.
+
 ## Installation
 
 1. Clone the repository:

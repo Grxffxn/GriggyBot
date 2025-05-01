@@ -80,6 +80,7 @@ module.exports = {
 			}, config.automsgdelay);
 		}
 
+		AutoProfile(client);
 		setInterval(() => {
 			AutoProfile(client);
 		}, 180000);

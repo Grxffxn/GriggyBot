@@ -1,10 +1,11 @@
 const fs = require('fs');
 const { queryDB } = require('../utils/databaseUtils');
-
-const databaseDir = '/home/minecraft/GriggyBot/database.db';
-const accountsFilePath = '/home/minecraft/Main/plugins/DiscordSRV/accounts.aof';
+const { getConfig } = require('../utils/configUtils');
 
 async function AutoProfile(client) {
+    const config = getConfig();
+    const databaseDir = config.griggyDbPath;
+    const accountsFilePath = config.accounts_aof;
     // Read the accounts.aof file
     let linkedAccountsData;
     try {

@@ -241,5 +241,6 @@ rankSubmissionChannelId: ""
 
 # Database Paths
 cmi_sqlite_db: ""
+luckperms_sqlite_db: ""
 accounts_aof: ""
 griggyDbPath: ""

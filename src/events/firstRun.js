@@ -16,14 +16,14 @@ async function findFile(basePath, targetDirectory, fileName, client) {
 
                 if (file.isDirectory()) {
                     if (file.name === 'plugins') {
-                        return filePath; // Return the path to the plugins folder
+                        return filePath;
                     }
                     const foundPath = await searchForPluginsFolder(filePath);
                     if (foundPath) return foundPath;
                 }
             }
         } catch (error) {
-            client.log(`Error reading directory ${directory}: ${error.message}`, 'DEBUG'); // Log as DEBUG instead of ERROR
+            client.log(`Error reading directory ${directory}: ${error.message}`, 'DEBUG');
         }
         return null;
     }
@@ -41,8 +41,8 @@ async function findFile(basePath, targetDirectory, fileName, client) {
                     results.push(filePath);
                 }
             }
-        } catch (error) {
-            client.log(`Error reading directory ${directory}: ${error.message}`, 'DEBUG'); // Log as DEBUG instead of ERROR
+        } catch (err) {
+            client.log(`Couldn't find ${directory} - searching elsewhere...`, 'DEBUG');
         }
     }
 
@@ -55,10 +55,9 @@ async function findFile(basePath, targetDirectory, fileName, client) {
                 const pluginsPath = await searchForPluginsFolder(potentialBase);
 
                 if (pluginsPath) {
-                    client.log(`Found plugins folder at ${pluginsPath}`, 'INFO');
                     const targetPath = path.join(pluginsPath, targetDirectory);
                     await searchDirectory(targetPath);
-                    if (results.length > 0) break; // Stop searching if files are found
+                    if (results.length > 0) break;
                 }
             }
         }
@@ -167,7 +166,7 @@ async function firstRun(client) {
     }
 
     // WELCOME CHANNEL
-    if (!config.welcomeChannelId) {
+    if (!config.welcomeChannelId && config.enableUpdatingImage) {
         const guild = client.guilds.cache.get(updatedValues.guildId || config.guildId);
         const welcomeChannel = guild?.channels.cache.find(c =>
             c.name.toLowerCase().includes('welcome') && c.isTextBased()
@@ -184,7 +183,7 @@ async function firstRun(client) {
     }
 
     // INIT. WELCOME MESSAGE
-    if (!config.welcomeMessageId && (config.welcomeChannelId || updatedValues.welcomeChannelId)) {
+    if (!config.welcomeMessageId && (config.welcomeChannelId || updatedValues.welcomeChannelId) && config.enableUpdatingImage) {
         const channelId = updatedValues.welcomeChannelId || config.welcomeChannelId;
         const guild = client.guilds.cache.get(updatedValues.guildId || config.guildId);
         const welcomeChannel = guild?.channels.cache.get(channelId);
@@ -199,7 +198,7 @@ async function firstRun(client) {
     }
 
     // BOTSPAM, CHORE, AUTOMSG CHANNELS
-    if (config.botspamChannelId) {
+    if (!config.botspamChannelId) {
         const guild = client.guilds.cache.get(updatedValues.guildId || config.guildId);
         const botspamChannel = guild?.channels.cache.find(c =>
             c.name.toLowerCase().includes('botspam') && c.isTextBased()
@@ -253,7 +252,7 @@ async function firstRun(client) {
     }
 
     // ATTEMPT PLUGIN DB LOCATION
-    if (!config.cmi_sqlite_db || !config.accounts_aof) {
+    if (!config.cmi_sqlite_db || !config.accounts_aof || !config.luckperms_sqlite_db) {
         const relativePath = '../../..';
         const basePath = path.resolve(__dirname, relativePath);
     
@@ -280,6 +279,19 @@ async function firstRun(client) {
                 client.log(`Could not find accounts.aof. Please set the path in the config file.`, 'WARN');
             }
         }
+
+        if (!config.luckperms_sqlite_db && config.enableInfo) {
+            client.log(`Searching for luckperms-sqlite.db in the LuckPerms directory... This may take a moment.`, 'INFO');
+            const foundFiles = await findFile(basePath, 'LuckPerms', 'luckperms-sqlite.db', client);
+    
+            if (foundFiles.length > 0) {
+                updatedValues.luckperms_sqlite_db = foundFiles[0];
+                client.log(`Found luckperms-sqlite.db at ${foundFiles[0]}`, 'SUCCESS');
+            } else {
+                client.log(`Could not find luckperms-sqlite.db. Please set the path in the config file.`, 'WARN');
+            }
+        }
+        isFirstRun = true;
     }
 
     // DATABASE SETUP
@@ -318,19 +330,43 @@ function createDatabase(updatedValues, databasePath, client) {
         db.serialize(() => {
             db.run(`
                 CREATE TABLE IF NOT EXISTS users (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
                     discord_id TEXT UNIQUE NOT NULL,
-                    minecraft_uuid TEXT UNIQUE,
+                    minecraft_uuid TEXT UNIQUE NOT NULL,
+                    profile_color TEXT DEFAULT '000000',
+                    profile_image TEXT UNIQUE NOT NULL,
+                    profile_description TEXT DEFAULT 'This user has not set a profile description.',
+                    profile_title TEXT,
+                    favorite_game TEXT DEFAULT 'Minecraft',
                     vouchedIds TEXT,
                     vouches INTEGER DEFAULT 0
                 )
             `);
             db.run(`
                 CREATE TABLE IF NOT EXISTS applications (
+                    message_id TEXT UNIQUE NOT NULL,
+                    player_name TEXT NOT NULL,
+                    role TEXT NOT NULL,
+                    answers TEXT NOT NULL,
+                    status TEXT DEFAULT 'active',
+                    staff_reactions TEXT,
+                    discord_id TEXT NOT NULL,
+                    approvals INTEGER DEFAULT 0,
+                    thread_id TEXT UNIQUE NOT NULL
+                )
+            `);
+            db.run(`
+                CREATE TABLE IF NOT EXISTS todo (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    discord_id TEXT UNIQUE NOT NULL,
-                    status TEXT DEFAULT 'pending',
-                    message_id TEXT
+                    todo TEXT NOT NULL,
+                    status TEXT DEFAULT 'todo',
+                    assignee TEXT
+                )
+            `);
+            db.run(`
+                CREATE TABLE IF NOT EXISTS daily_streaks (
+                    user_id TEXT UNIQUE NOT NULL,
+                    streak INTEGER DEFAULT 0,
+                    last_claimed TEXT
                 )
             `);
         });

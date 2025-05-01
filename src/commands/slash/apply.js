@@ -9,7 +9,8 @@ const { queryDB } = require('../../utils/databaseUtils.js');
 const config = getConfig();
 const questions = config.applicationQuestions || [];
 const ranks = config.ranks || [];
-const databasePaths = config.databasePaths || {};
+const cmiDatabasePath = config.cmi_sqlite_db;
+const griggyDatabasePath = config.griggyDbPath;
 
 // Active modal handlers tracking
 const activeModalHandlers = new Map();
@@ -117,8 +118,8 @@ async function startApplicationProcess(interaction, rank, playerName) {
         const thumbnailUrl = `https://visage.surgeplay.com/bust/256/${playerUUID}`;
 
         // Retrieve data from the databases
-        const row = await queryDB(databasePaths.main, 'SELECT * FROM users WHERE minecraft_uuid = ?', [playerUUID], true);
-        const userPoints = await queryDB(databasePaths.cmi, 'SELECT UserMeta FROM users WHERE username = ? COLLATE NOCASE', [playerName], true)
+        const row = await queryDB(griggyDatabasePath, 'SELECT * FROM users WHERE minecraft_uuid = ?', [playerUUID], true);
+        const userPoints = await queryDB(cmiDatabasePath, 'SELECT UserMeta FROM users WHERE username = ? COLLATE NOCASE', [playerName], true)
             .then(row => parseFloat((row.UserMeta || '').split('%%')[1], 10) || 0);
 
         const vouches = parseInt(row.vouches || 0, 10);
@@ -180,7 +181,7 @@ async function startApplicationProcess(interaction, rank, playerName) {
         });
 
         // Save application to database
-        await queryDB(databasePaths.main, 'INSERT INTO applications (message_id, player_name, role, answers, status, discord_id, approvals, thread_id) VALUES (?, ?, ?, ?, ?, ?, 0, ?)', [
+        await queryDB(griggyDatabasePath, 'INSERT INTO applications (message_id, player_name, role, answers, status, discord_id, approvals, thread_id) VALUES (?, ?, ?, ?, ?, ?, 0, ?)', [
             sentMessage.id,
             playerName,
             rank,

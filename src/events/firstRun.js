@@ -4,6 +4,75 @@ const readline = require('readline');
 const sqlite3 = require('sqlite3').verbose();
 const { getConfig, saveConfig, reloadConfig } = require('../utils/configUtils');
 
+async function findFile(basePath, targetDirectory, fileName, client) {
+    const results = [];
+
+    async function searchForPluginsFolder(directory) {
+        try {
+            const files = await fs.promises.readdir(directory, { withFileTypes: true });
+
+            for (const file of files) {
+                const filePath = path.join(directory, file.name);
+
+                if (file.isDirectory()) {
+                    if (file.name === 'plugins') {
+                        return filePath; // Return the path to the plugins folder
+                    }
+                    const foundPath = await searchForPluginsFolder(filePath);
+                    if (foundPath) return foundPath;
+                }
+            }
+        } catch (error) {
+            client.log(`Error reading directory ${directory}: ${error.message}`, 'DEBUG'); // Log as DEBUG instead of ERROR
+        }
+        return null;
+    }
+
+    async function searchDirectory(directory) {
+        try {
+            const files = await fs.promises.readdir(directory, { withFileTypes: true });
+
+            for (const file of files) {
+                const filePath = path.join(directory, file.name);
+
+                if (file.isDirectory()) {
+                    await searchDirectory(filePath);
+                } else if (file.name === fileName) {
+                    results.push(filePath);
+                }
+            }
+        } catch (error) {
+            client.log(`Error reading directory ${directory}: ${error.message}`, 'DEBUG'); // Log as DEBUG instead of ERROR
+        }
+    }
+
+    try {
+        const baseDirectories = await fs.promises.readdir(basePath, { withFileTypes: true });
+
+        for (const dir of baseDirectories) {
+            if (dir.isDirectory()) {
+                const potentialBase = path.join(basePath, dir.name);
+                const pluginsPath = await searchForPluginsFolder(potentialBase);
+
+                if (pluginsPath) {
+                    client.log(`Found plugins folder at ${pluginsPath}`, 'INFO');
+                    const targetPath = path.join(pluginsPath, targetDirectory);
+                    await searchDirectory(targetPath);
+                    if (results.length > 0) break; // Stop searching if files are found
+                }
+            }
+        }
+    } catch (error) {
+        client.log(`Error reading base directory ${basePath}: ${error.message}`, 'ERROR');
+    }
+
+    if (results.length === 0) {
+        client.log(`Could not find ${fileName} in the ${targetDirectory} directory.`, 'ERROR');
+    }
+
+    return results;
+}
+
 async function firstRun(client) {
     const config = getConfig();
     const updatedValues = {};
@@ -183,11 +252,41 @@ async function firstRun(client) {
         isFirstRun = true;
     }
 
+    // ATTEMPT PLUGIN DB LOCATION
+    if (!config.cmi_sqlite_db || !config.accounts_aof) {
+        const relativePath = '../../..';
+        const basePath = path.resolve(__dirname, relativePath);
+    
+        if (!config.cmi_sqlite_db) {
+            client.log(`Searching for cmi.sqlite.db in the CMI directory... This may take a moment.`, 'INFO');
+            const foundFiles = await findFile(basePath, 'CMI', 'cmi.sqlite.db', client);
+    
+            if (foundFiles.length > 0) {
+                updatedValues.cmi_sqlite_db = foundFiles[0];
+                client.log(`Found cmi.sqlite.db at ${foundFiles[0]}`, 'SUCCESS');
+            } else {
+                client.log(`Could not find cmi.sqlite.db. Please set the path in the config file.`, 'WARN');
+            }
+        }
+    
+        if (!config.accounts_aof) {
+            client.log(`Searching for accounts.aof in the DiscordSRV directory... This may take a moment.`, 'INFO');
+            const foundFiles = await findFile(basePath, 'DiscordSRV', 'accounts.aof', client);
+    
+            if (foundFiles.length > 0) {
+                updatedValues.accounts_aof = foundFiles[0];
+                client.log(`Found accounts.aof at ${foundFiles[0]}`, 'SUCCESS');
+            } else {
+                client.log(`Could not find accounts.aof. Please set the path in the config file.`, 'WARN');
+            }
+        }
+    }
+
     // DATABASE SETUP
     const databasePath = path.resolve(__dirname, '../../database.db');
     if (!fs.existsSync(databasePath)) {
         client.log('No database found. Creating...');
-        createDatabase(databasePath, client);
+        createDatabase(updatedValues, databasePath, client);
         isFirstRun = true;
     }
 
@@ -213,29 +312,36 @@ async function firstRun(client) {
     return isFirstRun;
 }
 
-function createDatabase(databasePath, client) {
-    const db = new sqlite3.Database(databasePath);
-    db.serialize(() => {
-        db.run(`
-            CREATE TABLE IF NOT EXISTS users (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                discord_id TEXT UNIQUE NOT NULL,
-                minecraft_uuid TEXT UNIQUE,
-                vouchedIds TEXT,
-                vouches INTEGER DEFAULT 0
-            )
-        `);
-        db.run(`
-            CREATE TABLE IF NOT EXISTS applications (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                discord_id TEXT UNIQUE NOT NULL,
-                status TEXT DEFAULT 'pending',
-                message_id TEXT
-            )
-        `);
-    });
-    db.close();
-    client.log('SQLite database initialized.', 'SUCCESS');
+function createDatabase(updatedValues, databasePath, client) {
+    try {
+        const db = new sqlite3.Database(databasePath);
+        db.serialize(() => {
+            db.run(`
+                CREATE TABLE IF NOT EXISTS users (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    discord_id TEXT UNIQUE NOT NULL,
+                    minecraft_uuid TEXT UNIQUE,
+                    vouchedIds TEXT,
+                    vouches INTEGER DEFAULT 0
+                )
+            `);
+            db.run(`
+                CREATE TABLE IF NOT EXISTS applications (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    discord_id TEXT UNIQUE NOT NULL,
+                    status TEXT DEFAULT 'pending',
+                    message_id TEXT
+                )
+            `);
+        });
+        db.close();
+        client.log('SQLite database initialized.', 'SUCCESS');
+        updatedValues.griggyDbPath = databasePath;
+        client.log(`Database path: ${databasePath}`, 'INFO');
+    } catch (err) {
+        client.log('Error creating database:', 'ERROR', err);
+
+    }
 }
 
 module.exports = firstRun;

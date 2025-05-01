@@ -240,8 +240,6 @@ consoleChannelId: ""
 rankSubmissionChannelId: ""
 
 # Database Paths
-databasePaths:
-  griggybot: "YOUR_DATABASE_PATH_HERE"
-  cmi: "YOUR_DATABASE_PATH_HERE"
-  discordsrv: "YOUR_DATABASE_PATH_HERE"
-  luckperms: "YOUR_DATABASE_PATH_HERE"
+cmi_sqlite_db: ""
+accounts_aof: ""
+griggyDbPath: ""

@@ -88,6 +88,7 @@ async function UpdateImage(client) {
                 dynamicEmbed.addFields({
                     name: field.name,
                     value: field.value,
+                    inline: true,
                 });
             });
         }

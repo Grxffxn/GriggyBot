@@ -57,6 +57,8 @@ module.exports = {
 		initializeRCONUtils(client);
 		await startRCON();
 
+		await getServerData(client);
+		if (config.enableUpdatingImage) await UpdateImage(client);
 		setInterval(async () => {
 			await getServerData(client);
 			if (config.enableUpdatingImage) await UpdateImage(client);

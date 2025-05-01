@@ -11,7 +11,8 @@ const fontPath = path.resolve(__dirname, '../../assets/fonts/Minecraft.ttf');
 
 async function UpdateImage(client) {
     const config = getConfig();
-    const imageChannel = client.channels.cache.get(config.welcomeMessageId);
+    const guild = await client.guilds.fetch(config.guildId);
+    const imageChannel = await guild.channels.fetch(config.welcomeChannelId);
     if (!imageChannel) {
         client.log('Image channel not found. Please check your configuration.', 'ERROR');
         return;
@@ -59,7 +60,7 @@ async function UpdateImage(client) {
         await generateImage(sanitizedNumberOnline, sanitizedServerVersion, tps, formattedSchedule); // Generate the image
 
         const attachment = new AttachmentBuilder('assets/dynamicserverinfo.png', { name: 'dynamicserverinfo.png' });
-       
+
         // default rules embed
         const rulesEmbed = new EmbedBuilder();
         if (config.useRulesInWelcomeMessage && config.rules && Array.isArray(config.rules)) {

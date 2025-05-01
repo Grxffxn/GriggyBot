@@ -10,6 +10,9 @@ module.exports = {
             return typeof value === 'boolean' || typeof value === 'string' || typeof value === 'number';
         });
 
+        // Limit to the first 25 keys
+        const limitedKeys = simpleKeys.slice(0, 25);
+
         const command = new SlashCommandBuilder()
             .setName('editconfig')
             .setDescription('Edit the config file')
@@ -18,7 +21,7 @@ module.exports = {
                     .setDescription('Key to edit')
                     .setRequired(true);
 
-                simpleKeys.forEach(key => {
+                limitedKeys.forEach(key => {
                     option.addChoices({ name: key, value: key });
                 });
 

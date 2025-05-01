@@ -31,6 +31,7 @@ function log(message, level = 'INFO', extra = null) {
 	const color = {
 		INFO: '\x1b[36m',
 		WARN: '\x1b[33m',
+		DEBUG: '\x1b[34m',
 		ERROR: '\x1b[31m',
 		SUCCESS: '\x1b[32m'
 	}[level.toUpperCase()] || '\x1b[0m';

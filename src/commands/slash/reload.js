@@ -20,7 +20,7 @@ module.exports = {
             await interaction.editReply('Config file reloaded. Some changes may require a restart to take effect.');
         } catch (err) {
             interaction.client.log('Failed to reload config file:', 'ERROR', err);
-            await interaction.editReply('Failed to reload config file.');
+            await interaction.editReply({ content: 'Failed to reload config file.', flags: MessageFlags.Ephemeral });
         }
     }
 };

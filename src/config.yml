@@ -69,6 +69,10 @@ applicationQuestions:
   - "COMMUNITY INVOLVEMENT"
   - "WHY DO YOU WANT TO RANK UP?"
 
+# displayName is only used in the /apply command
+# I found that players had confusion when applying without an indication of the order of ranks
+# I recommend making the displayName "I. RankName" or "1. RankName" to indicate the order
+# I also recommend keeping the name: lowercase and no spaces
 ranks:
   - name: "fabled"
     displayName: "I. Fabled"
@@ -172,6 +176,7 @@ enableMap: true
 enableProfile: true
 enableReload: true
 enableRender: true
+enableRules: true
 enableTodo: true
 enableVipperks: true
 enableVote: true

@@ -84,7 +84,5 @@ module.exports = {
 		setInterval(() => {
 			AutoProfile(client);
 		}, 180000);
-
-		getServerData(client);
 	},
 };

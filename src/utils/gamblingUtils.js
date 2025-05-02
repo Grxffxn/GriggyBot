@@ -8,8 +8,6 @@ const { hyphenateUUID } = require('./formattingUtils.js');
 const { parseServerData } = require('./serverDataUtils.js');
 const { sendMCCommand, logRCON, logRCONError } = require('./rconUtils.js');
 const cooldownFilePath = path.resolve(__dirname, '../cooldowns.json');
-const griggyDatabaseDir = '/home/minecraft/GriggyBot/database.db';
-const cmiDatabaseDir = '/home/minecraft/Main/plugins/CMI/cmi.sqlite.db';
 
 function checkEnoughBalance(balance, wager) {
     return balance >= wager;
@@ -43,6 +41,8 @@ async function preGameCheck(interaction, gameName) {
     const userId = interaction.user.id;
     const bet = interaction.options.getInteger('bet');
     const config = getConfig();
+    const griggyDatabaseDir = config.griggyDbPath;
+    const cmiDatabaseDir = config.cmi_sqlite_db;
     const serverData = parseServerData();
     // CHECK LINKED
     if (!serverData.online) {

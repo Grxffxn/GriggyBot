@@ -1,33 +1,42 @@
 const { SlashCommandBuilder, EmbedBuilder, MessageFlags } = require('discord.js');
 const { queryDB } = require('../../utils/databaseUtils');
 const { checkStaff } = require('../../utils/roleCheckUtils');
-const databaseDir = '/home/minecraft/GriggyBot/database.db';
+const { getConfig } = require('../../utils/configUtils');
+
+const config = getConfig();
+const ranks = config.ranks;
+const griggyDatabaseDir = config.griggyDbPath;
 
 module.exports = {
-    data: new SlashCommandBuilder()
-        .setName('deleteapplication')
-        .setDescription('Delete an active rank application')
-        .addStringOption(option =>
-            option.setName('rank')
-                .setDescription('Rank')
-                .setRequired(true)
-                .addChoices(
-                    { name: 'Fabled', value: 'fabled' },
-                    { name: 'Heroic', value: 'heroic' },
-                    { name: 'Mythical', value: 'mythical' },
-                    { name: 'Apocryphal', value: 'apocryphal' },
-                    { name: 'Legend', value: 'legend' },
-                ))
-        .addStringOption(option =>
-            option.setName('playername')
-                .setDescription('Minecraft username')
-                .setRequired(true)),
+    data: (() => {
+            const command = new SlashCommandBuilder()
+                .setName('deleteapplication')
+                .setDescription('Delete an application')
+                .addStringOption(option => {
+                    option.setName('rank')
+                        .setDescription('The rank application to delete.')
+                        .setRequired(true);
+    
+                    ranks.forEach(rank => {
+                        option.addChoices({ name: rank.displayName, value: rank.name });
+                    });
+    
+                    return option;
+                })
+                .addStringOption(option =>
+                    option.setName('playername')
+                        .setDescription('Your in-game Minecraft username.')
+                        .setRequired(true)
+                );
+    
+            return command;
+        })(),
 
     async run(interaction) {
         const rank = interaction.options.getString('rank');
         const playerName = interaction.options.getString('playername');
 
-        const row = await queryDB(databaseDir, `SELECT * FROM applications WHERE role = ? AND player_name = ? AND status = 'active'`, [rank, playerName], true);
+        const row = await queryDB(griggyDatabaseDir, `SELECT * FROM applications WHERE role = ? AND player_name = ? AND status = 'active'`, [rank, playerName], true);
 
         if (!row) {
             await interaction.reply({ content: 'No active application found for the specified rank and player.', flags: MessageFlags.Ephemeral });
@@ -60,7 +69,7 @@ module.exports = {
                 await applicationThread.delete().catch(err => interaction.client.log('Failed to delete application thread:', 'ERROR', err));
 
                 // Delete the application record from the database
-                await queryDB(databaseDir, `DELETE FROM applications WHERE discord_id = ? AND role = ? AND status = ?`, [row.discord_id, rank, 'active']);
+                await queryDB(griggyDatabaseDir, `DELETE FROM applications WHERE discord_id = ? AND role = ? AND status = ?`, [row.discord_id, rank, 'active']);
                 interaction.followUp({ content: `The application for **${playerName}** (${rank}) and its associated thread/message have been successfully deleted.`, flags: MessageFlags.Ephemeral });
                 collector.stop();
             } catch (err) {

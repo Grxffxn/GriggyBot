@@ -3,9 +3,7 @@ const { queryDB } = require('../../utils/databaseUtils.js');
 const { formatNumber, hyphenateUUID } = require('../../utils/formattingUtils.js');
 const { checkLinked } = require('../../utils/roleCheckUtils.js');
 const { updateBalance } = require('../../utils/gamblingUtils.js');
-
-const griggyDatabaseDir = '/home/minecraft/GriggyBot/database.db';
-const cmiDatabaseDir = '/home/minecraft/Main/plugins/CMI/cmi.sqlite.db';
+const { getConfig } = require('../../utils/configUtils.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -13,10 +11,13 @@ module.exports = {
         .setDescription('Daily reward'),
     async run(interaction) {
         try {
+            const config = getConfig();
+            const griggyDatabaseDir = config.griggyDbPath;
+            const cmiDatabaseDir = config.cmi_sqlite_db;
             const userId = interaction.user.id;
             const now = Math.floor(Date.now() / 1000);
             const dailyReward = 1000;
-            const streakBonus = 50; // +10 per streak level
+            const streakBonus = 50;
             if (!checkLinked(interaction.member)) {
                 return interaction.reply(`Sorry, you must link your accounts to receive daily rewards. \`/link\``);
             }
@@ -33,14 +34,14 @@ module.exports = {
             }
             const username = cmiUserRow.username;
 
-            let userStreakData = await queryDB( // Get streak data
+            let userStreakData = await queryDB(
                 griggyDatabaseDir,
                 'SELECT streak, last_claimed FROM daily_streaks WHERE user_id = ?',
                 [userId],
                 true
             );
 
-            if (!userStreakData) { // Create streak for new users
+            if (!userStreakData) {
                 await queryDB(
                     griggyDatabaseDir,
                     'INSERT INTO daily_streaks (user_id, streak, last_claimed) VALUES (?, ?, ?)',
@@ -59,7 +60,7 @@ module.exports = {
             const { streak, last_claimed } = userStreakData;
             const timeSinceLastClaim = now - last_claimed;
 
-            if (timeSinceLastClaim < 86400) { // Daily check
+            if (timeSinceLastClaim < 86400) {
                 const timeUntilNextAvailable = 86400 - timeSinceLastClaim;
                 const hours = Math.floor(timeUntilNextAvailable / 3600);
                 const minutes = Math.floor((timeUntilNextAvailable % 3600) / 60);
@@ -71,14 +72,14 @@ module.exports = {
 
             let newStreak = streak;
             if (timeSinceLastClaim > 172800) {
-                newStreak = 1; // Reset streak after 48h
+                newStreak = 1;
             } else {
                 newStreak += 1;
             }
 
-            const reward = Math.min(dailyReward + (newStreak * streakBonus), 5000); // Max 5000
+            const reward = Math.min(dailyReward + (newStreak * streakBonus), 5000);
 
-            await queryDB( // Update streak
+            await queryDB(
                 griggyDatabaseDir,
                 'UPDATE daily_streaks SET streak = ?, last_claimed = ? WHERE user_id = ?',
                 [newStreak, now, userId]

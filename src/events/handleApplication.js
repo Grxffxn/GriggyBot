@@ -4,12 +4,7 @@ const { queryDB } = require('../utils/databaseUtils');
 const { sendMCCommand, logRCON } = require('../utils/rconUtils.js');
 const { checkStaff } = require('../utils/roleCheckUtils.js');
 
-const config = getConfig();
-const ranks = config.ranks || [];
-const staffRoleIds = config.staffRoleIds || [];
-const databasePaths = config.databasePaths || {};
-
-function createButtons(vouchingFor, rank, data) {
+function createButtons(vouchingFor, rank, data, config) {
     const buttons = [
         { id: `approve-${vouchingFor}-${rank}`, label: `Approve (${data.approvals}/${data.requiredApprovals})`, style: 'Primary' },
     ];
@@ -22,7 +17,6 @@ function createButtons(vouchingFor, rank, data) {
         buttons.push({ id: `accumulatedPts-${vouchingFor}-${rank}`, label: `Points: ${data.userPoints}/${data.requiredPts}`, style: 'Secondary', disabled: true });
     }
 
-    // Always include the refresh button
     buttons.push({ id: `refresh-${vouchingFor}-${rank}`, label: 'Refresh', style: 'Secondary' });
 
     const row = new ActionRowBuilder();
@@ -33,8 +27,11 @@ function createButtons(vouchingFor, rank, data) {
 }
 
 async function handleApplication(interaction) {
+    const config = getConfig();
+    const griggyDatabaseDir = config.griggyDbPath;
+    const cmiDatabaseDir = config.cmi_sqlite_db;
     const [action, vouchingFor, rank] = interaction.customId.split('-');
-    const rankConfig = ranks.find(r => r.name === rank);
+    const rankConfig = config.ranks.find(r => r.name === rank);
 
     if (!rankConfig) {
         await interaction.reply({ content: `The rank "${rank}" is not configured.`, flags: MessageFlags.Ephemeral });
@@ -46,7 +43,7 @@ async function handleApplication(interaction) {
 
         if (action === 'refresh') {
             const application = await queryDB(
-                databasePaths.main,
+                griggyDatabaseDir,
                 `
                 SELECT * FROM applications
                 WHERE discord_id = ? AND status = ?
@@ -62,9 +59,9 @@ async function handleApplication(interaction) {
             }
 
             const { approvals = 0 } = application;
-            const { vouches = 0 } = await queryDB(databasePaths.main, 'SELECT * FROM users WHERE discord_id = ?', [vouchingFor], true) || {};
+            const { vouches = 0 } = await queryDB(griggyDatabaseDir, 'SELECT * FROM users WHERE discord_id = ?', [vouchingFor], true) || {};
             const userPoints = config.enableRankPoints
-                ? await queryDB(databasePaths.cmi, 'SELECT UserMeta FROM users WHERE username = ? COLLATE NOCASE', [application.player_name], true)
+                ? await queryDB(cmiDatabaseDir, 'SELECT UserMeta FROM users WHERE username = ? COLLATE NOCASE', [application.player_name], true)
                       .then(row => parseFloat((row.UserMeta || '').split('%%')[1], 10) || 0)
                 : 0;
 
@@ -74,7 +71,7 @@ async function handleApplication(interaction) {
                 requiredPts: rankConfig.requiredPoints,
                 vouches,
                 userPoints,
-            });
+            }, config);
 
             const submissionMessage = await interaction.channel.messages.fetch(application.message_id).catch(() => null);
             if (!submissionMessage) {
@@ -99,7 +96,7 @@ async function handleApplication(interaction) {
                             await interaction.followUp({ content: `<@${vouchingFor}> has met the criteria and has been granted the ${rankConfig.displayName} role!` });
                             await interaction.channel.send(`Your application has been approved, congratulations <@${member.id}>! 🎉`);
                             await interaction.channel.setLocked(true);
-                            await queryDB(databasePaths.main, 'UPDATE applications SET status = ? WHERE discord_id = ?', ['approved', vouchingFor]);
+                            await queryDB(griggyDatabaseDir, 'UPDATE applications SET status = ? WHERE discord_id = ?', ['approved', vouchingFor]);
                         } catch (error) {
                             await interaction.followUp({ content: `An error occurred while promoting the user. Please try again later.`, flags: MessageFlags.Ephemeral });
                             return;
@@ -125,7 +122,7 @@ async function handleApplication(interaction) {
                 return;
             }
 
-            const application = await queryDB(databasePaths.main, 'SELECT * FROM applications WHERE discord_id = ? AND status = ?', [vouchingFor, 'active'], true);
+            const application = await queryDB(griggyDatabaseDir, 'SELECT * FROM applications WHERE discord_id = ? AND status = ?', [vouchingFor, 'active'], true);
             if (!application) {
                 await interaction.editReply({ content: `No active application found for <@${vouchingFor}>.` });
                 return;
@@ -133,7 +130,7 @@ async function handleApplication(interaction) {
 
             const approvals = parseInt(application.approvals || 0, 10);
             const updatedApprovals = approvals + 1;
-            await queryDB(databasePaths.main, 'UPDATE applications SET approvals = ? WHERE discord_id = ?', [updatedApprovals, vouchingFor]);
+            await queryDB(griggyDatabaseDir, 'UPDATE applications SET approvals = ? WHERE discord_id = ?', [updatedApprovals, vouchingFor]);
 
             await interaction.editReply({ content: 'Your approval has been recorded.' });
             await interaction.channel.send({ content: `<@${interaction.user.id}> has approved this application. Multiple approvals may be required for higher ranks.` });

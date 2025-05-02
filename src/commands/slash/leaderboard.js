@@ -2,8 +2,6 @@ const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const { queryDB } = require('../../utils/databaseUtils.js');
 const { getConfig } = require('../../utils/configUtils');
 
-const databasePath = '/home/minecraft/Main/plugins/CMI/cmi.sqlite.db';
-
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('leaderboard')
@@ -11,6 +9,7 @@ module.exports = {
     async run(interaction) {
         try {
             const config = getConfig();
+            const cmiDatabasePath = config.cmi_sqlite_db;
             // Query the leaderboard
             const leaderboardQuery = `
                 SELECT username, TotalPlayTime 
@@ -18,7 +17,7 @@ module.exports = {
                 ORDER BY TotalPlayTime DESC 
                 LIMIT 10
             `;
-            const rows = await queryDB(databasePath, leaderboardQuery);
+            const rows = await queryDB(cmiDatabasePath, leaderboardQuery);
 
             if (!rows || rows.length === 0) {
                 return interaction.reply('No data found in the leaderboard.');

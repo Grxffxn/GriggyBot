@@ -3,10 +3,6 @@ const axios = require('axios');
 const { queryDB } = require('../../utils/databaseUtils.js');
 const { getConfig } = require('../../utils/configUtils.js');
 
-const griggyDatabaseDir = '/home/minecraft/GriggyBot/database.db';
-const cmiDatabasePath = '/home/minecraft/Main/plugins/CMI/cmi.sqlite.db';
-const luckPermsDatabasePath = '/home/minecraft/Main/plugins/LuckPerms/luckperms-sqlite.db';
-
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('info')
@@ -19,6 +15,10 @@ module.exports = {
     async run(interaction) {
         try {
             const config = await getConfig();
+            const griggyDatabaseDir = config.griggyDbPath;
+            const cmiDatabasePath = config.cmi_sqlite_db;
+            const luckPermsDatabasePath = config.luckperms_sqlite_db;
+
             await interaction.deferReply();
             const username = interaction.options.getString('username');
             const { data } = await axios.get(`https://api.geysermc.org/v2/utils/uuid/bedrock_or_java/${username}?prefix=.`);

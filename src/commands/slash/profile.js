@@ -1,7 +1,7 @@
 const { SlashCommandBuilder, EmbedBuilder, ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder, MessageFlags } = require('discord.js');
 const fs = require('fs');
 const { queryDB } = require('../../utils/databaseUtils.js');
-const databaseDir = '/home/minecraft/GriggyBot/database.db';
+const { getConfig } = require('../../utils/configUtils.js');
 
 // Define profile modal
 const profileColorTextInput = new TextInputBuilder()
@@ -59,6 +59,9 @@ module.exports = {
 		.setName('profile')
 		.setDescription('Customize your profile'),
 	async run(interaction) {
+		const config = getConfig();
+		const griggyDatabaseDir = config.griggyDbPath;
+
 		function sanitizeProfileColor(profileColor) {
 			// Remove # if it's present
 			if (profileColor.startsWith("#")) {
@@ -94,9 +97,9 @@ module.exports = {
 		const trimmedUUID = minecraftUUID.replace(/-/g, '');
 
 		// Check for existing profile in griggydb
-		const row = await queryDB(databaseDir, 'SELECT * FROM users WHERE discord_id = ?', [discordId], true);
+		const row = await queryDB(griggyDatabaseDir, 'SELECT * FROM users WHERE discord_id = ?', [discordId], true);
 		if (!row) {
-			await queryDB(databaseDir, 'INSERT INTO users(discord_id, minecraft_uuid, profile_color, profile_image, profile_description, vouches) VALUES(?, ?, ?, ?, ?, ?)', [discordId, trimmedUUID, '000000', `https://visage.surgeplay.com/bust/256/${trimmedUUID}`, 'This user has not set a profile description.', '0']);
+			await queryDB(griggyDatabaseDir, 'INSERT INTO users(discord_id, minecraft_uuid, profile_color, profile_image, profile_description, vouches) VALUES(?, ?, ?, ?, ?, ?)', [discordId, trimmedUUID, '000000', `https://visage.surgeplay.com/bust/256/${trimmedUUID}`, 'This user has not set a profile description.', '0']);
 		}
 		
 		// Show modal and await response
@@ -145,7 +148,7 @@ module.exports = {
 		sql += ' WHERE discord_id = ?';
 		params.push(discordId);
 
-		await queryDB(databaseDir, sql, params);
+		await queryDB(griggyDatabaseDir, sql, params);
 
 		// Send confirmation message
 		const confirmationEmbed = new EmbedBuilder()

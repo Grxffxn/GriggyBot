@@ -3,7 +3,7 @@
 const { SlashCommandBuilder, ModalBuilder, TextInputBuilder, ActionRowBuilder, EmbedBuilder, TextInputStyle, MessageFlags } = require('discord.js');
 const { queryDB } = require('../../utils/databaseUtils');
 const { checkStaff } = require('../../utils/roleCheckUtils');
-const griggyDatabaseDir = '/home/minecraft/GriggyBot/database.db';
+const { getConfig } = require('../../utils/configUtils');
 
 module.exports = {
 	data: new SlashCommandBuilder()
@@ -77,6 +77,9 @@ module.exports = {
 		if (!isStaff) {
 			return interaction.reply({ content: 'You do not have permission to use this command.', flags: MessageFlags.Ephemeral });
 		}
+
+		const config = getConfig();
+		const griggyDatabaseDir = config.griggyDbPath;
 
 		// If all options are empty, get the low priority, standard to-do items from the database and format the result
 		if (interaction.options.getSubcommand() === 'view') {

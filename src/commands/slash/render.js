@@ -1,4 +1,4 @@
-const { SlashCommandBuilder } = require('discord.js');
+const { SlashCommandBuilder, MessageFlags } = require('discord.js');
 const axios = require('axios');
 const { getConfig } = require('../../utils/configUtils');
 
@@ -39,13 +39,13 @@ module.exports = {
 		const skintype = interaction.options.getString('skintype') || defaultSkinType;
 
 		if (username.startsWith('.')) {
-			return interaction.reply('Sorry, Bedrock renders are not supported.')
+			return interaction.reply({ content: 'Sorry, Bedrock renders are not supported.', flags: MessageFlags.Ephemeral });
 		}
 		try {
 			const response = await axios.get(`https://api.mojang.com/users/profiles/minecraft/${username}`);
 
 			if (!response.data) {
-				return interaction.reply('That player either doesn\'t exist or hasn\'t been on TLC before. :(');
+				return interaction.reply({content: 'That player doesn\'t exist :(', flags: MessageFlags.Ephemeral });
 			}
 
 			const playerUUID = response.data.id;
@@ -61,7 +61,7 @@ module.exports = {
 			interaction.reply({ content: renderUrl });
 		} catch (err) {
 			interaction.client.log('Error fetching player data:', 'ERROR', err);
-			interaction.reply('An error occurred while fetching player data.');
+			interaction.reply({ content: 'An error occurred while fetching player data.', flags: MessageFlags.Ephemeral });
 		}
 	},
 };

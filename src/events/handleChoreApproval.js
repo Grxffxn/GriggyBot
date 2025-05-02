@@ -5,12 +5,11 @@ const { queryDB } = require('../utils/databaseUtils.js');
 const { getConfig } = require('../utils/configUtils');
 const { updateBalance } = require('../utils/gamblingUtils.js');
 
-const griggyDatabaseDir = '/home/minecraft/GriggyBot/database.db';
-const cmiDatabaseDir = '/home/minecraft/Main/plugins/CMI/cmi.sqlite.db';
-
 async function handleChoreApproval(interaction) {
     try {
         const config = getConfig();
+        const griggyDatabaseDir = config.griggyDbPath;
+        const cmiDatabaseDir = config.cmi_sqlite_db;
         const approver = interaction.member;
         const requiredRole = config.approverRoleId;
 
@@ -19,7 +18,6 @@ async function handleChoreApproval(interaction) {
             return interaction.reply({ content: 'You\'re not a mom! No perms to approve chores', flags: MessageFlags.Ephemeral });
         }
 
-        // Validate customId format
         const customIdParts = interaction.customId.split('_');
         if (customIdParts.length < 3) {
             interaction.client.log(`Invalid customId format ${interaction.customId} (processing chore approval)`, 'ERROR');

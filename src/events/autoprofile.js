@@ -6,7 +6,6 @@ async function AutoProfile(client) {
     const config = getConfig();
     const databaseDir = config.griggyDbPath;
     const accountsFilePath = config.accounts_aof;
-    // Read the accounts.aof file
     let linkedAccountsData;
     try {
         linkedAccountsData = fs.readFileSync(accountsFilePath, 'utf8');
@@ -15,7 +14,6 @@ async function AutoProfile(client) {
         return;
     }
 
-    // Parse the file into a JavaScript object
     const linkedAccounts = {};
     const linkedAccountsLines = linkedAccountsData.split('\n');
     for (const line of linkedAccountsLines) {
@@ -42,21 +40,18 @@ async function AutoProfile(client) {
                 newProfiles.push([
                     discordId,
                     minecraftUUID,
-                    '000000',
                     `https://visage.surgeplay.com/bust/256/${minecraftUUID}`,
-                    'This user has not set a profile description.',
-                    '0'
                 ]);
             }
         }
 
         // Insert new profiles
         if (newProfiles.length > 0) {
-            const placeholders = newProfiles.map(() => '(?, ?, ?, ?, ?, ?)').join(', ');
+            const placeholders = newProfiles.map(() => '(?, ?, ?)').join(', ');
             const flattenedValues = newProfiles.flat();
             await queryDB(
                 databaseDir,
-                `INSERT INTO users (discord_id, minecraft_uuid, profile_color, profile_image, profile_description, vouches) VALUES ${placeholders}`,
+                `INSERT INTO users (discord_id, minecraft_uuid, profile_image) VALUES ${placeholders}`,
                 flattenedValues
             );
             client.log(`Created ${newProfiles.length} new profiles.`, 'SUCCESS');

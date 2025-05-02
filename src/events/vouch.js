@@ -2,11 +2,11 @@ const { EmbedBuilder, MessageFlags } = require('discord.js');
 const { queryDB } = require('../utils/databaseUtils');
 const { sendMCCommand, logRCON } = require('../utils/rconUtils');
 const { getConfig } = require('../utils/configUtils');
-const databaseDir = '/home/minecraft/GriggyBot/database.db';
-const cmiDatabaseDir = '/home/minecraft/Main/plugins/CMI/cmi.sqlite.db';
 
 async function Vouch(interaction) {
     const config = getConfig();
+    const griggyDatabaseDir = config.griggyDbPath;
+    const cmiDatabaseDir = config.cmi_sqlite_db;
     if (!config.enableVouch) return interaction.reply({ content: `Vouching has been disabled by the server owner.`, flags: MessageFlags.Ephemeral });
     try {
         await sendMCCommand('list');
@@ -24,12 +24,12 @@ async function Vouch(interaction) {
     const vouchingAccount = interaction.user.id;
 
     try {
-        const vouchingAccountRow = await queryDB(databaseDir, 'SELECT * FROM users WHERE discord_id = ?', [vouchingAccount], true);
+        const vouchingAccountRow = await queryDB(griggyDatabaseDir, 'SELECT * FROM users WHERE discord_id = ?', [vouchingAccount], true);
         if (!vouchingAccountRow) {
             return interaction.followUp({ content: `You must link your Discord account to your Minecraft account before you can vouch for \`${vouchingFor}\`.` });
         }
 
-        const vouchedPlayerRow = await queryDB(databaseDir, 'SELECT * FROM users WHERE discord_id = ?', [vouchingFor], true);
+        const vouchedPlayerRow = await queryDB(griggyDatabaseDir, 'SELECT * FROM users WHERE discord_id = ?', [vouchingFor], true);
         if (!vouchedPlayerRow) {
             return interaction.followUp({ content: `You must link your Discord account to your Minecraft account before you can vouch for \`${vouchingFor}\`.` });
         }
@@ -57,12 +57,12 @@ async function Vouch(interaction) {
         }
 
         const updatedVouches = parseInt(vouchedPlayerRow.vouches) + 1;
-        await queryDB(databaseDir, 'UPDATE users SET vouches = ? WHERE minecraft_uuid = ?', [updatedVouches, vouchingForUUID]);
+        await queryDB(griggyDatabaseDir, 'UPDATE users SET vouches = ? WHERE minecraft_uuid = ?', [updatedVouches, vouchingForUUID]);
 
         const updatedVouchedIds = vouchingAccountRow.vouchedIds
             ? `${vouchingAccountRow.vouchedIds},${vouchingForUUID}`
             : vouchingForUUID;
-        await queryDB(databaseDir, 'UPDATE users SET vouchedIds = ? WHERE discord_id = ?', [updatedVouchedIds, vouchingAccount]);
+        await queryDB(griggyDatabaseDir, 'UPDATE users SET vouchedIds = ? WHERE discord_id = ?', [updatedVouchedIds, vouchingAccount]);
 
         const vouchingForUser = await interaction.guild.members.fetch({ user: vouchingFor, force: true });
         const vouchingForUsername = vouchingForUser.displayName;

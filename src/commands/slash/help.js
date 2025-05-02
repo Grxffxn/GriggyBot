@@ -62,7 +62,6 @@ module.exports = {
             });
         }
 
-        // Reply with the help embed
         await interaction.reply({ embeds: [helpEmbed] });
     },
 };

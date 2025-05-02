@@ -25,7 +25,6 @@ module.exports = {
                     .setDescription('The rank you want to apply for.')
                     .setRequired(true);
 
-                // Dynamically add rank choices from config
                 ranks.forEach(rank => {
                     option.addChoices({ name: rank.displayName, value: rank.name });
                 });

@@ -5,8 +5,6 @@ const { formatNumber, hyphenateUUID } = require('../../utils/formattingUtils.js'
 const { checkEnoughBalance, checkCooldown, setCooldown, updateBalance } = require('../../utils/gamblingUtils.js');
 const { checkLinked } = require('../../utils/roleCheckUtils.js');
 const { queryDB } = require('../../utils/databaseUtils.js');
-const cmiDatabaseDir = '/home/minecraft/Main/plugins/CMI/cmi.sqlite.db';
-const griggyDatabaseDir = '/home/minecraft/GriggyBot/database.db';
 
 const choices = [
     { name: 'Rock', emoji: '🪨', beats: 'Scissors' },
@@ -30,7 +28,9 @@ module.exports = {
                 .setRequired(true)),
     async run(interaction) {
         const config = getConfig();
-        // Check if gambling is enabled and server is online
+        const cmiDatabaseDir = config.cmi_sqlite_db;
+        const griggyDatabaseDir = config.griggyDbPath;
+        // Check if server is online
         if (!serverData.online) return interaction.reply({ content: 'Gambling disabled while server is offline.', flags: MessageFlags.Ephemeral, });
         const userId = interaction.user.id;
         // Check if the targeted user is the same as the user OR is a bot

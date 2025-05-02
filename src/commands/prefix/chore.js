@@ -3,7 +3,7 @@ const { getConfig } = require('../../utils/configUtils');
 const fs = require('fs');
 const path = require('path');
 
-const filePath = path.join(__dirname, '../../choreList.txt');
+const choreFilePath = path.join(__dirname, '../../choreList.txt');
 const serverDataPath = path.join(__dirname, '../../serverData.json');
 
 module.exports = {
@@ -25,7 +25,7 @@ module.exports = {
 
         // Get the daily chore and its matching reward
         const serverData = JSON.parse(fs.readFileSync(serverDataPath, 'utf8'));
-        const fileContent = fs.readFileSync(filePath, 'utf8');
+        const fileContent = fs.readFileSync(choreFilePath, 'utf8');
         const chores = fileContent.split('\n').filter(line => line.trim() !== '');
 
         const selectedChoreIndex = serverData.selectedChoreIndex;

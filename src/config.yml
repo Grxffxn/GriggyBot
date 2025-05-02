@@ -1,6 +1,9 @@
 # You must manually populate these first several fields.
 # I recommend customizing as many values in this document as you can.
-# If you disable the feature, you do not need to populate the field.
+# You can use Discord emojis in the config, but you must use the emoji ID (e.g., <:emoji_name:emoji_id>)
+# You can find the emoji ID by typing '\:emoji_name:' in Discord.
+
+# If you disable a feature, you do not need to populate the field.
 # Please follow my setup guide on GitHub if you have any issues :)
 
 # * The bot token and client ID from the Discord Developer Portal
@@ -149,7 +152,7 @@ vipTiers:
 
 # Welcome message settings
 # Not necessary if you've disabled 'enableUpdatingImage', and can be left blank either way.
-welcomeIntro: "# <:_:1342069188931485707> Welcome to the server!\n-# <:_:1355510503140753518> Founded in 2077. Co-owned by Joe and Mama.\n-# Maintained by our incredible staff team <3"
+welcomeIntro: "# 👋 Welcome to the server!\n-# ❤️ Founded in 2077. Co-owned by Joe and Mama.\n-# Maintained by our incredible staff team <3"
 # List of staff emojis used in the welcome message. Feel free to leave this blank.
 staffEmojisList: ""
 useRulesInWelcomeMessage: true
@@ -159,7 +162,7 @@ welcomeServerInfoTitle: 'Server Info'
 welcomeServerInfoFields:
   - name: "🧭 View the live map"
     value: "🗺️ [BlueMap](http://mc.thelegendcontinues.info:8123/)"
-  - name: "<a:_:1162277213090107472> Become a donor"
+  - name: "❤️ Become a donor"
     value: "💵 [Patreon](https://www.patreon.com/)"
 
 # ENABLE/DISABLE FEATURES & COMMANDS

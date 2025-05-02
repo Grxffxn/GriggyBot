@@ -53,11 +53,11 @@ module.exports = {
             // Construct the final payout message
             let payoutMessage;
             if (payoutMultiplier === 0) {
-                payoutMessage = `<:_:774859143495417867> You lost your bet of **$${formatNumber(betAmount)}**. Better luck next time!`;
+                payoutMessage = `😞 You lost your bet of **$${formatNumber(betAmount)}**. Better luck next time!`;
             } else if (totalWinnings === betAmount) {
-                payoutMessage = `<a:_:762492571523219466> You broke even with your bet of **$${formatNumber(betAmount)}**.`;
+                payoutMessage = `🤝 You broke even with your bet of **$${formatNumber(betAmount)}**.`;
             } else {
-                payoutMessage = `<a:_:774429683876888576> You won **$${formatNumber(totalWinnings)}**!`;
+                payoutMessage = `🎉 You won **$${formatNumber(totalWinnings)}**!`;
             }
 
             return { payoutMultiplier, payoutMessage };

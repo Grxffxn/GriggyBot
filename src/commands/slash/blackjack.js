@@ -66,7 +66,7 @@ module.exports = {
                         
                         await interaction.editReply({
                             content: `🃏 You drew a **${newCard}**. Your cards: **${playerCards.join(', ')}** (Total: ${playerTotal})\n` +
-                                `You busted! Dealer wins! <:_:774859143495417867>\nNew balance: **$${formatNumber(newBalance)}**`,
+                                `You busted! Dealer wins! 😞\nNew balance: **$${formatNumber(newBalance)}**`,
                             components: [],
                         });
                         collector.stop('game_over');
@@ -79,7 +79,7 @@ module.exports = {
 
                         await interaction.editReply({
                             content: `🃏 You drew a **${newCard}**. Your cards: **${playerCards.join(', ')}** (Total: ${playerTotal})\n` +
-                                `You hit blackjack! You win! <a:_:774429683876888576>\nNew balance: **$${formatNumber(newBalance)}**`,
+                                `You hit blackjack! You win! 🎉\nNew balance: **$${formatNumber(newBalance)}**`,
                             components: [],
                         });
                         setCooldown(userId, 'blackjack'); // Add winner to cooldowns
@@ -113,16 +113,16 @@ module.exports = {
                     let newBalance;
                     if (playerTotal > 21) {
                         newBalance = balance - bet;
-                        resultMessage += `You busted! Dealer wins! <:_:774859143495417867>\nNew balance: **$${formatNumber(newBalance)}**`;
+                        resultMessage += `You busted! Dealer wins! 😞\nNew balance: **$${formatNumber(newBalance)}**`;
                     } else if (dealerTotal > 21 || playerTotal > dealerTotal) {
                         newBalance = balance + bet;
-                        resultMessage += `You win! <:_:1162276681323642890>\nNew balance: **$${formatNumber(newBalance)}**`;
+                        resultMessage += `You win! 🎉\nNew balance: **$${formatNumber(newBalance)}**`;
                         setCooldown(userId, 'blackjack'); // Add winner to cooldowns
                     } else if (playerTotal < dealerTotal) {
                         newBalance = balance - bet;
-                        resultMessage += `Dealer wins! <:_:774859143495417867>\nNew balance: **$${formatNumber(newBalance)}**`;
+                        resultMessage += `Dealer wins! 😞\nNew balance: **$${formatNumber(newBalance)}**`;
                     } else {
-                        resultMessage += `It's a tie! <a:_:762492571523219466>\nBalance: **$${formatNumber(balance)}**`;
+                        resultMessage += `It's a tie! 🤝\nBalance: **$${formatNumber(balance)}**`;
                     }
 
                     await interaction.editReply({ content: resultMessage, components: [] });

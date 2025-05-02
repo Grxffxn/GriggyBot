@@ -108,7 +108,7 @@ async function logRCONError(command) {
             return;
         }
 
-        const formattedErrorMsg = `<:tlcerror:1350727115015716865> The following command failed because GriggyBot couldn't reach TLC\n\`\`\`ansi\n\u001b[2;31m${command}\u001b[0m\n\`\`\``;
+        const formattedErrorMsg = `⚠️ The following command failed because GriggyBot couldn't reach ${config.serverAcronym || config.serverName}\n\`\`\`ansi\n\u001b[2;31m${command}\u001b[0m\n\`\`\``;
         thread.send(formattedErrorMsg);
     } catch (err) {
         botClient.log('Error logging error message... How ironic', 'ERROR', err);

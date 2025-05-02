@@ -95,11 +95,11 @@ module.exports = {
 				idea: 'Ideas'
 			};
 			const emojis = {
-				low: '<:bunnyhearts:1165199356094337084>',
-				todo: '<:bunnyexclaim:1165199355117043712>',
-				inprogress: '<:bunnystress:1165199818205962271>',
-				completed: '<:bunnycelebrate:1165199351438659626>',
-				idea: '<:bunnystars:1165199816985411624>'
+				low: '🐢',
+				todo: '📋',
+				inprogress: '🚧',
+				completed: '✅',
+				idea: '💡'
 			};
 
 			const fetchTodos = async (status, limit = null) => {

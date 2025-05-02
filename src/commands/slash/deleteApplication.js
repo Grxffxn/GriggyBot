@@ -43,7 +43,7 @@ module.exports = {
             return;
         }
 
-        const isStaff = checkStaff(interaction.user);
+        const isStaff = checkStaff(interaction.member);
         if (interaction.user.id !== row.discord_id && !isStaff) {
             await interaction.reply({ content: 'You are not authorized to delete this application.', flags: MessageFlags.Ephemeral });
             return;

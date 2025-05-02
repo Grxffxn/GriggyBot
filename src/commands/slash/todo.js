@@ -73,7 +73,7 @@ module.exports = {
 
 	async run(interaction) {
 		// Check if the user is staff
-		const isStaff = checkStaff(interaction.user);
+		const isStaff = checkStaff(interaction.member);
 		if (!isStaff) {
 			return interaction.reply({ content: 'You do not have permission to use this command.', flags: MessageFlags.Ephemeral });
 		}

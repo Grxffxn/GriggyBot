@@ -23,22 +23,35 @@ async function UpdateImage(client) {
         return;
     }
 
-    async function generateImage(sanitizedNumberOnline, sanitizedServerVersion, tps, formattedSchedule) {
+    async function generateImage(serverOnline, sanitizedNumberOnline, sanitizedServerVersion, tps, formattedSchedule) {
         try {
             const fontData = fs.readFileSync(fontPath).toString('base64');
             const fontBase64 = `data:font/ttf;base64,${fontData}`;
             const htmlTemplatePath = path.resolve(__dirname, '../welcomeImage.html');
             let htmlTemplate = fs.readFileSync(htmlTemplatePath, 'utf8');
 
-            htmlTemplate = htmlTemplate
-                .replace('{{fontBase64}}', fontBase64)
-                .replace('{{backgroundImage}}', base64DataUrl)
-                .replace('{{numberOnline}}', sanitizedNumberOnline)
-                .replace('{{serverVersion}}', sanitizedServerVersion)
-                .replace('{{tps}}', tps)
-                .replace('{{tpsColor}}', tps >= 17 ? 'green' : tps >= 13 ? 'yellow' : 'red')
-                .replace('{{formattedSchedule}}', formattedSchedule)
-                .replace('{{serverIp}}', config.serverIp);
+            if (!serverOnline) {
+                htmlTemplate = htmlTemplate
+                    .replace('{{fontBase64}}', fontBase64)
+                    .replace('{{backgroundImage}}', base64DataUrl)
+                    .replace('{{numberOnlineBlock}}', '')
+                    .replace('{{serverVersionBlock}}', '')
+                    .replace('{{tpsBlock}}', '')
+                    .replace('{{formattedScheduleBlock}}', '')
+                    .replace(
+                        '{{serverIp}}',
+                        `<div style="color: red; font-size: 40px; text-align: center; margin-bottom: 20px;">Server Offline</div><div>${config.serverIp}</div>`
+                    );
+            } else {
+                htmlTemplate = htmlTemplate
+                    .replace('{{fontBase64}}', fontBase64)
+                    .replace('{{backgroundImage}}', base64DataUrl)
+                    .replace('{{numberOnlineBlock}}', `<div>Players Online: ${sanitizedNumberOnline}</div>`)
+                    .replace('{{serverVersionBlock}}', `<div>Server Version: ${sanitizedServerVersion}</div>`)
+                    .replace('{{tpsBlock}}', `<div style="color: ${tps >= 17 ? 'green' : tps >= 13 ? 'yellow' : 'red'};">TPS: ${tps}</div>`)
+                    .replace('{{formattedScheduleBlock}}', `<div>Restart in ${formattedSchedule}</div>`)
+                    .replace('{{serverIp}}', `<div>${config.serverIp}</div>`);
+            }
 
             await nodeHtmlToImage({
                 output: 'assets/dynamicserverinfo.png',
@@ -52,14 +65,14 @@ async function UpdateImage(client) {
 
     try {
         const serverData = parseServerData();
+        const serverOnline = serverData.online;
         const sanitizedNumberOnline = serverData.numberOnline;
         const sanitizedServerVersion = serverData.serverVersion;
         const tps = serverData.tps;
         const formattedSchedule = serverData.restartSchedule;
 
-        await generateImage(sanitizedNumberOnline, sanitizedServerVersion, tps, formattedSchedule); // Generate the image
-
-        const attachment = new AttachmentBuilder('assets/dynamicserverinfo.png', { name: 'dynamicserverinfo.png' });
+        await generateImage(serverOnline, sanitizedNumberOnline, sanitizedServerVersion, tps, formattedSchedule);
+        attachment = new AttachmentBuilder('assets/dynamicserverinfo.png', { name: 'dynamicserverinfo.png' });
 
         // default rules embed
         const rulesEmbed = new EmbedBuilder();
@@ -70,7 +83,7 @@ async function UpdateImage(client) {
             config.rules.forEach((ruleObj, index) => {
                 rulesEmbed.addFields({
                     name: `**${index + 1}. ${ruleObj.rule}**`,
-                    value: ruleObj.description || '-+-+-+-+--+-+-+-+',
+                    value: `↪ ${ruleObj.description}` || '-+-+-+-+--+-+-+-+',
                 });
             });
             if (config.rulesFooter) {

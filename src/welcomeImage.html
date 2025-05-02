@@ -53,23 +53,36 @@
                 font-size: 30px;
                 color: white;
             }
+            .server-offline {
+                color: red;
+                font-size: 40px;
+                text-align: center;
+                margin-bottom: 20px;
+            }
         </style>
     </head>
     <body style="background: url('{{backgroundImage}}') no-repeat center center; background-size: cover;">
+        <!-- TPS Block -->
         <div class="tps-field">
-            TPS: {{tps}}
+            {{tpsBlock}}
         </div>
+
+        <!-- Restart Schedule Block -->
         <div class="restart-schedule">
-            Restart in {{formattedSchedule}}
+            {{formattedScheduleBlock}}
         </div>
+
+        <!-- Online Count and Server Version -->
         <div class="container">
             <div class="online-count">
-                Players Online: {{numberOnline}}
+                {{numberOnlineBlock}}
             </div>
             <div class="server-version">
-                Server Version: {{serverVersion}}
+                {{serverVersionBlock}}
             </div>
         </div>
+
+        <!-- Footer Text -->
         <div class="footer-text">
             {{serverIp}}
         </div>

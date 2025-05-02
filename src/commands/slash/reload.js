@@ -8,19 +8,19 @@ module.exports = {
         .setDescription('Reload the config file'),
     
     async run(interaction) {
-        const isStaff = checkStaff(interaction.user);
+        const isStaff = checkStaff(interaction.member);
         if (!isStaff) {
             return interaction.reply({ content: 'You do not have permission to use this command.', flags: MessageFlags.Ephemeral });
         }
-        await interaction.deferReply();
-        await interaction.editReply({ content: 'Reloading config file...', flags: MessageFlags.Ephemeral });
+        await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+        await interaction.editReply('Reloading config file...');
 
         try {
             reloadConfig();
-            await interaction.editReply({ content: 'Config file reloaded.', flags: MessageFlags.Ephemeral });
+            await interaction.editReply('Config file reloaded. Some changes may require a restart to take effect.');
         } catch (err) {
             interaction.client.log('Failed to reload config file:', 'ERROR', err);
-            await interaction.editReply({ content: 'Failed to reload config file.', flags: MessageFlags.Ephemeral });
+            await interaction.editReply('Failed to reload config file.');
         }
     }
 };

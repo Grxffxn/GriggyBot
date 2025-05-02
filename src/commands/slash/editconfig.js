@@ -42,28 +42,28 @@ module.exports = {
             return interaction.reply({ content: 'You do not have permission to use this command.', flags: MessageFlags.Ephemeral });
         }
 
-        await interaction.deferReply();
+        await interaction.deferReply({ flags: MessageFlags.Ephemeral });
         const key = interaction.options.getString('key');
         const value = interaction.options.getString('value');
 
         if (!key || !value) {
-            return interaction.editReply({ content: 'Please provide both a key and a value.', flags: MessageFlags.Ephemeral });
+            return interaction.editReply('Please provide both a key and a value.');
         }
 
         try {
             const config = getConfig();
 
             if (!(key in config)) {
-                return interaction.editReply({ content: `Invalid key: ${key}`, flags: MessageFlags.Ephemeral });
+                return interaction.editReply(`Invalid key: ${key}`);
             }
 
             config[key] = parseValue(value, config[key]);
             saveConfig(config, interaction.client);
             reloadConfig(interaction.client);
 
-            await interaction.editReply({ content: `Config updated: ${key} = ${value}`, flags: MessageFlags.Ephemeral });
+            await interaction.editReply(`Config updated: ${key} = ${value}`);
         } catch (err) {
-            await interaction.editReply({ content: 'Failed to update config.', flags: MessageFlags.Ephemeral });
+            await interaction.editReply('Failed to update config.');
             interaction.client.log('Failed to update config:', 'ERROR', err);
         }
     }

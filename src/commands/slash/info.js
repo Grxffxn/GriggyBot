@@ -19,13 +19,14 @@ module.exports = {
             const cmiDatabasePath = config.cmi_sqlite_db;
             const luckPermsDatabasePath = config.luckperms_sqlite_db;
 
-            await interaction.deferReply();
             const username = interaction.options.getString('username');
             const { data } = await axios.get(`https://api.geysermc.org/v2/utils/uuid/bedrock_or_java/${username}?prefix=.`);
 
             if (!data) {
-                return interaction.followUp({ content: 'Invalid username, or Mojang\'s API is down.', flags: MessageFlags.Ephemeral });
+                return interaction.reply({ content: 'Invalid username, or Mojang\'s API is down.', flags: MessageFlags.Ephemeral });
             }
+
+            await interaction.deferReply();
 
             const trimmedUUID = data.id;
             let renderUrl = `https://visage.surgeplay.com/bust/256/${trimmedUUID}`;
@@ -113,16 +114,16 @@ module.exports = {
             )
 
             if (linkedDiscordAccount && config.enableVouch) {
-                interaction.followUp({ embeds: [embed], components: [actionRow] });
+                interaction.editReply({ embeds: [embed], components: [actionRow] });
             } else if (!linkedDiscordAccount && config.enableVouch) {
-                interaction.followUp({ embeds: [embed], components: [unlinkedActionRow] });
+                interaction.editReply({ embeds: [embed], components: [unlinkedActionRow] });
             } else {
-                interaction.followUp({ embeds: [embed] });
+                interaction.editReply({ embeds: [embed] });
             }
 
         } catch (err) {
             interaction.client.log('/info command failure:', 'ERROR', err);
-            interaction.followUp({ content: 'Command failed </3 Try again or contact an admin.\nPlayer data could be formatted improperly.', flags: MessageFlags.Ephemeral });
+            interaction.editReply({ content: 'Command failed </3 Try again or contact an admin.\nPlayer data could be formatted improperly.', flags: MessageFlags.Ephemeral });
         }
     }
 };

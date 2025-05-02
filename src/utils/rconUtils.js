@@ -1,18 +1,18 @@
 const { getConfig } = require('../utils/configUtils');
 const { Rcon } = require('rcon-client');
 
-const config = getConfig();
-
-const rcon = new Rcon({
-    host: config.rconIp,
-    port: config.rconPort,
-    password: config.rconPwd
-});
-
+let config;
+let rcon;
 let botClient;
 
 async function initializeRCONUtils(client) {
     botClient = client;
+    config = getConfig();
+    rcon = new Rcon({
+        host: config.rconIp,
+        port: config.rconPort,
+        password: config.rconPwd
+    });
 }
 
 async function startRCON() {

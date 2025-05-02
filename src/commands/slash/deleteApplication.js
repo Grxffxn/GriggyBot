@@ -54,7 +54,8 @@ module.exports = {
             .setDescription(`Rank: **${rank}**\nPlayer: **${playerName}**\nStatus: **${row.status}**`)
             .setColor(0xFF0000);
 
-        const confirmationMessage = await interaction.reply({ embeds: [embed], fetchReply: true });
+        await interaction.reply({ embeds: [embed] });
+        const confirmationMessage = await interaction.fetchReply();
 
         confirmationMessage.react('✅').catch(err => interaction.client.log('Failed to react:', 'ERROR', err));
 

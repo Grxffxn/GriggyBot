@@ -1,4 +1,5 @@
 const { getConfig } = require('../utils/configUtils');
+const { convertMinecraftToANSI } = require('../utils/formattingUtils');
 const { Rcon } = require('rcon-client');
 
 let config;
@@ -71,6 +72,10 @@ async function attemptReconnection() {
 async function sendMCCommand(command) {
     try {
         const response = await rcon.send(command);
+        if (!response || response.trim() === '') {
+            botClient.log(`RCON command "${command}" returned an empty response.`, 'WARN');
+            return 'No response from server.';
+        }
         return response;
     } catch (err) {
         botClient.log(`Error sending command: ${command}`, 'ERROR', err);
@@ -86,7 +91,9 @@ async function logRCON(command, response) {
             return;
         }
 
-        const formattedLogMsg = `\`\`\`ansi\n\u001b[2;34m>\u001b[0m \u001b[2;33m${command}\u001b[0m\n\u001b[2;34m↪\u001b[0m \u001b[2;32m${response}\u001b[0m\n\`\`\``
+        const formattedResponse = convertMinecraftToANSI(response);
+
+        const formattedLogMsg = `\`\`\`ansi\n\u001b[2;34m>\u001b[0m \u001b[2;33m${command}\u001b[0m\n\u001b[2;34m↪\u001b[0m \u001b[2;32m${formattedResponse}\u001b[0m\n\`\`\``
         thread.send(formattedLogMsg);
     } catch (err) {
         botClient.log('Error logging RCON response:', 'ERROR', err);

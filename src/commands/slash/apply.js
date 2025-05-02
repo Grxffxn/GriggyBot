@@ -63,7 +63,7 @@ async function startApplicationProcess(interaction, rank, playerName) {
     const rankConfig = ranks.find(r => r.name === rank);
 
     if (!rankConfig) {
-        await interaction.reply(`The rank "${rank}" is not configured.`);
+        await interaction.reply({ content: `The rank "${rank}" is not configured.`, flags: MessageFlags.Ephemeral });
         return;
     }
 
@@ -74,7 +74,7 @@ async function startApplicationProcess(interaction, rank, playerName) {
         const requiredRole = interaction.guild.roles.cache.find(role => role.name.toLowerCase() === requiredRank.name);
 
         if (!requiredRole || !user.roles.cache.has(requiredRole.id)) {
-            await interaction.reply(`You must have the **${requiredRank.name}** role before applying for **${rankConfig.name}**.`);
+            await interaction.reply({ content: `You must have the **${requiredRank.name}** role before applying for **${rankConfig.name}**.`, flags: MessageFlags.Ephemeral });
             return;
         }
     }

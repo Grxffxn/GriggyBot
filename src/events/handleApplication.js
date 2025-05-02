@@ -47,7 +47,7 @@ async function handleApplication(interaction) {
                 `
                 SELECT * FROM applications
                 WHERE discord_id = ? AND status = ?
-                ORDER BY id DESC
+                ORDER BY rowid DESC
                 LIMIT 1
                 `,
                 [vouchingFor, 'active'], true
@@ -99,6 +99,7 @@ async function handleApplication(interaction) {
                             await queryDB(griggyDatabaseDir, 'UPDATE applications SET status = ? WHERE discord_id = ?', ['approved', vouchingFor]);
                         } catch (error) {
                             await interaction.editReply(`An error occurred while promoting the user. Please try again later.`);
+                            interaction.client.log('Error promoting user:', 'ERROR', error);
                             return;
                         }
                     } else {

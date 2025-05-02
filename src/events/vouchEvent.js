@@ -16,22 +16,18 @@ async function Vouch(interaction) {
     }
     await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
-    if (isNaN(interaction.customId.replace('vouchButton-', ''))) {
-        return interaction.followUp({ content: 'Error: Attempted to vouch for an unlinked player. Notify <@365871683828973568>, this shouldn\'t be possible!' });
-    }
-
     const vouchingFor = interaction.customId.replace('vouchButton-', '');
     const vouchingAccount = interaction.user.id;
 
     try {
         const vouchingAccountRow = await queryDB(griggyDatabaseDir, 'SELECT * FROM users WHERE discord_id = ?', [vouchingAccount], true);
         if (!vouchingAccountRow) {
-            return interaction.followUp({ content: `You must link your Discord account to your Minecraft account before you can vouch for \`${vouchingFor}\`.` });
+            return interaction.editReply(`You must link your Discord account to your Minecraft account before you can vouch for \`${vouchingFor}\`.`);
         }
 
         const vouchedPlayerRow = await queryDB(griggyDatabaseDir, 'SELECT * FROM users WHERE discord_id = ?', [vouchingFor], true);
         if (!vouchedPlayerRow) {
-            return interaction.followUp({ content: `You must link your Discord account to your Minecraft account before you can vouch for \`${vouchingFor}\`.` });
+            return interaction.editReply(`You must link your Discord account to your Minecraft account before you can vouch for \`${vouchingFor}\`.`);
         }
 
         const vouchingForUUID = vouchedPlayerRow.minecraft_uuid;
@@ -45,15 +41,15 @@ async function Vouch(interaction) {
         const vouchingForMCUsername = cmiRow ? cmiRow.username : null;
 
         if (!vouchingForMCUsername) {
-            return interaction.followUp({ content: `Minecraft username not found for UUID: ${hyphenatedVouchingForUUID}.` });
+            return interaction.editReply(`Minecraft username not found for UUID: ${hyphenatedVouchingForUUID}.`);
         }
 
         if (vouchedPlayerRow.discord_id === vouchingAccount) {
-            return interaction.followUp({ content: 'Nice try! You cannot vouch for yourself.' });
+            return interaction.editReply('Nice try! You cannot vouch for yourself.');
         }
 
         if (vouchingAccountRow.vouchedIds && vouchingAccountRow.vouchedIds.includes(vouchingForUUID)) {
-            return interaction.followUp({ content: `You have already vouched for <@${vouchingFor}>.` });
+            return interaction.editReply(`You have already vouched for <@${vouchingFor}>.`);
         }
 
         const updatedVouches = parseInt(vouchedPlayerRow.vouches) + 1;
@@ -76,7 +72,7 @@ async function Vouch(interaction) {
             .setTimestamp()
             .setFooter({ text: 'GriggyBot' });
 
-        await interaction.followUp({ content: 'Success' });
+        await interaction.editReply('Success');
         await interaction.channel.send({ embeds: [vouchEmbed] });
 
         const command = `cmi usermeta ${vouchingForMCUsername} increment points 1`;
@@ -84,7 +80,7 @@ async function Vouch(interaction) {
         logRCON(command, response);
     } catch (err) {
         interaction.client.log('Error processing vouch:', 'ERROR', err);
-        return interaction.followUp({ content: 'An error occurred while processing your vouch. Please try again later.' });
+        return interaction.editReply('An error occurred while processing your vouch. Please try again later.');
     }
 }
 

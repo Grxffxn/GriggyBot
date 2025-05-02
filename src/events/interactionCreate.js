@@ -1,5 +1,5 @@
 const { Events, InteractionType, MessageFlags } = require('discord.js');
-const Vouch = require('./vouch.js');
+const Vouch = require('./vouchEvent.js');
 const handleApplication = require('./handleApplication.js');
 const handleChoreApproval = require('./handleChoreApproval.js');
 

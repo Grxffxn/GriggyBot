@@ -74,7 +74,7 @@ async function startApplicationProcess(interaction, rank, playerName) {
         const requiredRole = interaction.guild.roles.cache.find(role => role.name.toLowerCase() === requiredRank.name);
 
         if (!requiredRole || !user.roles.cache.has(requiredRole.id)) {
-            await interaction.reply(`You must have the **${requiredRank.displayName}** role before applying for **${rankConfig.displayName}**.`);
+            await interaction.reply(`You must have the **${requiredRank.name}** role before applying for **${rankConfig.name}**.`);
             return;
         }
     }
@@ -84,7 +84,7 @@ async function startApplicationProcess(interaction, rank, playerName) {
 
     // Show the modal
     const modal = new ModalBuilder()
-        .setTitle(`${rankConfig.displayName} Application`)
+        .setTitle(`${rankConfig.name.replace(/^./, char => char.toUpperCase())} Application`)
         .setCustomId(`applicationModal-${userId}`);
     questions.forEach((question, index) => {
         modal.addComponents(
@@ -162,13 +162,13 @@ async function startApplicationProcess(interaction, rank, playerName) {
         if (!submissionChannel) interaction.client.log(`Submission channel not found.`, 'ERROR');
 
         const thread = await submissionChannel.threads.create({
-            name: `${playerName}'s ${rankConfig.displayName} Application`,
+            name: `${playerName}'s ${rankConfig.name.replace(/^./, char => char.toUpperCase())} Application`,
             autoArchiveDuration: 4320,
         });
         if (thread.joinable) await thread.join();
 
         const embed = new EmbedBuilder()
-            .setTitle(`📌 ${playerName}'s ${rankConfig.displayName} Application`)
+            .setTitle(`📌 ${playerName}'s ${rankConfig.name.replace(/^./, char => char.toUpperCase())} Application`)
             .setThumbnail(thumbnailUrl)
             .addFields({ name: '📄 Application Form', value: questions.map((q, i) => `**${q}**\n${answers[i]}`).join('\n-=+=- -=+=- -=+=-\n') })
             .setFooter({ text: `Application submitted by ${interaction.user.username}`, iconURL: interaction.user.displayAvatarURL() });
@@ -193,7 +193,7 @@ async function startApplicationProcess(interaction, rank, playerName) {
         // Notify in-game chat about a new application
         const mcChatChannel = interaction.guild.channels.cache.find(c => c.id === config.mcChatChannelId);
         if (mcChatChannel && config.enableApplicationNotifications) {
-            await mcChatChannel.send(`${playerName} just submitted a ${rankConfig.displayName} application!`);
+            await mcChatChannel.send(`${playerName} just submitted a ${rankConfig.name.replace(/^./, char => char.toUpperCase())} application!`);
         }
     } catch (err) {
         if (err.name === 'TimeoutError') {

@@ -1,8 +1,15 @@
-const { getConfig } = require('../utils/configUtils.js');
+const { getConfig } = require('./configUtils.js');
+const { queryDB } = require('./databaseUtils.js');
 
 function checkLinked(member) {
-    const linkedRole = member.guild.roles.cache.find(role => role.name === 'Linked');
-    return member.roles.cache.has(linkedRole.id);
+    const config = getConfig();
+    const griggyDatabaseDir = config.griggyDbPath;
+    const userRow = queryDB(griggyDatabaseDir, 'SELECT * FROM users WHERE discord_id = ?', [member.id], true);
+    if (userRow) {
+        return true;
+    } else {
+        return false;
+    }
 }
 
 function checkStaff(member, staffRoles = []) {

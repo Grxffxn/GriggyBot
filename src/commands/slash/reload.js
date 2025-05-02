@@ -16,7 +16,7 @@ module.exports = {
         await interaction.editReply('Reloading config file...');
 
         try {
-            reloadConfig();
+            reloadConfig(interaction.client);
             await interaction.editReply('Config file reloaded. Some changes may require a restart to take effect.');
         } catch (err) {
             interaction.client.log('Failed to reload config file:', 'ERROR', err);

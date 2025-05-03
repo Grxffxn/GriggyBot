@@ -39,7 +39,9 @@ async function handleApplication(interaction) {
     }
 
     try {
-        await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+        if (!interaction.deferred && !interaction.replied) {
+            await interaction.deferUpdate();
+        }
 
         if (action === 'refresh') {
             const application = await queryDB(
@@ -53,10 +55,7 @@ async function handleApplication(interaction) {
                 [vouchingFor, 'active'], true
             );
 
-            if (!application) {
-                await interaction.editReply(`No active application found for <@${vouchingFor}>.`);
-                return;
-            }
+            if (!application)  return interaction.followUp({ content: `No active application found for <@${vouchingFor}>.`, flags: MessageFlags.Ephemeral });
 
             const { approvals = 0 } = application;
             const { vouches = 0 } = await queryDB(griggyDatabaseDir, 'SELECT * FROM users WHERE discord_id = ?', [vouchingFor], true) || {};
@@ -74,10 +73,7 @@ async function handleApplication(interaction) {
             }, config);
 
             const submissionMessage = await interaction.channel.messages.fetch(application.message_id).catch(() => null);
-            if (!submissionMessage) {
-                await interaction.editReply('Error: The application message could not be found. It may have been deleted.');
-                return;
-            }
+            if (!submissionMessage) return interaction.followUp({ content: 'Error: The application message could not be found. It may have been deleted.', flags: MessageFlags.Ephemeral });
 
             if (
                 approvals >= rankConfig.requiredStaffApprovals &&
@@ -86,59 +82,52 @@ async function handleApplication(interaction) {
                 const guild = interaction.guild;
                 const member = await guild.members.fetch(vouchingFor).catch(() => null);
                 if (member) {
-                    const role = guild.roles.cache.find(r => r.name.toLowerCase() === rank.toLowerCase());
+                    const role = await guild.roles.cache.find(r => r.name.toLowerCase() === rank.toLowerCase());
                     if (role) {
                         const command = `lp user ${application.player_name} promote player`;
                         try {
                             const response = await sendMCCommand(command);
                             logRCON(command, response);
                             await member.roles.add(role);
-                            await interaction.editReply(`<@${vouchingFor}> has met the criteria and has been granted the ${rankConfig.displayName} role!`);
                             await interaction.channel.send(`Your application has been approved, congratulations <@${member.id}>! 🎉`);
                             await interaction.channel.setLocked(true);
                             await queryDB(griggyDatabaseDir, 'UPDATE applications SET status = ? WHERE discord_id = ?', ['approved', vouchingFor]);
                         } catch (error) {
-                            await interaction.editReply(`An error occurred while promoting the user. Please try again later.`);
+                            await interaction.followUp({ content: `An error occurred while promoting the user. Please try again later.`, flags: MessageFlags.Ephemeral });
                             interaction.client.log('Error promoting user:', 'ERROR', error);
                             return;
                         }
                     } else {
-                        await interaction.editReply(`Role "${rank}" not found in the server. Please check role setup.`);
+                        return interaction.followUp({ content: `Role "${rank}" not found in the server. Please check role setup.`, flags: MessageFlags.Ephemeral });
                     }
                 } else {
-                    await interaction.editReply(`Could not fetch member <@${vouchingFor}>. They might not be in the server.`);
+                    return interaction.followUp({ content: `Could not fetch member <@${vouchingFor}>. They might not be in the server.`, flags: MessageFlags.Ephemeral });
                 }
             }
 
             await submissionMessage.edit({ components: [buttonRow] });
-            if (approvals < rankConfig.requiredStaffApprovals || (config.enableRankPoints && userPoints < rankConfig.requiredPoints)) {
-                await interaction.editReply({ content: 'Buttons have been refreshed.' });
-            }
+            if (approvals < rankConfig.requiredStaffApprovals || (config.enableRankPoints && userPoints < rankConfig.requiredPoints)) return;
         }
 
         if (action === 'approve') {
             const isStaff = checkStaff(interaction.member);
-            if (!isStaff) {
-                await interaction.editReply('You do not have permission to approve applications.');
-                return;
-            }
+            if (!isStaff) return interaction.followUp('You do not have permission to approve applications.');
 
             const application = await queryDB(griggyDatabaseDir, 'SELECT * FROM applications WHERE discord_id = ? AND status = ?', [vouchingFor, 'active'], true);
-            if (!application) {
-                await interaction.editReply(`No active application found for <@${vouchingFor}>.`);
-                return;
-            }
+            if (!application) return interaction.followUp(`No active application found for <@${vouchingFor}>.`);
 
             const approvals = parseInt(application.approvals || 0, 10);
             const updatedApprovals = approvals + 1;
             await queryDB(griggyDatabaseDir, 'UPDATE applications SET approvals = ? WHERE discord_id = ?', [updatedApprovals, vouchingFor]);
 
-            await interaction.editReply('Your approval has been recorded.');
-            await interaction.channel.send({ content: `<@${interaction.user.id}> has approved this application. Multiple approvals may be required for higher ranks.` });
+            await interaction.channel.send(`<@${interaction.user.id}> has approved this application. Multiple approvals may be required for higher ranks.`);
+        
+            interaction.customId = `refresh-${vouchingFor}-${rank}`;
+            await handleApplication(interaction);
         }
     } catch (err) {
         interaction.client.log('Error processing interaction:', 'ERROR', err);
-        await interaction.editReply('An error occurred while processing your request.');
+        await interaction.followUp({ content: 'An error occurred while processing your request.', flags: MessageFlags.Ephemeral });
     }
 }
 

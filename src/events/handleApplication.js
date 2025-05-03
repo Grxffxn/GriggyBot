@@ -62,7 +62,7 @@ async function handleApplication(interaction) {
             const { vouches = 0 } = await queryDB(griggyDatabaseDir, 'SELECT * FROM users WHERE discord_id = ?', [vouchingFor], true) || {};
             const userPoints = config.enableRankPoints
                 ? await queryDB(cmiDatabaseDir, 'SELECT UserMeta FROM users WHERE username = ? COLLATE NOCASE', [application.player_name], true)
-                      .then(row => parseFloat((row.UserMeta || '').split('%%')[1], 10) || 0)
+                    .then(row => parseFloat((row.UserMeta || '').split('%%')[1], 10) || 0)
                 : 0;
 
             const buttonRow = createButtons(vouchingFor, rank, {

@@ -129,7 +129,7 @@ async function startApplicationProcess(interaction, rank, playerName) {
             new ButtonBuilder()
                 .setCustomId(`approve-${userId}-${rank}`)
                 .setLabel(`Approve (0/${rankConfig.requiredStaffApprovals})`)
-                .setStyle('Success')
+                .setStyle('Primary')
         );
         if (config.enableVouch) {
             buttonRow.addComponents(
@@ -169,13 +169,21 @@ async function startApplicationProcess(interaction, rank, playerName) {
 
         const embed = new EmbedBuilder()
             .setTitle(`📌 ${playerName}'s ${rankConfig.name.replace(/^./, char => char.toUpperCase())} Application`)
+            .setColor(rankConfig.color)
             .setThumbnail(thumbnailUrl)
             .addFields({ name: '📄 Application Form', value: questions.map((q, i) => `**${q}**\n${answers[i]}`).join('\n-=+=- -=+=- -=+=-\n') })
             .setFooter({ text: `Application submitted by ${interaction.user.username}`, iconURL: interaction.user.displayAvatarURL() });
 
+        const profileEmbed = new EmbedBuilder()
+            .setTitle(playerName)
+            .setColor(row.profile_color)
+            .setDescription(row.profile_description)
+            .setThumbnail(row.profile_image)
+            .addFields({ name: 'Favorite Game', value: row.favorite_game})
+
         const sentMessage = await thread.send({
             content: `${interaction.user}`,
-            embeds: [embed],
+            embeds: [embed, profileEmbed],
             components: [buttonRow],
         });
 

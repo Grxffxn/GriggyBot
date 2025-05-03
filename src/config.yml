@@ -79,22 +79,27 @@ applicationQuestions:
 ranks:
   - name: "fabled"
     displayName: "I. Fabled"
+    color: "3544b9"
     requiredStaffApprovals: 1
     requiredPoints: 5
   - name: "heroic"
     displayName: "II. Heroic"
+    color: "7650ba"
     requiredStaffApprovals: 2
     requiredPoints: 10
   - name: "mythical"
     displayName: "III. Mythical"
+    color: "a061bb"
     requiredStaffApprovals: 3
     requiredPoints: 15
   - name: "apocryphal"
     displayName: "IV. Apocryphal"
+    color: "c177bc"
     requiredStaffApprovals: 4
     requiredPoints: 20
   - name: "legend"
     displayName: "V. Legend"
+    color: "da90c0"
     requiredStaffApprovals: 5
     requiredPoints: 25
 

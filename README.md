@@ -36,7 +36,7 @@ GriggyBot is a Discord bot originally designed for **The Legend Continues** Mine
 Before installing and running GriggyBot, ensure you have the following:
 
 1. **Node.js**: Install the latest version of Node.js from [nodejs.org](https://nodejs.org/).
-2. **Discord Bot Token**: Create a bot on the [Discord Developer Portal](https://discord.com/developers/applications) and obtain the token and client ID.
+2. **Discord Bot Token**: Create a bot on the [Discord Developer Portal](https://discord.com/developers/applications) and obtain the token and client ID. [Help!](https://discordjs.guide/preparations/setting-up-a-bot-application.html#creating-your-bot)
 3. **Minecraft Server Plugins**:
    - **LuckPerms**
    - **DiscordSRV**
@@ -44,7 +44,7 @@ Before installing and running GriggyBot, ensure you have the following:
 4. **RCON**: Enable RCON in your `server.properties` file and configure the IP, port, and password.
 
 ## Installation
-**Setup the Bot in [Discord Developer Portal](https://discord.com/developers/applications)**
+**Setup the Bot in [Discord Developer Portal](https://discord.com/developers/applications)** - [more info](https://discordjs.guide/preparations/setting-up-a-bot-application.html#creating-your-bot)
 
 **Save the clientId and token for `config.yml`!**
 ![gbotinstruct](https://github.com/user-attachments/assets/c85eb2a9-133b-4edf-8fd7-07fb30e7f531)

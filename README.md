@@ -1,4 +1,3 @@
-
 # GriggyBot
 GriggyBot is a Discord bot originally designed for **The Legend Continues** Minecraft server. It integrates with the server to provide interactive features such as rank applications, chore submissions, gambling games, and more. The bot is tailored to work with plugins like **LuckPerms**, **DiscordSRV**, and **CMI**.
 
@@ -45,7 +44,10 @@ Before installing and running GriggyBot, ensure you have the following:
 4. **RCON**: Enable RCON in your `server.properties` file and configure the IP, port, and password.
 
 ## Installation
+**Setup the Bot in [Discord Developer Portal](https://discord.com/developers/applications)**
 
+**Save the clientId and token for `config.yml`!**
+![gbotinstruct](https://github.com/user-attachments/assets/c85eb2a9-133b-4edf-8fd7-07fb30e7f531)
 **Recommended Install Location**
 ```
 ├── GriggyBot <---- HERE

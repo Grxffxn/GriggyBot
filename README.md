@@ -73,6 +73,19 @@ Before installing and running GriggyBot, ensure you have the following:
 
 3. Configure the bot:
    - Edit the [`src/config.yml`](src/config.yml) file with your server and bot details.
+At minimum, configure these:
+```yaml
+# * The bot token and client ID from the Discord Developer Portal
+token: "YOUR_DISCORD_BOT_TOKEN_HERE"
+clientId: "YOUR_CLIENT_ID_HERE"
+
+# * RCON connection details for your Minecraft server
+# These values are found in your server.properties file
+# You may need to manually add 'rcon.ip=127.0.0.1' to your server.properties
+rconIp: "127.0.0.1"
+rconPwd: "YOUR_RCON_PASSWORD_HERE"
+rconPort: 25575  # Default RCON port, replace if different
+```
 
 4. Run the bot:
    ```bash

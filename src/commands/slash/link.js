@@ -22,7 +22,7 @@ module.exports = {
 			// Extract guild, channel, and message IDs
 			const match = messageLink.match(/discord\.com\/channels\/(\d+)\/(\d+)\/(\d+)/);
 			if (!match) {
-				return interaction.reply({ content: '<:_:1353522852581605517> can\'t find that message. Please check the link and try again.\n-# Maybe I\'m going blind?', flags: MessageFlags.Ephemeral });
+				return interaction.reply({ content: '😞 can\'t find that message. Please check the link and try again.\n-# Maybe I\'m going blind?', flags: MessageFlags.Ephemeral });
 			}
 
 			const [, guildId, channelId, messageId] = match;

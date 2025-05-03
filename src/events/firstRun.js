@@ -134,16 +134,40 @@ async function firstRun(client) {
             updatedValues.consoleChannelId = consoleChannel.id;
             client.log(`Detected console channel: ${consoleChannel.name} (${consoleChannel.id})`, 'SUCCESS');
 
-            const thread = await consoleChannel.threads.create({
-                name: 'RCON',
-                autoArchiveDuration: 4320,
-                reason: 'RCON logging',
-            });
-            updatedValues.rconLogThreadId = thread.id;
+            try {
+                const thread = await consoleChannel.threads.create({
+                    name: 'RCON',
+                    autoArchiveDuration: 4320,
+                    reason: 'RCON logging',
+                });
+                updatedValues.rconLogThreadId = thread.id;
+            } catch (err) {
+                client.log('Error creating RCON thread:', 'ERROR', err);
+                updatedValues.rconLogThreadId = await askForId('rconLogThreadId (create the thread manually)', config.rconLogThreadId);
+            }
         } else {
             client.log('No console channel found.', 'WARN');
             updatedValues.consoleChannelId = await askForId('consoleChannelId', config.consoleChannelId);
-            updatedValues.rconLogThreadId = await askForId('rconLogThreadId (create the thread manually)', config.rconLogThreadId);
+
+            if (updatedValues.consoleChannelId) {
+                const consoleChannel = guild?.channels.cache.get(updatedValues.consoleChannelId);
+                if (consoleChannel) {
+                    try {
+                        const thread = await consoleChannel.threads.create({
+                            name: 'RCON',
+                            autoArchiveDuration: 4320,
+                            reason: 'RCON logging',
+                        });
+                        updatedValues.rconLogThreadId = thread.id;
+                    } catch (err) {
+                        client.log('Error creating RCON thread:', 'ERROR', err);
+                        updatedValues.rconLogThreadId = await askForId('rconLogThreadId (create the thread manually)', config.rconLogThreadId);
+                    }
+                } else {
+                    client.log('Couldn\'t find console channel with the provided ID.', 'WARN');
+                    updatedValues.rconLogThreadId = await askForId('rconLogThreadId (create the thread manually)', config.rconLogThreadId);
+                }
+            }
         }
         isFirstRun = true;
     }
@@ -255,11 +279,11 @@ async function firstRun(client) {
     if (!config.cmi_sqlite_db || !config.accounts_aof || !config.luckperms_sqlite_db) {
         const relativePath = '../../..';
         const basePath = path.resolve(__dirname, relativePath);
-    
+
         if (!config.cmi_sqlite_db) {
             client.log(`Searching for cmi.sqlite.db in the CMI directory... This may take a moment.`, 'INFO');
             const foundFiles = await findFile(basePath, 'CMI', 'cmi.sqlite.db', client);
-    
+
             if (foundFiles.length > 0) {
                 updatedValues.cmi_sqlite_db = foundFiles[0];
                 client.log(`Found cmi.sqlite.db at ${foundFiles[0]}`, 'SUCCESS');
@@ -267,11 +291,11 @@ async function firstRun(client) {
                 client.log(`Could not find cmi.sqlite.db. Please set the path in the config file.`, 'WARN');
             }
         }
-    
+
         if (!config.accounts_aof) {
             client.log(`Searching for accounts.aof in the DiscordSRV directory... This may take a moment.`, 'INFO');
             const foundFiles = await findFile(basePath, 'DiscordSRV', 'accounts.aof', client);
-    
+
             if (foundFiles.length > 0) {
                 updatedValues.accounts_aof = foundFiles[0];
                 client.log(`Found accounts.aof at ${foundFiles[0]}`, 'SUCCESS');
@@ -283,7 +307,7 @@ async function firstRun(client) {
         if (!config.luckperms_sqlite_db && config.enableInfo) {
             client.log(`Searching for luckperms-sqlite.db in the LuckPerms directory... This may take a moment.`, 'INFO');
             const foundFiles = await findFile(basePath, 'LuckPerms', 'luckperms-sqlite.db', client);
-    
+
             if (foundFiles.length > 0) {
                 updatedValues.luckperms_sqlite_db = foundFiles[0];
                 client.log(`Found luckperms-sqlite.db at ${foundFiles[0]}`, 'SUCCESS');
@@ -297,9 +321,13 @@ async function firstRun(client) {
     // DATABASE SETUP
     const databasePath = path.resolve(__dirname, '../../database.db');
     if (!fs.existsSync(databasePath)) {
-        client.log('No database found. Creating...');
-        createDatabase(updatedValues, databasePath, client);
-        isFirstRun = true;
+        try {
+            client.log('No database found. Creating...');
+            createDatabase(updatedValues, databasePath, client);
+            isFirstRun = true;
+        } catch (err) {
+            client.log('Error creating database:', 'ERROR', err);
+        }
     }
 
     // CHECK CONFIG CONFLICTS

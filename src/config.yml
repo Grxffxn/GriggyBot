@@ -22,10 +22,16 @@ serverName: "The Legend Continues"
 serverAcronym: ""
 serverIp: ""
 
-# Discord ID of the user who can run /shutdown (shuts down GriggyBot)
+# User ID of the bot owner (used for /admin commands)
+# Defaults to guild owner if not set
 botOwner: ""
 
-# Role IDs of all your staff roles (used for /todo, /deleteapplication, /reload, /editconfig, etc.)
+# Role IDs of your Admin roles (used for /admin commands)
+adminRoleIds:
+  - ""
+  - ""
+
+# Role IDs of all your staff roles (used for /todo, /deleteapplication, approving rank applications, etc.)
 staffRoleIds:
   - ""
   - ""

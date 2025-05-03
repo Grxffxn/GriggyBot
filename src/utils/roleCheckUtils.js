@@ -23,4 +23,13 @@ function checkStaff(member, staffRoles = []) {
     return staffRoles.some(role => member.roles.cache.has(role.id));
 }
 
-module.exports = { checkLinked, checkStaff };
+function checkAdmin(member) {
+    const config = getConfig();
+    adminRoles = config.adminRoleIds
+        .map(roleId => member.guild.roles.cache.get(roleId))
+        .filter(role => role !== undefined);
+    
+    return adminRoles.some(role => member.roles.cache.has(role.id)) || member.user.id === config.botOwner;
+}
+
+module.exports = { checkLinked, checkStaff, checkAdmin };

@@ -330,10 +330,10 @@ function createDatabase(updatedValues, databasePath, client) {
         db.serialize(() => {
             db.run(`
                 CREATE TABLE IF NOT EXISTS users (
-                    discord_id TEXT UNIQUE NOT NULL,
-                    minecraft_uuid TEXT UNIQUE NOT NULL,
+                    discord_id TEXT NOT NULL,
+                    minecraft_uuid TEXT NOT NULL,
                     profile_color TEXT DEFAULT '000000',
-                    profile_image TEXT UNIQUE NOT NULL,
+                    profile_image TEXT NOT NULL,
                     profile_description TEXT DEFAULT 'This user has not set a profile description.',
                     profile_title TEXT,
                     favorite_game TEXT DEFAULT 'Minecraft',
@@ -343,7 +343,7 @@ function createDatabase(updatedValues, databasePath, client) {
             `);
             db.run(`
                 CREATE TABLE IF NOT EXISTS applications (
-                    message_id TEXT UNIQUE NOT NULL,
+                    message_id TEXT NOT NULL,
                     player_name TEXT NOT NULL,
                     role TEXT NOT NULL,
                     answers TEXT NOT NULL,
@@ -351,7 +351,7 @@ function createDatabase(updatedValues, databasePath, client) {
                     staff_reactions TEXT,
                     discord_id TEXT NOT NULL,
                     approvals INTEGER DEFAULT 0,
-                    thread_id TEXT UNIQUE NOT NULL
+                    thread_id TEXT NOT NULL
                 )
             `);
             db.run(`
@@ -364,7 +364,7 @@ function createDatabase(updatedValues, databasePath, client) {
             `);
             db.run(`
                 CREATE TABLE IF NOT EXISTS daily_streaks (
-                    user_id TEXT UNIQUE NOT NULL,
+                    user_id TEXT NOT NULL,
                     streak INTEGER DEFAULT 0,
                     last_claimed TEXT
                 )

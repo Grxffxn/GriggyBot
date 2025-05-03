@@ -371,9 +371,7 @@ function createDatabase(updatedValues, databasePath, client) {
             `);
         });
         db.close();
-        client.log('SQLite database initialized.', 'SUCCESS');
-        updatedValues.griggyDbPath = databasePath;
-        client.log(`Database path: ${databasePath}`, 'INFO');
+        client.log(`SQLite database initialized at ${updatedValues.griggyDbPath}`, 'SUCCESS');
     } catch (err) {
         client.log('Error creating database:', 'ERROR', err);
 

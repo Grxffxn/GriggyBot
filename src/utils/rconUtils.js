@@ -19,7 +19,7 @@ async function initializeRCONUtils(client) {
 async function startRCON() {
     try {
         await rcon.connect();
-        botClient.log(`RCON Authenticated: ${rcon.authenticated}`, 'SUCCESS');
+        botClient.log(`RCON Authenticated!`, 'SUCCESS');
 
         // HEARTBEAT
         setInterval(async () => {

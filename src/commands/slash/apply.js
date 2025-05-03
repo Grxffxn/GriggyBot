@@ -175,7 +175,7 @@ async function startApplicationProcess(interaction, rank, playerName) {
             .setFooter({ text: `Application submitted by ${interaction.user.username}`, iconURL: interaction.user.displayAvatarURL() });
 
         const profileEmbed = new EmbedBuilder()
-            .setTitle(playerName)
+            .setTitle(row.profile_title || playerName)
             .setColor(row.profile_color)
             .setDescription(row.profile_description)
             .setThumbnail(row.profile_image)

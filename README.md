@@ -29,7 +29,8 @@ GriggyBot is a Discord bot originally designed for **The Legend Continues** Mine
 
 **Staff Tools**
 - **Interactive TODO List**: Staff can manage tasks with `/todo` commands.
-- **Application Management**: Approve or delete rank applications with ease.
+- **Easy Config Editing**: Modify some config values from Discord with `/admin editconfig`.
+- **Reload or Shutdown**: `/admin reload` and `/admin shutdown` from Discord.
 
 ## Prerequisites
 
@@ -44,6 +45,18 @@ Before installing and running GriggyBot, ensure you have the following:
 4. **RCON**: Enable RCON in your `server.properties` file and configure the IP, port, and password.
 
 ## Installation
+
+**Recommended Install Location**
+```
+├── GriggyBot <---- HERE
+└── YourMainFolder/
+    ├── world
+    ├── world_nether
+    ├── world_the_end
+    └── plugins
+```
+**Ensure you've installed Node.js** - on Linux, run
+`sudo apt install nodejs`
 
 1. Clone the repository:
    ```bash
@@ -63,3 +76,9 @@ Before installing and running GriggyBot, ensure you have the following:
    ```bash
    node index.js
    ```
+
+5. After first setup:
+   - Shut down the bot (ctrl+c in terminal, or `/admin shutdown` on Discord)
+   - Run the bot with `nohup node index.js &`
+   - Type `exit` and press enter
+   - Check `GriggyBot/nohup.out` for bot logs

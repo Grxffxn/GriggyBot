@@ -123,6 +123,20 @@ async function firstRun(client) {
         }
     }
 
+    // BOT OWNER
+    if (!config.botOwner) {
+        const guild = client.guilds.cache.get(updatedValues.guildId || config.guildId);
+        const owner = guild?.fetchOwner();
+        if (owner) {
+            updatedValues.botOwner = owner.id;
+            client.log(`Set guild owner as bot owner: ${owner.user.tag} (${owner.id})`, 'SUCCESS');
+        } else {
+            client.log('Couldn\'t auto-detect bot owner.', 'WARN');
+            updatedValues.botOwner = await askForId('your Discord user ID', config.botOwner);
+        }
+        isFirstRun = true;
+    }
+
     // CONSOLE CHANNEL & RCON THREAD
     if (!config.consoleChannelId) {
         const guild = client.guilds.cache.get(updatedValues.guildId || config.guildId);

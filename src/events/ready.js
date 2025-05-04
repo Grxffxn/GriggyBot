@@ -77,7 +77,7 @@ module.exports = {
 		if (config.enableAutoMsg) {
 			setInterval(() => {
 				AutoMsg(client);
-			}, config.automsgdelay);
+			}, config.autoMsgDelay);
 		}
 
 		AutoProfile(client);

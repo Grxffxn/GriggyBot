@@ -109,7 +109,7 @@ ranks:
     requiredStaffApprovals: 5
     requiredPoints: 25
 
-# Array of automated messages to be sent periodically (see automsgdelay)
+# Array of automated messages to be sent periodically (see autoMsgDelay)
 autoMessages:
   - description: |
       **Have you voted yet today?**
@@ -212,7 +212,7 @@ enableApplicationNotifications: true
 # You probably don't need to change anything below this.
 
 # Delay for automated messages in milliseconds (e.g., 7200000 = 2 hours)
-automsgdelay: 7200000
+autoMsgDelay: 7200000
 
 # Base URL for rendering Minecraft player skins
 baseRenderUrl: "https://visage.surgeplay.com/"
@@ -241,7 +241,7 @@ welcomeChannelId: ""
 welcomeMessageId: ""
 
 # The ID of the channel where automated messages should be sent
-automsgchannelid: ""
+autoMsgChannelId: ""
 
 # The ID of your "botspam" channel
 botspamChannelId: ""
@@ -250,7 +250,7 @@ botspamChannelId: ""
 mcChatChannelId: ""
 
 # The ID of the channel to send chores to
-chorechannelid: ""
+choreChannelId: ""
 
 # The ID of the channel where GriggyBot will create the RCON log thread
 consoleChannelId: ""

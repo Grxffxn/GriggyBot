@@ -69,7 +69,7 @@ function setSelectedChore(index, client) {
 
 module.exports = async (client) => {
     const config = getConfig();
-    const choreChannelId = config.chorechannelid;
+    const choreChannelId = config.choreChannelId;
     const choreChannel = client.channels.cache.get(choreChannelId);
     if (!choreChannel) {
         client.log('Chore channel not found >.<', 'ERROR');

@@ -18,7 +18,7 @@ module.exports = {
             return message.reply('Please provide proof of your chore completion (text or attachments).');
         }
 
-        const choreChannel = client.channels.cache.get(config.chorechannelid);
+        const choreChannel = client.channels.cache.get(config.choreChannelId);
         if (!choreChannel) {
             return message.reply('Chore channel not found. Please contact an admin.');
         }

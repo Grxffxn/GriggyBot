@@ -21,7 +21,7 @@ function createEmbed(message, config) {
 
 async function AutoMsg(client) {
     const config = getConfig();
-    const channel = client.channels.cache.get(config.automsgchannelid);
+    const channel = client.channels.cache.get(config.autoMsgChannelId);
 
     if (!channel) {
         client.log('AutoMsg Error: Channel not found.', 'ERROR');

@@ -1,5 +1,5 @@
 # GriggyBot
-GriggyBot is a Discord bot originally designed for **The Legend Continues** Minecraft server. It integrates with the server to provide interactive features such as rank applications, chore submissions, gambling games, and more. The bot is tailored to work with plugins like **LuckPerms**, **DiscordSRV**, and **CMI**.
+GriggyBot is a Discord bot originally designed for **The Legend Continues'** Community Minecraft server. It integrates with the server to provide interactive features such as rank applications, chore submissions, gambling games, and more. The bot is tailored to work with plugins like **LuckPerms**, **DiscordSRV**, and **CMI**.
 
 [![MIT License](https://img.shields.io/badge/License-MIT-green.svg)](https://choosealicense.com/licenses/mit/)
 ![GitHub Created At](https://img.shields.io/github/created-at/Grxffxn/GriggyBot)
@@ -7,41 +7,33 @@ GriggyBot is a Discord bot originally designed for **The Legend Continues** Mine
 
 
 ## Features
-
-**Minecraft Server Integration**
-- **Dynamic Welcome Image**: Automatically updates the welcome message with server stats like TPS, player count, and restart schedule.
 - **RCON Integration**: Executes server commands and logs responses directly in Discord.
-
-**Player Interaction**
-- **Rank Applications**: Players can apply for ranks using `/apply`. Staff can approve applications based on points and vouches.
 - **Daily Rewards**: Players can claim daily rewards with `/daily`, with streak bonuses for consecutive claims.
-- **Chore Submissions**: Submit proof of completed chores for in-game rewards using `!chore`.
-- **Custom Profiles**: Players can customize their profiles with `/profile`, including colors, descriptions, and images.
-
-**Gambling Games**
+- **Daily Chores**: Randomly selects a daily task for players to complete for in-game currency. Submit proof of completed chores using `!chore`.
+- **Custom Profiles**: Players can customize their profiles with `/profile`, including colors, descriptions, and images. Viewed with `/info`.
 - **Slots, Blackjack, Roulette, and Rock-Paper-Scissors**: Players can wager in-game currency on fun games.
-- **Cooldowns and Balances**: Ensures fair play with cooldowns and real-time balance updates.
-
-**Automated Features**
-- **Auto Messages**: Periodic messages to keep the community engaged.
-- **Daily Chores**: Randomly selects a daily task for players to complete for rewards.
-
-**Staff Tools**
-- **Interactive TODO List**: Staff can manage tasks with `/todo` commands.
-- **Easy Config Editing**: Modify some config values from Discord with `/admin editconfig`.
-- **Reload or Shutdown**: `/admin reload` and `/admin shutdown` from Discord.
+- **Auto Messages**: Ability to send periodic messages to help you advertise server features.
+- **Interactive TODO List**: Staff can manage tasks with `/todo` commands. Includes assigning tasks to members, different lists like "idea", "low priority", etc.
+- **Admin Tools**: Modify some config values from Discord with `/admin editconfig`. Reload the config with `/admin reload`, or shutdown the bot with `/admin shutdown`.
+- **[Experimental]** **Dynamic Welcome Image**: Automatically updates the welcome message with server stats like TPS, player count, and restart schedule.
+- **[Experimental]** **Rank Applications**: Players can apply for ranks using `/apply`. Staff can approve applications based on points and vouches.
 
 ## Prerequisites
 
 Before installing and running GriggyBot, ensure you have the following:
 
-1. **Node.js**: Install the latest version of Node.js from [nodejs.org](https://nodejs.org/).
-2. **Discord Bot Token**: Create a bot on the [Discord Developer Portal](https://discord.com/developers/applications) and obtain the token and client ID. [Help!](https://discordjs.guide/preparations/setting-up-a-bot-application.html#creating-your-bot)
+1. **Node.js**: Install the latest version of Node.js from [nodejs.org](https://nodejs.org/), or install on Linux with `sudo apt install nodejs`
+2. **Discord Bot**: Create a bot on the [Discord Developer Portal](https://discord.com/developers/applications) and obtain the token and client ID.
+Resources for help setting up a Discord bot:
+- [Discord Bot Creation Guide](https://discordjs.guide/preparations/setting-up-a-bot-application.html#creating-your-bot)
+- [DiscordSRV Guide](https://docs.discordsrv.com/installation/initial-setup/#setting-up-the-bot) This guide aligns almost exactly with how you should setup GriggyBot
+
 3. **Minecraft Server Plugins**:
-   - **LuckPerms**
    - **DiscordSRV**
    - **CMI**
+   - **LuckPerms** (soft depend, used for viewing player rank in `/info`)
 4. **RCON**: Enable RCON in your `server.properties` file and configure the IP, port, and password.
+⚠️ You should really, really set your RCON IP to 127.0.0.1 (localhost) to ensure no one from outside of your server can connect to your remote console (RCON). And it's still a good idea to set a long, complex password. Change your RCON port to something other than the default `25575` for extra brownie points.
 
 ## Installation
 **Setup the Bot in [Discord Developer Portal](https://discord.com/developers/applications)** - [more info](https://discordjs.guide/preparations/setting-up-a-bot-application.html#creating-your-bot)

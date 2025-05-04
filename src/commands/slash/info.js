@@ -13,6 +13,16 @@ module.exports = {
                 .setRequired(true)),
 
     async run(interaction) {
+
+        function formatDuration(milliseconds) {
+            const totalMinutes = Math.floor(milliseconds / 60000);
+            const hours = Math.floor(totalMinutes / 60);
+            const minutes = totalMinutes % 60;
+            return `${hours} hours ${minutes} minutes`;
+        }
+
+        await interaction.deferReply();
+
         try {
             const config = await getConfig();
             const griggyDatabaseDir = config.griggyDbPath;
@@ -22,108 +32,72 @@ module.exports = {
             const username = interaction.options.getString('username');
             const { data } = await axios.get(`https://api.geysermc.org/v2/utils/uuid/bedrock_or_java/${username}?prefix=.`);
 
-            if (!data) {
-                return interaction.reply({ content: 'Invalid username, or Mojang\'s API is down.', flags: MessageFlags.Ephemeral });
-            }
-
-            await interaction.deferReply();
+            if (!data) return interaction.reply({ content: 'Invalid username, or Mojang\'s API is down.', flags: MessageFlags.Ephemeral });
 
             const trimmedUUID = data.id;
-            let renderUrl = `https://visage.surgeplay.com/bust/256/${trimmedUUID}`;
 
-            // Check if the user has linked their Discord account
-            const row = await queryDB(griggyDatabaseDir, 'SELECT * FROM users WHERE minecraft_uuid = ?', [trimmedUUID], true);
-
-            const linkedDiscordAccount = row ? row.minecraft_uuid === trimmedUUID : false;
-
-            // Query the CMI and LuckPerms databases
-            const sqls = [
-                'SELECT * FROM `users` WHERE LOWER(`users`.`username`) = LOWER(?)',
-                'SELECT `luckperms_players`.`primary_group` FROM `luckperms_players` WHERE LOWER(`luckperms_players`.`username`) = LOWER(?)',
-            ];
-
-            const results = await Promise.all([
-                queryDB(cmiDatabasePath, sqls[0], [username], true),
-                queryDB(luckPermsDatabasePath, sqls[1], [username], true)
+            const query = `
+                SELECT users.*, daily_streaks.streak 
+                FROM users 
+                LEFT JOIN daily_streaks ON users.discord_id = daily_streaks.user_id 
+                WHERE users.minecraft_uuid = ?
+            `;
+            const [row, result1, result2] = await Promise.all([
+                queryDB(griggyDatabaseDir, query, [trimmedUUID], true),
+                queryDB(cmiDatabasePath, 'SELECT * FROM `users` WHERE LOWER(`username`) = LOWER(?)', [username], true),
+                queryDB(luckPermsDatabasePath, 'SELECT `primary_group` FROM `luckperms_players` WHERE LOWER(`username`) = LOWER(?)', [username], true)
             ]);
 
-            const [result1, result2] = results;
-
-            const vouchButton = new ButtonBuilder()
-                .setCustomId(`vouchButton-${row?.discord_id || username}`)
-                .setLabel('Vouch')
-                .setStyle('Success');
-
-            const actionRow = new ActionRowBuilder()
-                .addComponents(vouchButton);
-
-            const unlinkedVouchButton = new ButtonBuilder()
-                .setCustomId('unlinkedVouchButton')
-                .setLabel('Cannot Vouch')
-                .setStyle('Secondary')
-                .setDisabled(true);
-
-            const unlinkedActionRow = new ActionRowBuilder()
-                .addComponents(unlinkedVouchButton);
-
-            const primary_group = result2 ? result2.primary_group.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) : 'Unknown';
-            const balance = result1 ? result1.Balance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : 'Unknown';
-            const formattedBalance = `$${balance}`;
-            const totalPlayTime = result1 ? result1.TotalPlayTime : 0; // Total playtime in milliseconds
-            const hours = Math.floor(totalPlayTime / (1000 * 60 * 60)); // Convert milliseconds to hours
-            const minutes = Math.floor((totalPlayTime % (1000 * 60 * 60)) / (1000 * 60)); // Remaining minutes
-
-            let formattedDuration = '';
-            if (hours > 0) {
-                formattedDuration += `${hours} hours `;
+            let vouchButton;
+            if (row) {
+                vouchButton = new ButtonBuilder()
+                    .setCustomId(`vouchButton-${row.discord_id}`)
+                    .setLabel('Vouch')
+                    .setStyle('Success');
+            } else {
+                vouchButton = new ButtonBuilder()
+                    .setCustomId('unlinkedVouchButton')
+                    .setLabel('Cannot Vouch')
+                    .setStyle('Secondary')
+                    .setDisabled(true);
             }
-            formattedDuration += `${minutes} minutes`;
-            const finalPlayTime = formattedDuration ? formattedDuration : 'Unknown';
 
-            const finalColor = row?.profile_color || '391991';
-            const finalDescription = `${row?.profile_description ? `**Username:** ${username}\n**Current Rank:** ${primary_group}\n**Total Playtime:** ${finalPlayTime}\n**Current Balance:** ${formattedBalance}\n\n${row.profile_description}\n` : `**Username:** ${username}\n**Current Rank:** ${primary_group}\n**Total Playtime:** ${finalPlayTime}\n**Current Balance:** ${formattedBalance}`}`;
-            const finalUrl = row?.profile_image || renderUrl;
-            const finalAccountStatus = linkedDiscordAccount ? `<@${row.discord_id}>` : 'Not Linked';
-            const finalTitle = row?.profile_title || `${username}'s Profile`;
-            const finalFavoriteGame = row?.favorite_game || 'Minecraft';
-            const finalVouches = parseFloat(row?.vouches || '0');
-            const userMetaValue = (result1?.UserMeta || '').split('%%')[1];
+            const vouchRow = new ActionRowBuilder().addComponents(vouchButton);
+
+            const streak = row?.streak || 0;
+            const primary_group = result2?.primary_group?.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) ?? 'Unknown';
+            const balance = result1?.Balance?.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || 'Unknown';
+            const finalPlayTime = result1 ? formatDuration(result1.TotalPlayTime) : 'Unknown';
+            const userMetaValue = (result1?.UserMeta || '').split('%%')[1] || '0';
             const points = parseFloat(userMetaValue || '0');
-            const finalRankPoints = points - finalVouches;
-            const totalPoints = finalRankPoints + finalVouches;
+            const vouches = parseFloat(row?.vouches || '0');
+            const rankPoints = points - vouches;
 
             const embed = new EmbedBuilder()
-                .setTitle(finalTitle)
-                .setDescription(finalDescription)
-                .setColor(finalColor)
-                .setThumbnail(finalUrl);
+                .setTitle(row?.profile_title || `${username}'s Profile`)
+                .setDescription(`**Username:** ${username}\n**Current Rank:** ${primary_group}\n**Total Playtime:** ${finalPlayTime}\n**Current Balance:** $${balance}\n\n${row?.profile_description || 'No bio.'}\n-+--+---+---+--+-`)
+                .setColor(row?.profile_color || '391991')
+                .setThumbnail(row?.profile_image || `https://visage.surgeplay.com/bust/256/${trimmedUUID}`);
+
+            const fields = [
+                ...(config.enableVouch ? [{ name: 'Vouches', value: vouches.toString(), inline: true }] : []),
+                ...(config.enableRankPoints ? [{ name: 'Rank Points', value: rankPoints.toString(), inline: true }] : []),
+                ...(config.enableVouch && config.enableRankPoints ? [{ name: 'Total Points', value: points.toString(), inline: true }] : []),
+                ...(config.enableDaily && streak ? [{ name: 'Daily Streak', value: streak.toString(), inline: true }] : []),
+                { name: 'Discord Account', value: row?.discord_id ? `<@${row.discord_id}>` : 'Not Linked', inline: true },
+                { name: 'Favorite Game', value: row?.favorite_game || 'Minecraft', inline: true }
+            ];
+
+            embed.addFields(fields);
 
             if (config.enableVouch) {
-                embed.addFields({ name: 'Vouches', value: finalVouches.toString(), inline: true });
-            }
-            if (config.enableRankPoints) {
-                embed.addFields({ name: 'Rank Points', value: finalRankPoints.toString(), inline: true });
-            }
-            if (config.enableVouch && config.enableRankPoints) {
-                embed.addFields({ name: 'Total Points', value: totalPoints.toString(), inline: true });
-            }
-
-            embed.addFields(
-                { name: 'Discord Account', value: finalAccountStatus, inline: true },
-                { name: 'Favorite Game', value: finalFavoriteGame }
-            )
-
-            if (linkedDiscordAccount && config.enableVouch) {
-                interaction.editReply({ embeds: [embed], components: [actionRow] });
-            } else if (!linkedDiscordAccount && config.enableVouch) {
-                interaction.editReply({ embeds: [embed], components: [unlinkedActionRow] });
+                await interaction.editReply({ embeds: [embed], components: [vouchRow] });
             } else {
-                interaction.editReply({ embeds: [embed] });
+                await interaction.editReply({ embeds: [embed] });
             }
-
         } catch (err) {
             interaction.client.log('/info command failure:', 'ERROR', err);
-            interaction.editReply({ content: 'Command failed </3 Try again or contact an admin.\nPlayer data could be formatted improperly.', flags: MessageFlags.Ephemeral });
+            interaction.editReply({ content: 'Command failed. Try again or contact an admin.', flags: MessageFlags.Ephemeral });
         }
     }
 };

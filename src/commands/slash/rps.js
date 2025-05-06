@@ -1,6 +1,5 @@
 const { SlashCommandBuilder, MessageFlags, ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder } = require('discord.js');
 const { getConfig } = require('../../utils/configUtils');
-const serverData = require('../../serverData.json');
 const { formatNumber, hyphenateUUID } = require('../../utils/formattingUtils.js');
 const { checkEnoughBalance, checkCooldown, setCooldown, updateBalance } = require('../../utils/gamblingUtils.js');
 const { checkLinked } = require('../../utils/roleCheckUtils.js');
@@ -28,6 +27,7 @@ module.exports = {
                 .setRequired(true)),
     async run(interaction) {
         const config = getConfig();
+        const serverData = require('../../serverData.json');
         const cmiDatabaseDir = config.cmi_sqlite_db;
         const griggyDatabaseDir = config.griggyDbPath;
         // Check if server is online

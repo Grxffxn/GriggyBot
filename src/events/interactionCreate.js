@@ -36,10 +36,10 @@ module.exports = {
 			if (interaction.customId === 'redraw_chore') {
 				const config = getConfig();
 				
-				if (!checkStaff(interaction.member) || (!config.allowStaffApproveChores && !checkMom(interaction.member))) {
+				if (!checkMom(interaction.member) && (!checkStaff(interaction.member) || !config.allowStaffApproveChores)) {
 					return interaction.reply({ content: ':no_entry_sign: You do not have permission to redraw chores.', ephemeral: true });
 				}
-
+				
 				const handleRedraw = require('./chores.js').handleRedraw;
 				await handleRedraw(interaction);
 			}

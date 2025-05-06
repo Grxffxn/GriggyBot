@@ -5,17 +5,10 @@ const { sendMCCommand, logRCON } = require('../utils/rconUtils.js');
 const { checkStaff } = require('../utils/roleCheckUtils.js');
 
 function createButtons(vouchingFor, rank, data, config) {
-    const buttons = [
-        { id: `approve-${vouchingFor}-${rank}`, label: `Approve (${data.approvals}/${data.requiredApprovals})`, style: 'Primary' },
-    ];
+    const buttons = [{ id: `approve-${vouchingFor}-${rank}`, label: `Approve (${data.approvals}/${data.requiredApprovals})`, style: 'Primary' }];
 
-    if (config.enableVouch) {
-        buttons.push({ id: `vouchButton-${vouchingFor}`, label: `Vouch (${data.vouches} Received)`, style: 'Success' });
-    }
-
-    if (config.enableRankPoints) {
-        buttons.push({ id: `accumulatedPts-${vouchingFor}-${rank}`, label: `Points: ${data.userPoints}/${data.requiredPts}`, style: 'Secondary', disabled: true });
-    }
+    if (config.enableVouch) buttons.push({ id: `vouchButton-${vouchingFor}`, label: `Vouch (${data.vouches} Received)`, style: 'Success' });
+    if (config.enableRankPoints) buttons.push({ id: `accumulatedPts-${vouchingFor}-${rank}`, label: `Points: ${data.userPoints}/${data.requiredPts}`, style: 'Secondary', disabled: true });
 
     buttons.push({ id: `refresh-${vouchingFor}-${rank}`, label: 'Refresh', style: 'Secondary' });
 
@@ -33,15 +26,10 @@ async function handleApplication(interaction) {
     const [action, vouchingFor, rank] = interaction.customId.split('-');
     const rankConfig = config.ranks.find(r => r.name === rank);
 
-    if (!rankConfig) {
-        await interaction.reply({ content: `The rank "${rank}" is not configured.`, flags: MessageFlags.Ephemeral });
-        return;
-    }
+    if (!rankConfig) return interaction.reply({ content: `The rank "${rank}" is not configured.`, flags: MessageFlags.Ephemeral });
 
     try {
-        if (!interaction.deferred && !interaction.replied) {
-            await interaction.deferUpdate();
-        }
+        if (!interaction.deferred && !interaction.replied) await interaction.deferUpdate();
 
         if (action === 'refresh') {
             const application = await queryDB(
@@ -111,7 +99,7 @@ async function handleApplication(interaction) {
 
         if (action === 'approve') {
             const isStaff = checkStaff(interaction.member);
-            if (!isStaff) return interaction.followUp('You do not have permission to approve applications.');
+            if (!isStaff) return interaction.followUp({ content: 'You do not have permission to approve applications.', flags: MessageFlags.Ephemeral });
 
             const application = await queryDB(griggyDatabaseDir, 'SELECT * FROM applications WHERE discord_id = ? AND status = ?', [vouchingFor, 'active'], true);
             if (!application) return interaction.followUp(`No active application found for <@${vouchingFor}>.`);

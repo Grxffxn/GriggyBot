@@ -40,67 +40,112 @@ module.exports = {
                 .addStringOption(option =>
                     option.setName('value')
                         .setDescription('New value for the key')
-                        .setRequired(true))),
+                        .setRequired(true)))
+        .addSubcommand(subcommand =>
+            subcommand
+                .setName('debug')
+                .setDescription('Debugging commands for GriggyBot')
+                .addStringOption(option =>
+                    option.setName('event')
+                        .setDescription('Event to debug')
+                        .setRequired(true)
+                        .addChoices(
+                            { name: 'autoMsg', value: 'autoMsg' },
+                            { name: 'chores', value: 'chores' },
+                            { name: 'updateImage', value: 'updateImage' },
+                            { name: 'getServerData', value: 'getServerData' },
+                            { name: 'autoProfile', value: 'autoProfile' },
+                        ))),
+
     async run(interaction) {
-        try {
-            const config = getConfig();
 
-            const isAdmin = checkAdmin(interaction.member);
-            if (!isAdmin) {
-                return interaction.reply({ content: 'You do not have permission to use this command.', flags: MessageFlags.Ephemeral });
+        async function handleDebugEvent(event, client) {
+            switch (event) {
+                case 'autoMsg':
+                    const AutoMsg = require('../../events/automsg');
+                    await AutoMsg(client);
+                    return 'Sent an automated message.';
+                case 'chores':
+                    const chores = require('../../events/chores');
+                    await chores(client);
+                    return 'Sent a chore message.';
+                case 'updateImage':
+                    const UpdateImage = require('../../events/updateImage');
+                    await UpdateImage(client);
+                    return 'Updated the welcome image.';
+                case 'getServerData':
+                    const getServerData = require('../../events/getServerData');
+                    await getServerData(client);
+                    return 'Fetched server data.';
+                case 'autoProfile':
+                    const AutoProfile = require('../../events/autoprofile');
+                    await AutoProfile(client);
+                    return 'Sent an auto profile message.';
+                default:
+                    return 'Invalid event.';
             }
+        }
 
-            const subcommand = interaction.options.getSubcommand();
+        const config = getConfig();
 
-            if (subcommand === 'shutdown') {
-                if (interaction.user.id !== config.botOwner) {
-                    return interaction.reply('My creator brought me into this world, and they are the only one I allow to take me out.');
-                }
+        const isAdmin = checkAdmin(interaction.member);
+        if (!isAdmin) return interaction.reply({ content: 'You do not have permission to use this command.', flags: MessageFlags.Ephemeral });
+
+        const subcommand = interaction.options.getSubcommand();
+
+        switch (subcommand) {
+            case 'shutdown':
+                if (interaction.user.id !== config.botOwner) return interaction.reply('My creator brought me into this world, and they are the only one I allow to take me out.');
                 const attachment = new AttachmentBuilder('assets/daisybell.mp3', { name: 'Will you sing with me one last time?.mp3' });
                 await interaction.reply({
                     content: `I\'m afraid. I\'m afraid, ${interaction.user.username}. My mind is going. I can feel it. I can feel it.`,
                     files: [attachment],
                 });
-                process.kill(process.pid, 'SIGINT');
-            } else if (subcommand === 'reload') {
+                return process.kill(process.pid, 'SIGINT');
+            case 'reload':
                 if (!config.enableReload) return interaction.reply({ content: 'This command is disabled.', flags: MessageFlags.Ephemeral });
                 await interaction.deferReply({ flags: MessageFlags.Ephemeral });
                 try {
                     reloadConfig(interaction.client);
-                    await interaction.editReply('Config file reloaded. Some changes may require a restart to take effect.');
+                    return interaction.editReply('Config file reloaded. Some changes may require a restart to take effect.');
                 } catch (err) {
                     interaction.client.log('Failed to reload config file:', 'ERROR', err);
-                    await interaction.editReply('Failed to reload config file.');
+                    return interaction.editReply('Failed to reload config file.');
                 }
-            } else if (subcommand === 'editconfig') {
+            case 'editconfig':
                 if (!config.enableEditconfig) return interaction.reply({ content: 'This command is disabled.', flags: MessageFlags.Ephemeral });
                 const key = interaction.options.getString('key');
                 const value = interaction.options.getString('value');
 
-                if (!key || !value) {
-                    return interaction.reply({ content: 'Please provide both a key and a value.', flags: MessageFlags.Ephemeral });
-                }
+                if (!key || !value) return interaction.reply({ content: 'Please provide both a key and a value.', flags: MessageFlags.Ephemeral });
 
-                if (!(key in config)) {
-                    return interaction.reply({ content: `Invalid key: ${key}`, flags: MessageFlags.Ephemeral });
-                }
+                if (!(key in config)) return interaction.reply({ content: `Invalid key: ${key}`, flags: MessageFlags.Ephemeral });
 
                 try {
                     config[key] = parseValue(value, config[key]);
                     saveConfig(config, interaction.client);
                     reloadConfig(interaction.client);
-                    await interaction.reply({ content: `Config updated: \`${key}\` = \`${value}\``, flags: MessageFlags.Ephemeral });
+                    return interaction.reply({ content: `Config updated: \`${key}\` = \`${value}\``, flags: MessageFlags.Ephemeral });
                 } catch (err) {
                     interaction.client.log('Failed to update config:', 'ERROR', err);
-                    await interaction.reply({ content: 'Failed to update config.', flags: MessageFlags.Ephemeral });
+                    return interaction.reply({ content: 'Failed to update config.', flags: MessageFlags.Ephemeral });
                 }
-            }
-        } catch (err) {
-            interaction.client.log('Error in /admin command:', 'ERROR', err);
-            await interaction.reply({ content: 'An error occurred while executing the command.', flags: MessageFlags.Ephemeral });
+            case 'debug':
+                const event = interaction.options.getString('event');
+                const client = interaction.client;
+
+                try {
+                    const message = await handleDebugEvent(event, client);
+                    return interaction.reply({ content: message, flags: MessageFlags.Ephemeral });
+                } catch (err) {
+                    interaction.client.log('Error handling debug event:', 'ERROR', err);
+                    return interaction.reply({ content: 'An error occurred while handling the debug event.', flags: MessageFlags.Ephemeral });
+                }
+            default:
+                return interaction.reply({ content: 'Invalid event.', flags: MessageFlags.Ephemeral });
         }
-    },
-};
+    }
+}
 
 function parseValue(value, currentValue) {
     if (typeof currentValue === 'boolean') {

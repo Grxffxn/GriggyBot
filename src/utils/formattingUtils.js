@@ -37,7 +37,7 @@ function stripMinecraftColorCodes(input, ansi) {
         return `\u001b[2;37m${strippedText}\u001b[0m`;
     } else {
         return strippedText;
-    }    
+    }
 }
 
 module.exports = { formatNumber, hyphenateUUID, convertMinecraftToANSI, stripMinecraftColorCodes };

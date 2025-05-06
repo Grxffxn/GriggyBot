@@ -10,8 +10,7 @@ async function AutoProfile(client) {
     try {
         linkedAccountsData = fs.readFileSync(accountsFilePath, 'utf8');
     } catch (err) {
-        client.log('Error reading accounts.aof file:', 'ERROR', err);
-        return;
+        return client.log('Error reading accounts.aof file:', 'ERROR', err);
     }
 
     const linkedAccounts = {};

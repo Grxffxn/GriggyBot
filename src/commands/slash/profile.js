@@ -64,9 +64,7 @@ module.exports = {
 
 		function sanitizeProfileColor(profileColor) {
 			// Remove # if it's present
-			if (profileColor.startsWith("#")) {
-				return profileColor.substring(1);
-			}
+			if (profileColor.startsWith("#")) return profileColor.substring(1);
 			return profileColor;
 		}
 
@@ -82,25 +80,19 @@ module.exports = {
 		const linkedAccountsLines = linkedAccountsData.split('\n');
 		for (const line of linkedAccountsLines) {
 			const [discordId, minecraftUUID] = line.trim().split(' ');
-			if (discordId && minecraftUUID) {
-				linkedAccounts[discordId] = minecraftUUID;
-			}
+			if (discordId && minecraftUUID) linkedAccounts[discordId] = minecraftUUID;
 		}
 
 		// Check if the user has linked their Discord account
 		const minecraftUUID = linkedAccounts[discordId];
 
-		if (!minecraftUUID) {
-			return interaction.reply({ content: 'You must link your Discord account to your Minecraft account before you can customize your profile.', flags: MessageFlags.Ephemeral });
-		}
+		if (!minecraftUUID) return interaction.reply({ content: 'You must link your Discord account to your Minecraft account before you can customize your profile.', flags: MessageFlags.Ephemeral });
 
 		const trimmedUUID = minecraftUUID.replace(/-/g, '');
 
 		// Check for existing profile in griggydb
 		const row = await queryDB(griggyDatabaseDir, 'SELECT * FROM users WHERE discord_id = ?', [discordId], true);
-		if (!row) {
-			await queryDB(griggyDatabaseDir, 'INSERT INTO users(discord_id, minecraft_uuid, profile_color, profile_image, profile_description, vouches) VALUES(?, ?, ?, ?, ?, ?)', [discordId, trimmedUUID, '000000', `https://visage.surgeplay.com/bust/256/${trimmedUUID}`, 'This user has not set a profile description.', '0']);
-		}
+		if (!row) await queryDB(griggyDatabaseDir, 'INSERT INTO users(discord_id, minecraft_uuid, profile_color, profile_image, profile_description, vouches) VALUES(?, ?, ?, ?, ?, ?)', [discordId, trimmedUUID, '000000', `https://visage.surgeplay.com/bust/256/${trimmedUUID}`, 'This user has not set a profile description.', '0']);
 		
 		// Show modal and await response
 

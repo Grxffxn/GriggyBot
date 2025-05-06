@@ -51,21 +51,12 @@ async function startApplicationProcess(interaction, rank, playerName) {
     const userId = interaction.user.id;
 
     // Check if there's an active process
-    if (activeModalHandlers.has(userId)) {
-        await interaction.reply({
-            content: 'Please wait 5 minutes before starting a new application.',
-            flags: MessageFlags.Ephemeral,
-        });
-        return;
-    }
+    if (activeModalHandlers.has(userId)) return interaction.reply({ content: 'Please wait 5 minutes before starting a new application.', flags: MessageFlags.Ephemeral });
 
     const user = interaction.member;
     const rankConfig = ranks.find(r => r.name === rank);
 
-    if (!rankConfig) {
-        await interaction.reply({ content: `The rank "${rank}" is not configured.`, flags: MessageFlags.Ephemeral });
-        return;
-    }
+    if (!rankConfig) return interaction.reply({ content: `The rank "${rank}" is not configured.`, flags: MessageFlags.Ephemeral });
 
     // Check if the user has the required previous rank
     const rankIndex = ranks.findIndex(r => r.name === rank);
@@ -73,10 +64,7 @@ async function startApplicationProcess(interaction, rank, playerName) {
         const requiredRank = ranks[rankIndex - 1];
         const requiredRole = interaction.guild.roles.cache.find(role => role.name.toLowerCase() === requiredRank.name);
 
-        if (!requiredRole || !user.roles.cache.has(requiredRole.id)) {
-            await interaction.reply({ content: `You must have the **${requiredRank.name}** role before applying for **${rankConfig.name}**.`, flags: MessageFlags.Ephemeral });
-            return;
-        }
+        if (!requiredRole || !user.roles.cache.has(requiredRole.id)) return interaction.reply({ content: `You must have the **${requiredRank.name}** role before applying for **${rankConfig.name}**.`, flags: MessageFlags.Ephemeral });
     }
 
     // Mark the user as having an active process
@@ -181,11 +169,7 @@ async function startApplicationProcess(interaction, rank, playerName) {
             .setThumbnail(row.profile_image)
             .addFields({ name: 'Favorite Game', value: row.favorite_game})
 
-        const sentMessage = await thread.send({
-            content: `${interaction.user}`,
-            embeds: [embed, profileEmbed],
-            components: [buttonRow],
-        });
+        const sentMessage = await thread.send({ content: `${interaction.user}`, embeds: [embed, profileEmbed], components: [buttonRow] });
 
         // Save application to database
         await queryDB(griggyDatabasePath, 'INSERT INTO applications (message_id, player_name, role, answers, status, discord_id, approvals, thread_id) VALUES (?, ?, ?, ?, ?, ?, 0, ?)', [
@@ -200,21 +184,13 @@ async function startApplicationProcess(interaction, rank, playerName) {
 
         // Notify in-game chat about a new application
         const mcChatChannel = interaction.guild.channels.cache.find(c => c.id === config.mcChatChannelId);
-        if (mcChatChannel && config.enableApplicationNotifications) {
-            await mcChatChannel.send(`${playerName} just submitted a ${rankConfig.name.replace(/^./, char => char.toUpperCase())} application!`);
-        }
+        if (mcChatChannel && config.enableApplicationNotifications) await mcChatChannel.send(`${playerName} just submitted a ${rankConfig.name.replace(/^./, char => char.toUpperCase())} application!`);
     } catch (err) {
         if (err.name === 'TimeoutError') {
-            await interaction.followUp({
-                content: 'Your application process timed out. Please try again.',
-                flags: MessageFlags.Ephemeral,
-            });
+            await interaction.followUp({ content: 'Your application process timed out. Please try again.', flags: MessageFlags.Ephemeral });
         } else {
             interaction.client.log('An error occurred:', 'ERROR', err);
-            await interaction.followUp({
-                content: 'An error occurred during the application process. Please try again.',
-                flags: MessageFlags.Ephemeral,
-            });
+            await interaction.followUp({ content: 'An error occurred during the application process. Please try again.', flags: MessageFlags.Ephemeral});
         }
     } finally {
         // Clean up the user's active process

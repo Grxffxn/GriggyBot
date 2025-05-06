@@ -20,12 +20,8 @@ module.exports = {
 		// Create multiple embeds based on how many are listed in config.vipTiers
 		const embeds = config.vipTiers.map((tier, index) => {
 			let description = '';
-			if (tier.discordPerks) {
-				description += `### Discord\n${tier.discordPerks}`;
-			}
-			if (tier.minecraftPerks) {
-				description += `### Minecraft\n${tier.minecraftPerks}`;
-			}
+			if (tier.discordPerks) description += `### Discord\n${tier.discordPerks}`;
+			if (tier.minecraftPerks) description += `### Minecraft\n${tier.minecraftPerks}`;
 
 			const embedColor = tier.color && tier.color.trim()
 				? parseInt(tier.color.replace('#', ''), 16)

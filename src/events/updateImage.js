@@ -13,15 +13,10 @@ async function UpdateImage(client) {
     const config = getConfig();
     const guild = await client.guilds.fetch(config.guildId);
     const imageChannel = await guild.channels.fetch(config.welcomeChannelId);
-    if (!imageChannel) {
-        client.log('Image channel not found. Please check your configuration.', 'ERROR');
-        return;
-    }
+    if (!imageChannel) return client.log('Image channel not found. Please check your configuration.', 'ERROR');
+
     const messageToEdit = await imageChannel.messages.fetch(config.welcomeMessageId);
-    if (!messageToEdit) {
-        client.log('Message to edit not found. Please check your configuration, or set welcomeMessageId to an empty string in config and restart.', 'ERROR');
-        return;
-    }
+    if (!messageToEdit) return client.log('Message to edit not found. Please check your configuration, or set welcomeMessageId to an empty string in config and restart.', 'ERROR');
 
     async function generateImage(serverOnline, sanitizedNumberOnline, sanitizedServerVersion, tps, formattedSchedule) {
         try {
@@ -86,9 +81,7 @@ async function UpdateImage(client) {
                     value: `↪ ${ruleObj.description}` || '-+-+-+-+--+-+-+-+',
                 });
             });
-            if (config.rulesFooter) {
-                rulesEmbed.setFooter({ text: config.rulesFooter });
-            }
+            if (config.rulesFooter) rulesEmbed.setFooter({ text: config.rulesFooter });
         }
 
         const dynamicEmbed = new EmbedBuilder()

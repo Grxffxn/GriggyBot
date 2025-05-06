@@ -18,20 +18,14 @@ module.exports = {
             const now = Math.floor(Date.now() / 1000);
             const dailyReward = 1000;
             const streakBonus = 50;
-            if (!checkLinked(interaction.member)) {
-                return interaction.reply(`Sorry, you must link your accounts to receive daily rewards. \`/link\``);
-            }
+            if (!checkLinked(interaction.member)) return interaction.reply(`Sorry, you must link your accounts to receive daily rewards. \`/link\``);
             // GET & FORMAT UUID
             const userRow = await queryDB(griggyDatabaseDir, 'SELECT minecraft_uuid FROM users WHERE discord_id = ?', [userId], true);
-            if (!userRow || !userRow.minecraft_uuid) {
-                return interaction.reply({ content: 'Error: UUID retrieval failed. Sorry!', flags: MessageFlags.Ephemeral });
-            }
+            if (!userRow || !userRow.minecraft_uuid) return interaction.reply({ content: 'Error: UUID retrieval failed. Sorry!', flags: MessageFlags.Ephemeral });
             const hyphenatedUUID = hyphenateUUID(userRow.minecraft_uuid);
             // QUERY CMI DB FOR USERNAME
             const cmiUserRow = await queryDB(cmiDatabaseDir, 'SELECT username FROM users WHERE player_uuid = ?', [hyphenatedUUID], true);
-            if (!cmiUserRow || !cmiUserRow.username) {
-                return interaction.reply({ content: 'Error: Username retrieval failed. Sorry!', flags: MessageFlags.Ephemeral });
-            }
+            if (!cmiUserRow || !cmiUserRow.username) return interaction.reply({ content: 'Error: Username retrieval failed. Sorry!', flags: MessageFlags.Ephemeral });
             const username = cmiUserRow.username;
 
             let userStreakData = await queryDB(
@@ -94,10 +88,7 @@ module.exports = {
             });
         } catch (err) {
             interaction.client.log('Error processing /daily command:', 'ERROR', err);
-            return interaction.reply({
-                content: 'An error occurred while processing your daily reward. Please try again later.',
-                flags: MessageFlags.Ephemeral
-            });
+            return interaction.reply({ content: 'An error occurred while processing your daily reward. Please try again later.', flags: MessageFlags.Ephemeral });
         }
     }
 };

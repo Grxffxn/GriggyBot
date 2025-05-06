@@ -55,9 +55,7 @@ async function attemptReconnection() {
             await rcon.connect();
             connected = rcon.authenticated;
 
-            if (connected) {
-                botClient.log('RCON reconnected successfully.', 'SUCCESS');
-            }
+            if (connected) botClient.log('RCON reconnected successfully.', 'SUCCESS');
         } catch (err) {
             botClient.log('Reconnection attempt failed:', 'ERROR', err);
         }
@@ -86,10 +84,7 @@ async function sendMCCommand(command) {
 async function logRCON(command, response) {
     try {
         const thread = await botClient.channels.fetch(config.rconLogThreadId);
-        if (!thread || !thread.isThread()) {
-            botClient.log('The RCON log thread ID defined in config.js is invalid :( Logging unavailable', 'ERROR');
-            return;
-        }
+        if (!thread || !thread.isThread()) return botClient.log('The RCON log thread ID defined in config.js is invalid :( Logging unavailable', 'ERROR');
 
         const formattedResponse = convertMinecraftToANSI(response);
 
@@ -103,10 +98,7 @@ async function logRCON(command, response) {
 async function logRCONError(command) {
     try {
         const thread = await botClient.channels.fetch(config.rconLogThreadId);
-        if (!thread || !thread.isThread()) {
-            botClient.log('The RCON log thread ID defined in config.js is invalid :( Logging unavailable', 'ERROR');
-            return;
-        }
+        if (!thread || !thread.isThread()) return botClient.log('The RCON log thread ID defined in config.js is invalid :( Logging unavailable', 'ERROR');
 
         const formattedErrorMsg = `⚠️ The following command failed because GriggyBot couldn't reach ${config.serverAcronym || config.serverName}\n\`\`\`ansi\n\u001b[2;31m${command}\u001b[0m\n\`\`\``;
         thread.send(formattedErrorMsg);

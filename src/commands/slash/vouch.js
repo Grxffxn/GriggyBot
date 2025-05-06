@@ -17,36 +17,27 @@ module.exports = {
         const config = getConfig();
 
         const user = interaction.options.getUser('user');
-        if (user.bot) {
-            return interaction.reply({ content: 'You cannot vouch for a bot.', flags: MessageFlags.Ephemeral });
-        }
+        if (user.bot) return interaction.reply({ content: 'You cannot vouch for a bot.', flags: MessageFlags.Ephemeral });
+
         const VoucherIsLinked = checkLinked(interaction.user);
         const VoucheeIsLinked = checkLinked(user);
 
-        if (!VoucherIsLinked || !VoucheeIsLinked) {
-            return interaction.reply({ content: `Both users must link their accounts to vouch.`, flags: MessageFlags.Ephemeral });
-        }
+        if (!VoucherIsLinked || !VoucheeIsLinked) return interaction.reply({ content: `Both users must link their accounts to vouch.`, flags: MessageFlags.Ephemeral });
 
         const vouchingAccount = interaction.user.id;
         const vouchingFor = user.id;
 
-        if (vouchingAccount === vouchingFor) {
-            return interaction.reply({ content: 'Nice try! You cannot vouch for yourself.', flags: MessageFlags.Ephemeral });
-        }
+        if (vouchingAccount === vouchingFor) return interaction.reply({ content: 'Nice try! You cannot vouch for yourself.', flags: MessageFlags.Ephemeral });
 
         try {
             const griggyDatabaseDir = config.griggyDbPath;
             const cmiDatabaseDir = config.cmi_sqlite_db;
 
             const vouchingAccountRow = await queryDB(griggyDatabaseDir, 'SELECT * FROM users WHERE discord_id = ?', [vouchingAccount], true);
-            if (!vouchingAccountRow) {
-                return interaction.reply({ content: `Please wait up to 5 minutes and try again. User profile not setup yet.`, flags: MessageFlags.Ephemeral });
-            }
+            if (!vouchingAccountRow) return interaction.reply({ content: `Please wait up to 5 minutes and try again. User profile not setup yet.`, flags: MessageFlags.Ephemeral });
 
             const vouchedPlayerRow = await queryDB(griggyDatabaseDir, 'SELECT * FROM users WHERE discord_id = ?', [vouchingFor], true);
-            if (!vouchedPlayerRow) {
-                return interaction.reply({ content: `Please wait up to 5 minutes and try again. User profile not setup yet.`, flags: MessageFlags.Ephemeral });
-            }
+            if (!vouchedPlayerRow) return interaction.reply({ content: `Please wait up to 5 minutes and try again. User profile not setup yet.`, flags: MessageFlags.Ephemeral });
 
             const vouchingForUUID = vouchedPlayerRow.minecraft_uuid;
             const hyphenatedVouchingForUUID = vouchingForUUID.replace(
@@ -58,13 +49,9 @@ module.exports = {
             const cmiRow = await queryDB(cmiDatabaseDir, cmiQuery, [hyphenatedVouchingForUUID], true);
             const vouchingForMCUsername = cmiRow ? cmiRow.username : null;
 
-            if (!vouchingForMCUsername) {
-                return interaction.reply({ content: `Minecraft username not found for UUID: ${hyphenatedVouchingForUUID}.`, flags: MessageFlags.Ephemeral });
-            }
+            if (!vouchingForMCUsername) return interaction.reply({ content: `Minecraft username not found for UUID: ${hyphenatedVouchingForUUID}.`, flags: MessageFlags.Ephemeral });
 
-            if (vouchingAccountRow.vouchedIds && vouchingAccountRow.vouchedIds.includes(vouchingForUUID)) {
-                return interaction.reply({ content: `You have already vouched for <@${vouchingFor}>.`, flags: MessageFlags.Ephemeral });
-            }
+            if (vouchingAccountRow.vouchedIds && vouchingAccountRow.vouchedIds.includes(vouchingForUUID)) return interaction.reply({ content: `You have already vouched for <@${vouchingFor}>.`, flags: MessageFlags.Ephemeral });
 
             const updatedVouches = parseInt(vouchedPlayerRow.vouches) + 1;
             await queryDB(griggyDatabaseDir, 'UPDATE users SET vouches = ? WHERE minecraft_uuid = ?', [updatedVouches, vouchingForUUID]);

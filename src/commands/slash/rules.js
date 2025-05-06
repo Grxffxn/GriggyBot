@@ -9,9 +9,7 @@ module.exports = {
     async run(interaction) {
         const config = getConfig();
         const rules = config.rules || [];
-        if (rules.length === 0) {
-            return interaction.reply({ content: 'No rules have been set up for this server.', flags: MessageFlags.Ephemeral });
-        }
+        if (rules.length === 0) return interaction.reply({ content: 'No rules have been set up for this server.', flags: MessageFlags.Ephemeral });
 
         const rulesEmbed = {
             color: parseInt(config.defaultColor, 16),

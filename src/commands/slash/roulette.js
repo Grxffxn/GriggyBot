@@ -43,9 +43,7 @@ module.exports = {
             }
 
             // Handle range bet
-            if (rangeBet && rangeBet === winningRange) {
-                payoutMultiplier += 1;
-            }
+            if (rangeBet && rangeBet === winningRange) payoutMultiplier += 1;
 
             // Calculate total winnings
             const totalWinnings = betAmount * payoutMultiplier;
@@ -70,12 +68,7 @@ module.exports = {
             // Set rangeBet to null if colorBet is green
             const rangeBet = colorBet === 'green' ? null : interaction.options.getString('range');
             // If rangeBet is null and color is NOT green, cancel game and tell user to pick a range
-            if (!rangeBet && colorBet !== 'green') {
-                return interaction.reply({
-                    content: 'You must pick a range if you are not betting on green.',
-                    flags: MessageFlags.Ephemeral,
-                });
-            }
+            if (!rangeBet && colorBet !== 'green') return interaction.reply({ content: 'You must pick a range if you are not betting on green.', flags: MessageFlags.Ephemeral });
 
             const { canProceed, playerData } = await preGameCheck(interaction, 'roulette');
             if (!canProceed) return;
@@ -97,21 +90,14 @@ module.exports = {
                 await updateBalance(interaction, command);
             }
             // If payoutMultiplier is greater than 0 (win), add user to cooldown. Otherwise do not.
-            if (payoutMultiplier > 0) {
-                setCooldown(userId, 'roulette');
-            }
+            if (payoutMultiplier > 0) setCooldown(userId, 'roulette');
+
             const winningNumberEmoji = winningNumber === 0 ? '🟢' : (winningColor === 'red' ? '🔴' : '⚫');
 
-            return interaction.reply({
-                content: `# ${winningNumberEmoji} **${winningNumber}**\n${payoutMessage}\nYour new balance is **${formatNumber(newBalance)}**`,
-            });
+            return interaction.reply(`# ${winningNumberEmoji} **${winningNumber}**\n${payoutMessage}\nYour new balance is **${formatNumber(newBalance)}**`);
         } catch (err) {
             interaction.client.log('Error within /roulette:', 'ERROR', err);
-
-            return interaction.reply({
-                content: 'An error occurred while processing your request.',
-                flags: MessageFlags.Ephemeral,
-            });
+            return interaction.reply({ content: 'An error occurred while processing your request.', flags: MessageFlags.Ephemeral });
         }
     }
 }

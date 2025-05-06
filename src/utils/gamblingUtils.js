@@ -28,9 +28,7 @@ function setCooldown(userId, commandName) {
     const cooldowns = JSON.parse(fs.readFileSync(cooldownFilePath, 'utf8'));
 
     // Initialize the user's cooldown object if it doesn't exist
-    if (!cooldowns[userId]) {
-        cooldowns[userId] = {};
-    }
+    if (!cooldowns[userId]) cooldowns[userId] = {};
 
     cooldowns[userId][commandName] = Date.now();
 

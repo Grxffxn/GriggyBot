@@ -8,12 +8,13 @@ async function Vouch(interaction) {
     const griggyDatabaseDir = config.griggyDbPath;
     const cmiDatabaseDir = config.cmi_sqlite_db;
     if (!config.enableVouch) return interaction.reply({ content: `Vouching has been disabled by the server owner.`, flags: MessageFlags.Ephemeral });
+    
     try {
         await sendMCCommand('list');
-    } catch (error) {
-        await interaction.reply(`Can't reach ${config.serverAcronym || config.serverName}, please try again later.`);
-        return;
+    } catch (err) {
+        return interaction.reply({ content: `Can't reach ${config.serverAcronym || config.serverName}, please try again later.`, flags: MessageFlags.Ephemeral });
     }
+
     await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
     const vouchingFor = interaction.customId.replace('vouchButton-', '');
@@ -21,14 +22,10 @@ async function Vouch(interaction) {
 
     try {
         const vouchingAccountRow = await queryDB(griggyDatabaseDir, 'SELECT * FROM users WHERE discord_id = ?', [vouchingAccount], true);
-        if (!vouchingAccountRow) {
-            return interaction.editReply(`You must link your Discord account to your Minecraft account before you can vouch for \`${vouchingFor}\`.`);
-        }
+        if (!vouchingAccountRow) return interaction.editReply(`You must link your Discord account to your Minecraft account before you can vouch for \`${vouchingFor}\`.`);
 
         const vouchedPlayerRow = await queryDB(griggyDatabaseDir, 'SELECT * FROM users WHERE discord_id = ?', [vouchingFor], true);
-        if (!vouchedPlayerRow) {
-            return interaction.editReply(`You must link your Discord account to your Minecraft account before you can vouch for \`${vouchingFor}\`.`);
-        }
+        if (!vouchedPlayerRow) return interaction.editReply(`You must link your Discord account to your Minecraft account before you can vouch for \`${vouchingFor}\`.`);
 
         const vouchingForUUID = vouchedPlayerRow.minecraft_uuid;
         const hyphenatedVouchingForUUID = vouchingForUUID.replace(
@@ -40,17 +37,9 @@ async function Vouch(interaction) {
         const cmiRow = await queryDB(cmiDatabaseDir, cmiQuery, [hyphenatedVouchingForUUID], true);
         const vouchingForMCUsername = cmiRow ? cmiRow.username : null;
 
-        if (!vouchingForMCUsername) {
-            return interaction.editReply(`Minecraft username not found for UUID: ${hyphenatedVouchingForUUID}.`);
-        }
-
-        if (vouchedPlayerRow.discord_id === vouchingAccount) {
-            return interaction.editReply('Nice try! You cannot vouch for yourself.');
-        }
-
-        if (vouchingAccountRow.vouchedIds && vouchingAccountRow.vouchedIds.includes(vouchingForUUID)) {
-            return interaction.editReply(`You have already vouched for <@${vouchingFor}>.`);
-        }
+        if (!vouchingForMCUsername) return interaction.editReply(`Minecraft username not found for UUID: ${hyphenatedVouchingForUUID}.`);
+        if (vouchedPlayerRow.discord_id === vouchingAccount) return interaction.editReply('Nice try! You cannot vouch for yourself.');
+        if (vouchingAccountRow.vouchedIds && vouchingAccountRow.vouchedIds.includes(vouchingForUUID)) return interaction.editReply(`You have already vouched for <@${vouchingFor}>.`);
 
         const updatedVouches = parseInt(vouchedPlayerRow.vouches) + 1;
         await queryDB(griggyDatabaseDir, 'UPDATE users SET vouches = ? WHERE minecraft_uuid = ?', [updatedVouches, vouchingForUUID]);

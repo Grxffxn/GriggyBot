@@ -18,12 +18,9 @@ module.exports = {
 			.setDescription(`Linking your accounts earns you your first rank, Linked, and allows you to vouch for players, create rank applications, and customize your server profile on Discord.\n\n**Step 1**\nRun the command \`/discord link\` in-game and take note of the 4-digit code\n\n**Step 2**\nDM the code to ${config.discordsrvBotId ? `<@${config.discordsrvBotId}>.` : 'the DiscordSRV linking bot.'}\n\n**This should work.** If it doesn't, you've likely DM'd an incorrect code or DM'd the wrong bot. Reach out for support if you're having issues.`)
 			.setColor(config.defaultColor);
 		if (messageLink) {
-
 			// Extract guild, channel, and message IDs
 			const match = messageLink.match(/discord\.com\/channels\/(\d+)\/(\d+)\/(\d+)/);
-			if (!match) {
-				return interaction.reply({ content: '😞 can\'t find that message. Please check the link and try again.\n-# Maybe I\'m going blind?', flags: MessageFlags.Ephemeral });
-			}
+			if (!match) return interaction.reply({ content: '😞 can\'t find that message. Please check the link and try again.\n-# Maybe I\'m going blind?', flags: MessageFlags.Ephemeral });
 
 			const [, guildId, channelId, messageId] = match;
 

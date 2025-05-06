@@ -2,6 +2,8 @@ const { Events, InteractionType, MessageFlags } = require('discord.js');
 const Vouch = require('./vouchEvent.js');
 const handleApplication = require('./handleApplication.js');
 const handleChoreApproval = require('./handleChoreApproval.js');
+const { getConfig } = require('../utils/configUtils.js');
+const { checkMom, checkStaff } = require('../utils/roleCheckUtils.js');
 
 module.exports = {
 	name: Events.InteractionCreate,
@@ -30,6 +32,16 @@ module.exports = {
 			}
 			if (interaction.customId.startsWith('approve_')) {
 				handleChoreApproval(interaction);
+			}
+			if (interaction.customId === 'redraw_chore') {
+				const config = getConfig();
+				
+				if (!checkStaff(interaction.member) || (!config.allowStaffApproveChores && !checkMom(interaction.member))) {
+					return interaction.reply({ content: ':no_entry_sign: You do not have permission to redraw chores.', ephemeral: true });
+				}
+
+				const handleRedraw = require('./chores.js').handleRedraw;
+				await handleRedraw(interaction);
 			}
 		}
 	},

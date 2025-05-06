@@ -14,14 +14,10 @@ module.exports = {
         const config = getConfig();
         if (!config.enableChore) return message.reply('The server owner has disabled the chores feature.');
         const proof = args.join(' ').trim();
-        if (!proof && message.attachments.size === 0) {
-            return message.reply('Please provide proof of your chore completion (text or attachments).');
-        }
+        if (!proof && message.attachments.size === 0) return message.reply('Please provide proof of your chore completion (text or attachments).');
 
         const choreChannel = client.channels.cache.get(config.choreChannelId);
-        if (!choreChannel) {
-            return message.reply('Chore channel not found. Please contact an admin.');
-        }
+        if (!choreChannel) return message.reply('Chore channel not found. Please contact an admin.');
 
         // Get the daily chore and its matching reward
         const serverData = JSON.parse(fs.readFileSync(serverDataPath, 'utf8'));
@@ -47,10 +43,7 @@ module.exports = {
                 iconURL: message.author.displayAvatarURL({ dynamic: true })
             });
 
-        if (message.attachments.size > 0) {
-            const attachment = message.attachments.first();
-            embed.setImage(attachment.url);
-        }
+        if (message.attachments.size > 0) embed.setImage(message.attachments.first().url);
 
         const approveButton = new ButtonBuilder()
             .setCustomId(`approve_${message.author.id}_${selectedChoreReward}`)

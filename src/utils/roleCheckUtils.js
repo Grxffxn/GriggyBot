@@ -12,6 +12,16 @@ function checkLinked(member) {
     }
 }
 
+function checkMom(member) {
+    const config = getConfig();
+    const momRole = member.guild.roles.cache.get(config.approverRoleId);
+    if (momRole) {
+        return member.roles.cache.has(momRole.id);
+    } else {
+        return false;
+    }
+}
+
 function checkStaff(member, staffRoles = []) {
     const config = getConfig();
     if (!staffRoles.length) {
@@ -32,4 +42,4 @@ function checkAdmin(member) {
     return adminRoles.some(role => member.roles.cache.has(role.id)) || member.user.id === config.botOwner;
 }
 
-module.exports = { checkLinked, checkStaff, checkAdmin };
+module.exports = { checkLinked, checkMom, checkStaff, checkAdmin };

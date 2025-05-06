@@ -9,9 +9,8 @@ module.exports = {
 		const config = getConfig();
 		const client = message.client;
 		if (message.author.bot) return;
-		if (message.channel.type === ChannelType.DM) {
-			message.reply(`Did you mean to DM the code to ${config.discordsrvBotId ? `<@${config.discordsrvBotId}>.` : 'the DiscordSRV linking bot'}?`);
-		}
+		if (message.channel.type === ChannelType.DM) message.reply(`Did you mean to DM the code to ${config.discordsrvBotId ? `<@${config.discordsrvBotId}>.` : 'the DiscordSRV linking bot'}?`);
+
 		const prefix = config.prefix;
 		if (!message.content.startsWith(prefix)) return;
 		const args = message.content.slice(prefix.length).trim().split(/ +/g);

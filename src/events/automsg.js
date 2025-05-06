@@ -12,9 +12,7 @@ function createEmbed(message, config) {
         .setDescription(message.description)
         .setThumbnail(config.logoImageUrl);
 
-    if (message.footer) {
-        embed.setFooter(message.footer);
-    }
+    if (message.footer) embed.setFooter(message.footer);
 
     return embed;
 }
@@ -23,10 +21,7 @@ async function AutoMsg(client) {
     const config = getConfig();
     const channel = client.channels.cache.get(config.autoMsgChannelId);
 
-    if (!channel) {
-        client.log('AutoMsg Error: Channel not found.', 'ERROR');
-        return;
-    }
+    if (!channel) return client.log('AutoMsg Error: Channel not found.', 'ERROR');
 
     // Get a random message from config.autoMessages
     const randomIndex = getRandomInt(0, config.autoMessages.length);
@@ -34,11 +29,10 @@ async function AutoMsg(client) {
 
     const embed = createEmbed(selectedMessage, config);
 
-    try {
-        await channel.send({ embeds: [embed] });
-    } catch (err) {
-        client.log('Error sending AutoMsg:', 'ERROR', err);
-    }
+    channel.send({ embeds: [embed] })
+        .catch(err => {
+            client.log('Error sending AutoMsg:', 'ERROR', err);
+        });
 }
 
 module.exports = AutoMsg;

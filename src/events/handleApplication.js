@@ -32,16 +32,7 @@ async function handleApplication(interaction) {
         if (!interaction.deferred && !interaction.replied) await interaction.deferUpdate();
 
         if (action === 'refresh') {
-            const application = await queryDB(
-                griggyDatabaseDir,
-                `
-                SELECT * FROM applications
-                WHERE discord_id = ? AND status = ?
-                ORDER BY rowid DESC
-                LIMIT 1
-                `,
-                [vouchingFor, 'active'], true
-            );
+            const application = await queryDB(griggyDatabaseDir, `SELECT * FROM applications WHERE message_id = ?`, [interaction.message.id], true);
 
             if (!application)  return interaction.followUp({ content: `No active application found for <@${vouchingFor}>.`, flags: MessageFlags.Ephemeral });
 
@@ -79,7 +70,7 @@ async function handleApplication(interaction) {
                             await member.roles.add(role);
                             await interaction.channel.send(`Your application has been approved, congratulations <@${member.id}>! 🎉`);
                             await interaction.channel.setLocked(true);
-                            await queryDB(griggyDatabaseDir, 'UPDATE applications SET status = ? WHERE discord_id = ?', ['approved', vouchingFor]);
+                            await queryDB(griggyDatabaseDir, 'UPDATE applications SET status = ? WHERE message_id = ?', ['approved', interaction.message.id]);
                         } catch (error) {
                             await interaction.followUp({ content: `An error occurred while promoting the user. Please try again later.`, flags: MessageFlags.Ephemeral });
                             interaction.client.log('Error promoting user:', 'ERROR', error);
@@ -101,12 +92,12 @@ async function handleApplication(interaction) {
             const isStaff = checkStaff(interaction.member);
             if (!isStaff) return interaction.followUp({ content: 'You do not have permission to approve applications.', flags: MessageFlags.Ephemeral });
 
-            const application = await queryDB(griggyDatabaseDir, 'SELECT * FROM applications WHERE discord_id = ? AND status = ?', [vouchingFor, 'active'], true);
-            if (!application) return interaction.followUp(`No active application found for <@${vouchingFor}>.`);
+            const application = await queryDB(griggyDatabaseDir, 'SELECT * FROM applications WHERE message_id = ?', [interaction.message.id], true);
+            if (!application) return interaction.followUp({ content: `No active application found for <@${vouchingFor}>.`, flags: MessageFlags.Ephemeral });
 
             const approvals = parseInt(application.approvals || 0, 10);
             const updatedApprovals = approvals + 1;
-            await queryDB(griggyDatabaseDir, 'UPDATE applications SET approvals = ? WHERE discord_id = ?', [updatedApprovals, vouchingFor]);
+            await queryDB(griggyDatabaseDir, 'UPDATE applications SET approvals = ? WHERE message_id = ?', [updatedApprovals, interaction.message.id]);
 
             await interaction.channel.send(`<@${interaction.user.id}> has approved this application. Multiple approvals may be required for higher ranks.`);
         

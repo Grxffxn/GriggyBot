@@ -4,12 +4,14 @@ const client = new Client({
 	partials: [Partials.Message, Partials.Channel, Partials.GuildMember, Partials.Reaction, Partials.GuildScheduledEvent, Partials.User, Partials.ThreadMember],
 	shards: 'auto',
 });
+
+client.fileCache = {};
+
 const { getConfig } = require('./src/utils/configUtils.js');
 const { readdirSync } = require('node:fs');
 const { closeRCON } = require('./src/utils/rconUtils.js');
 
 const config = getConfig();
-
 const token = config.token;
 
 client.commandaliases = new Collection();
@@ -107,3 +109,5 @@ process.on('SIGINT', async () => {
 });
 
 client.login(token);
+
+module.exports = client;

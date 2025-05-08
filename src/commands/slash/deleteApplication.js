@@ -36,9 +36,10 @@ module.exports = {
         const rank = interaction.options.getString('rank');
         const playerName = interaction.options.getString('playername');
 
-        const row = await queryDB(griggyDatabaseDir, `SELECT * FROM applications WHERE role = ? AND player_name = ? AND status = 'active'`, [rank, playerName], true);
+        const row = await queryDB(griggyDatabaseDir, `SELECT * FROM applications WHERE role = ? AND player_name = ?`, [rank, playerName], true);
 
         if (!row) return interaction.reply({ content: 'No active application found for the specified rank and player.', flags: MessageFlags.Ephemeral });
+        if (row.status !== 'active') return interaction.reply({ content: 'You can only delete active applications.', flags: MessageFlags.Ephemeral });
 
         const isStaff = checkStaff(interaction.member);
         if (interaction.user.id !== row.discord_id && !isStaff) return interaction.reply({ content: 'You are not authorized to delete this application.', flags: MessageFlags.Ephemeral });
@@ -74,7 +75,7 @@ module.exports = {
         });
 
         collector.on('end', (_, reason) => {
-            if (reason !== 'messageDelete') confirmationMessage.reactions.removeAll().catch(err => interaction.client.log('Failed to remove reactions:', 'ERROR', err));
+            if (reason !== 'messageDelete') confirmationMessage.delete();
         });
     }
 };

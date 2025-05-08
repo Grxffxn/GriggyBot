@@ -1,6 +1,7 @@
 const { SlashCommandBuilder, AttachmentBuilder, MessageFlags } = require('discord.js');
 const { getConfig, saveConfig, reloadConfig } = require('../../utils/configUtils');
 const { checkAdmin } = require('../../utils/roleCheckUtils');
+const { updateFileCache } = require('../../utils/fileUtils');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -13,7 +14,10 @@ module.exports = {
         .addSubcommand(subcommand =>
             subcommand
                 .setName('reload')
-                .setDescription('Reload the config file'))
+                .setDescription('Reload configs and file cache')
+                .addBooleanOption(option =>
+                    option.setName('cache')
+                        .setDescription('Update the file cache')))
         .addSubcommand(subcommand =>
             subcommand
                 .setName('editconfig')
@@ -104,10 +108,13 @@ module.exports = {
                 return process.kill(process.pid, 'SIGINT');
             case 'reload':
                 if (!config.enableReload) return interaction.reply({ content: 'This command is disabled.', flags: MessageFlags.Ephemeral });
-                await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+                const initialMsg = await interaction.deferReply({ flags: MessageFlags.Ephemeral, withResponse: true });
+                const cache = interaction.options.getBoolean('cache') || false;
                 try {
                     reloadConfig(interaction.client);
-                    return interaction.editReply('Config file reloaded. Some changes may require a restart to take effect.');
+                    if (cache) await updateFileCache(interaction.client);
+
+                    return interaction.editReply(`Configs reloaded in ${Date.now() - initialMsg.resource.message.createdTimestamp}ms.`);
                 } catch (err) {
                     interaction.client.log('Failed to reload config file:', 'ERROR', err);
                     return interaction.editReply('Failed to reload config file.');

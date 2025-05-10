@@ -14,7 +14,25 @@ module.exports = {
       try {
         const command = client.slashcommands.get(interaction.commandName);
         if (command && command.run) {
-          command.run(interaction);
+          if (command.requiredRoles) {
+            const { all, roles } = command.requiredRoles;
+            if (all === true) {
+              if (!interaction.member.roles.cache.hasAll(...roles)) {
+                return await interaction.reply({
+                  content: `⚠️ You do not have the required roles to use this command!`,
+                  ephemeral: true
+                });
+              }
+            } else {
+              if (!interaction.member.roles.cache.hasAny(...roles)) {
+                return await interaction.reply({
+                  content: `⚠️ You do not have any of the required roles to use this command!`,
+                  ephemeral: true
+                });
+              }
+            }
+          }
+          await command.run(interaction);
         } else {
           interaction.client.log(
             `Command ${interaction.commandName} not found or does not have a run method.`,

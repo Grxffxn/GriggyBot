@@ -2,7 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const readline = require('readline');
 const sqlite3 = require('sqlite3').verbose();
-const { getConfig, saveConfig, reloadConfig } = require('../utils/configUtils');
+const { saveConfig, reloadConfig } = require('../utils/configUtils');
 
 async function findFile(basePath, targetDirectory, fileName, client) {
     const results = [];
@@ -73,7 +73,7 @@ async function findFile(basePath, targetDirectory, fileName, client) {
 }
 
 async function firstRun(client) {
-    const config = getConfig();
+    const config = client.config;
     const updatedValues = {};
     let isFirstRun = false;
 

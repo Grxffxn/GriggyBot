@@ -1,7 +1,6 @@
 const { SlashCommandBuilder, EmbedBuilder, ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder, MessageFlags } = require('discord.js');
 const fs = require('fs');
 const { queryDB } = require('../../utils/databaseUtils.js');
-const { getConfig } = require('../../utils/configUtils.js');
 
 // Define profile modal
 const profileColorTextInput = new TextInputBuilder()
@@ -59,7 +58,7 @@ module.exports = {
 		.setName('profile')
 		.setDescription('Customize your profile'),
 	async run(interaction) {
-		const config = getConfig();
+		const config = interaction.client.config;
 		const griggyDatabaseDir = config.griggyDbPath;
 
 		function sanitizeProfileColor(profileColor) {

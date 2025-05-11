@@ -1,5 +1,4 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
-const { getConfig } = require('../../utils/configUtils');
 const fs = require('fs');
 const path = require('path');
 
@@ -9,7 +8,7 @@ module.exports = {
         .setDescription('List all of my commands'),
 
     async run(interaction) {
-        const config = getConfig();
+        const config = interaction.client.config;
         const slashCommands = await interaction.client.application.commands.fetch();
         const prefixCommandsPath = path.join(__dirname, '../prefix');
         const prefixCommands = [];

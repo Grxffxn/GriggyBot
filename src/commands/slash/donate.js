@@ -1,12 +1,11 @@
 const { SlashCommandBuilder } = require('discord.js');
-const { getConfig } = require('../../utils/configUtils');
 
 module.exports = {
 	data: new SlashCommandBuilder()
 		.setName('donate')
 		.setDescription('Donation info'),
 	async run(interaction) {
-		const config = getConfig();
+		const config = interaction.client.config;
 		const embedDescription = Object.entries(config.donateLinks)
 			.map(([site, url]) => `- [${site}](${url})`)
 			.join('\n');

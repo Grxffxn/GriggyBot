@@ -7,7 +7,6 @@ const UpdateImage = require('./updateImage.js');
 const AutoProfile = require('./autoprofile.js');
 const firstRun = require('./firstRun.js');
 const chores = require('./chores.js');
-const { getConfig } = require('../utils/configUtils');
 const cron = require('node-cron');
 const { initializeRCONUtils, startRCON } = require('../utils/rconUtils.js');
 
@@ -26,7 +25,7 @@ module.exports = {
 		const rest = new REST({ version: '10' }).setToken(client.token);
 
 		await firstRun(client);
-		const config = getConfig();
+		const config = client.config;
 
 		// Filter disabled features before registering slash commands
 		const enabledSlashCommands = client.slashdatas.filter(cmd => {

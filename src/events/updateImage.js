@@ -1,4 +1,3 @@
-const { getConfig } = require('../utils/configUtils');
 const { parseServerData } = require('../utils/serverDataUtils.js');
 const { AttachmentBuilder, EmbedBuilder } = require('discord.js');
 const nodeHtmlToImage = require('node-html-to-image');
@@ -10,7 +9,7 @@ const base64DataUrl = `data:image/png;base64,${base64Image}`;
 const fontPath = path.resolve(__dirname, '../../assets/fonts/Minecraft.ttf');
 
 async function UpdateImage(client) {
-    const config = getConfig();
+    const config = client.config;
     const guild = await client.guilds.fetch(config.guildId);
     const imageChannel = await guild.channels.fetch(config.welcomeChannelId);
     if (!imageChannel) return client.log('Image channel not found. Please check your configuration.', 'ERROR');

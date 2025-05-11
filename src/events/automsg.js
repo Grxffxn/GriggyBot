@@ -1,38 +1,37 @@
-const { getConfig } = require('../utils/configUtils');
 const { EmbedBuilder } = require('discord.js');
 
 function getRandomInt(min, max) {
-    return Math.floor(Math.random() * (max - min)) + min;
+  return Math.floor(Math.random() * (max - min)) + min;
 }
 
 function createEmbed(message, config) {
-    const embed = new EmbedBuilder()
-        .setTitle(`${config.serverName} | AutoMsg`)
-        .setColor(config.defaultColor)
-        .setDescription(message.description)
-        .setThumbnail(config.logoImageUrl);
+  const embed = new EmbedBuilder()
+    .setTitle(`${config.serverName} | AutoMsg`)
+    .setColor(config.defaultColor)
+    .setDescription(message.description)
+    .setThumbnail(config.logoImageUrl);
 
-    if (message.footer) embed.setFooter(message.footer);
+  if (message.footer) embed.setFooter(message.footer);
 
-    return embed;
+  return embed;
 }
 
 async function AutoMsg(client) {
-    const config = getConfig();
-    const channel = client.channels.cache.get(config.autoMsgChannelId);
+  const config = client.config;
+  const channel = client.channels.cache.get(config.autoMsgChannelId);
 
-    if (!channel) return client.log('AutoMsg Error: Channel not found.', 'ERROR');
+  if (!channel) return client.log('AutoMsg Error: Channel not found.', 'ERROR');
 
-    // Get a random message from config.autoMessages
-    const randomIndex = getRandomInt(0, config.autoMessages.length);
-    const selectedMessage = config.autoMessages[randomIndex];
+  // Get a random message from config.autoMessages
+  const randomIndex = getRandomInt(0, config.autoMessages.length);
+  const selectedMessage = config.autoMessages[randomIndex];
 
-    const embed = createEmbed(selectedMessage, config);
+  const embed = createEmbed(selectedMessage, config);
 
-    channel.send({ embeds: [embed] })
-        .catch(err => {
-            client.log('Error sending AutoMsg:', 'ERROR', err);
-        });
+  channel.send({ embeds: [embed] })
+    .catch(err => {
+      client.log('Error sending AutoMsg:', 'ERROR', err);
+    });
 }
 
 module.exports = AutoMsg;

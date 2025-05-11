@@ -44,6 +44,7 @@ const token = config.token;
 
 client.commandaliases = new Collection();
 client.commands = new Collection();
+client.config = config;
 client.slashcommands = new Collection();
 client.slashdatas = [];
 client.components = {

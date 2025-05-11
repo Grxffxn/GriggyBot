@@ -1,4 +1,8 @@
 const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, MessageFlags } = require('discord.js');
+const { checkLinked } = require('../utils/roleCheckUtils.js');
+const { hyphenateUUID } = require('../utils/formattingUtils.js');
+const { queryDB } = require('../utils/databaseUtils.js');
+const { updateBalance } = require('../utils/gamblingUtils.js');
 const fs = require('fs');
 const path = require('path');
 
@@ -107,5 +111,60 @@ module.exports.handleRedraw = async (interaction, args) => {
   } catch (err) {
     client.log('Error handling chore redraw:', 'ERROR', err);
     return interaction.reply({ content: 'An error occurred while redrawing the chore.', flags: MessageFlags.Ephemeral });
+  }
+}
+
+module.exports.handleChoreApproval = async (interaction, submitterUserId, choreReward) => {
+  try {
+    const config = interaction.client.config;
+    const griggyDatabaseDir = config.griggyDbPath;
+    const cmiDatabaseDir = config.cmi_sqlite_db;
+    const approver = interaction.member;
+
+    const message = await interaction.message.fetch();
+    const embed = message.embeds[0];
+
+    const updatedEmbed = EmbedBuilder.from(embed).setFooter({
+      text: `Approved by ${interaction.member.nickname || interaction.user.globalName}`,
+      iconURL: approver.user.displayAvatarURL()
+    });
+
+    await message.edit({ embeds: [updatedEmbed], components: [] });
+
+    // Fetch submitter
+    const submitter = await interaction.guild.members.fetch(submitterUserId)
+    if (!submitter) {
+      interaction.client.log(`Submitter ${submitterUserId} not found.`, 'ERROR');
+      return interaction.reply({ content: 'Couldn\'t find the submitter. Did they leave the server?', flags: MessageFlags.Ephemeral });
+    }
+
+    // Get linked MC username
+    const userRow = await queryDB(griggyDatabaseDir, 'SELECT minecraft_uuid FROM users WHERE discord_id = ?', [submitterUserId], true);
+    if (!userRow || !userRow.minecraft_uuid) {
+      interaction.client.log(`UUID retrieval failed for ${submitterUserId}`, 'ERROR');
+      return interaction.reply({ content: 'Error: UUID retrieval failed. Sorry!', flags: MessageFlags.Ephemeral });
+    }
+    const hyphenatedUUID = hyphenateUUID(userRow.minecraft_uuid);
+
+    const playerData = await queryDB(cmiDatabaseDir, 'SELECT * FROM users WHERE player_uuid = ?', [hyphenatedUUID], true);
+    if (!playerData) {
+      interaction.client.log(`PlayerData retrieval failed for UUID ${hyphenateUUID}`, 'ERROR');
+      return interaction.reply({ content: 'Error: PlayerData retrieval failed. Sorry!', flags: MessageFlags.Ephemeral });
+    }
+
+    const submitterUsername = playerData.username;
+
+    // Check if the user is linked
+    const isLinked = checkLinked(submitter);
+    if (isLinked) {
+      const command = `cmi money give ${submitterUsername} ${choreReward}`;
+      await updateBalance(interaction, command);
+      await interaction.reply({ content: `Successfully approved ${submitter}'s chore submission!`, flags: MessageFlags.Ephemeral });
+    } else {
+      await interaction.reply({ content: `${submitter}, your submission was approved but you weren't rewarded any in-game currency because your accounts are not linked. For information on how to link, run \`/link\` on Discord.` });
+    }
+  } catch (err) {
+    interaction.client.log('Error in handleChoreApproval:', 'ERROR', err);
+    await interaction.reply({ content: 'An unexpected error occurred while processing the chore approval. Please contact an admin.', flags: MessageFlags.Ephemeral });
   }
 }

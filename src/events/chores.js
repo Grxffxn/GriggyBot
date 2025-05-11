@@ -40,6 +40,7 @@ function chooseChore(client) {
     return {
       description: description.trim(),
       reward: parseInt(reward.trim(), 10),
+      index: randomIndex,
     };
   } catch (err) {
     client.log('Error reading or parsing choreList.txt:', 'ERROR', err);
@@ -47,8 +48,8 @@ function chooseChore(client) {
   }
 }
 
-// Function to create a formatted message to send to chores channel
-function choreToEmbed(dailyChore, dailyReward, config, client) {
+function choreToEmbed(dailyChore, dailyReward, selectedIndex, client) {
+  const config = client.config;
   try {
     const choreEmbed = new EmbedBuilder()
       .setTitle('Daily Chore')
@@ -58,7 +59,7 @@ function choreToEmbed(dailyChore, dailyReward, config, client) {
 
     const actionRow = new ActionRowBuilder().addComponents(
       new ButtonBuilder()
-        .setCustomId('redraw_chore')
+        .setCustomId(`redrawChore:${selectedIndex}`)
         .setLabel('Redraw')
         .setStyle(ButtonStyle.Primary)
     );
@@ -75,34 +76,34 @@ module.exports = async (client) => {
   const choreChannel = client.channels.cache.get(config.choreChannelId);
   if (!choreChannel) return client.log('Chore channel not found >.<', 'ERROR');
 
-  const { description: dailyChore, reward: dailyReward } = chooseChore(client);
-  if (!dailyChore || !dailyReward) return client.log('Failed to select a daily chore/reward >.<', 'ERROR');
+  const { description, reward, selectedIndex } = chooseChore(client);
+  if (!description || !reward) return client.log('Failed to select a daily chore/reward >.<', 'ERROR');
 
-  const { embed: choreEmbed, components } = choreToEmbed(dailyChore, dailyReward, config, client);
-  if (!choreEmbed) return client.log('Failed to generate the chore embed >.<', 'ERROR');
+  const { embed, components } = choreToEmbed(description, reward, selectedIndex, client);
+  if (!embed) return client.log('Failed to generate the chore embed >.<', 'ERROR');
 
-  await choreChannel.send({ embeds: [choreEmbed], components })
+  await choreChannel.send({ embeds: [embed], components })
     .catch(err => client.log('Failed to send the chore embed >.<', 'ERROR', err));
 };
 
-module.exports.handleRedraw = async (interaction) => {
+module.exports.handleRedraw = async (interaction, args) => {
   const client = interaction.client;
-  const config = interaction.client.config;
-
   try {
-    const { description: dailyChore, reward: dailyReward } = chooseChore(client);
-    if (!dailyChore || !dailyReward) {
+    const previousIndex = args[0];
+    const { description, reward, index } = chooseChore(client);
+    if (!description || !reward) {
       client.log('Failed to select a daily chore/reward >.<', 'ERROR');
       return interaction.reply({ content: 'Failed to select a daily chore/reward >.<', flags: MessageFlags.Ephemeral });
     }
 
-    const { embed: choreEmbed, components } = choreToEmbed(dailyChore, dailyReward, config, client);
-    if (!choreEmbed) {
+    const { embed, components } = choreToEmbed(description, reward, index, client);
+    if (!embed) {
       client.log('Failed to generate the chore embed >.<', 'ERROR');
       return interaction.reply({ content: 'Failed to generate the chore embed >.<', flags: MessageFlags.Ephemeral });
     }
+    embed.setFooter({ text: `${interaction.member.nickname || interaction.user.globalName} reselected today's chore`, iconURL: interaction.member.displayAvatarURL() });
 
-    await interaction.update({ embeds: [choreEmbed], components });
+    await interaction.update({ embeds: [embed], components });
   } catch (err) {
     client.log('Error handling chore redraw:', 'ERROR', err);
     return interaction.reply({ content: 'An error occurred while redrawing the chore.', flags: MessageFlags.Ephemeral });

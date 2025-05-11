@@ -1,10 +1,9 @@
 const { EmbedBuilder, MessageFlags } = require('discord.js');
 const { queryDB } = require('../utils/databaseUtils');
 const { sendMCCommand, logRCON } = require('../utils/rconUtils');
-const { getConfig } = require('../utils/configUtils');
 
-async function Vouch(interaction) {
-    const config = getConfig();
+async function Vouch(interaction, vouchingFor, vouchingAccount) {
+    const config = interaction.client.config;
     const griggyDatabaseDir = config.griggyDbPath;
     const cmiDatabaseDir = config.cmi_sqlite_db;
     if (!config.enableVouch) return interaction.reply({ content: `Vouching has been disabled by the server owner.`, flags: MessageFlags.Ephemeral });
@@ -16,9 +15,6 @@ async function Vouch(interaction) {
     }
 
     await interaction.deferReply({ flags: MessageFlags.Ephemeral });
-
-    const vouchingFor = interaction.customId.replace('vouchButton-', '');
-    const vouchingAccount = interaction.user.id;
 
     try {
         const vouchingAccountRow = await queryDB(griggyDatabaseDir, 'SELECT * FROM users WHERE discord_id = ?', [vouchingAccount], true);

@@ -46,7 +46,7 @@ module.exports = {
         if (message.attachments.size > 0) embed.setImage(message.attachments.first().url);
 
         const approveButton = new ButtonBuilder()
-            .setCustomId(`approve_${message.author.id}_${selectedChoreReward}`)
+            .setCustomId(`approveChore:${message.author.id}/${selectedChoreReward}`)
             .setLabel('Approve')
             .setStyle('Success');
 

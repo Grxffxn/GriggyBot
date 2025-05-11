@@ -2,10 +2,11 @@ const { EmbedBuilder, MessageFlags } = require('discord.js');
 const { queryDB } = require('../utils/databaseUtils');
 const { sendMCCommand, logRCON } = require('../utils/rconUtils');
 
-async function Vouch(interaction, vouchingFor, vouchingAccount) {
+async function Vouch(interaction, vouchingFor) {
     const config = interaction.client.config;
     const griggyDatabaseDir = config.griggyDbPath;
     const cmiDatabaseDir = config.cmi_sqlite_db;
+    const vouchingAccount = interaction.user.id;
     if (!config.enableVouch) return interaction.reply({ content: `Vouching has been disabled by the server owner.`, flags: MessageFlags.Ephemeral });
     
     try {
@@ -18,10 +19,10 @@ async function Vouch(interaction, vouchingFor, vouchingAccount) {
 
     try {
         const vouchingAccountRow = await queryDB(griggyDatabaseDir, 'SELECT * FROM users WHERE discord_id = ?', [vouchingAccount], true);
-        if (!vouchingAccountRow) return interaction.editReply(`You must link your Discord account to your Minecraft account before you can vouch for \`${vouchingFor}\`.`);
+        if (!vouchingAccountRow) return interaction.editReply(`You must link your Discord account to your Minecraft account before you can vouch for <@${vouchingFor}>`);
 
         const vouchedPlayerRow = await queryDB(griggyDatabaseDir, 'SELECT * FROM users WHERE discord_id = ?', [vouchingFor], true);
-        if (!vouchedPlayerRow) return interaction.editReply(`You must link your Discord account to your Minecraft account before you can vouch for \`${vouchingFor}\`.`);
+        if (!vouchedPlayerRow) return interaction.editReply(`<@${vouchingFor}>'s Minecraft account is not linked to their Discord account. This may be an error.`);
 
         const vouchingForUUID = vouchedPlayerRow.minecraft_uuid;
         const hyphenatedVouchingForUUID = vouchingForUUID.replace(
@@ -69,4 +70,4 @@ async function Vouch(interaction, vouchingFor, vouchingAccount) {
     }
 }
 
-module.exports = Vouch;
+module.exports = { Vouch };

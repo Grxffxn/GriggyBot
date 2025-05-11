@@ -45,7 +45,7 @@ function createElements(type, interaction) {
       }
       buttonRow.addComponents(
         new ButtonBuilder()
-          .setCustomId(`refresh:${interaction.user.id}/${applicantInfo.rank}`)
+          .setCustomId(`refreshApplication:${interaction.user.id}/${applicantInfo.rank}`)
           .setLabel('Refresh')
           .setStyle('Secondary')
       );

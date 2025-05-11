@@ -1,8 +1,8 @@
 .DS_Store
 package.json
 package-lock.json
-config.yml
-serverData.json
-cooldowns.json
+src/serverData.json
+src/cooldowns.json
 node_modules/
 assets/
+src/config.yml

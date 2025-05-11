@@ -4,27 +4,12 @@ const { hyphenateUUID } = require('../utils/formattingUtils.js');
 const { queryDB } = require('../utils/databaseUtils.js');
 const { updateBalance } = require('../utils/gamblingUtils.js');
 
-async function handleChoreApproval(interaction) {
+async function handleChoreApproval(interaction, submitterUserId, choreReward) {
   try {
     const config = interaction.client.config;
     const griggyDatabaseDir = config.griggyDbPath;
     const cmiDatabaseDir = config.cmi_sqlite_db;
     const approver = interaction.member;
-    const requiredRole = config.approverRoleId;
-
-    const isStaff = checkStaff(approver);
-    if (!approver.roles.cache.has(requiredRole) && (!config.allowStaffApproveChores || !isStaff)) {
-      return interaction.reply({ content: 'You\'re not a mom! No perms to approve chores', flags: MessageFlags.Ephemeral });
-    }
-
-    const customIdParts = interaction.customId.split('_');
-    if (customIdParts.length < 3) {
-      interaction.client.log(`Invalid customId format ${interaction.customId} (processing chore approval)`, 'ERROR');
-      return interaction.reply({ content: 'Invalid interaction. Please try again.', flags: MessageFlags.Ephemeral });
-    }
-
-    const submitterUserId = customIdParts[1];
-    const choreReward = customIdParts[2];
 
     const message = await interaction.message.fetch();
     const embed = message.embeds[0];

@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, EmbedBuilder, ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder, MessageFlags } = require('discord.js');
+const { SlashCommandBuilder, ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder, MessageFlags } = require('discord.js');
 const fs = require('fs');
 const { queryDB } = require('../../utils/databaseUtils.js');
 
@@ -61,17 +61,12 @@ module.exports = {
 		const config = interaction.client.config;
 		const griggyDatabaseDir = config.griggyDbPath;
 
-		function sanitizeProfileColor(profileColor) {
-			// Remove # if it's present
-			if (profileColor.startsWith("#")) return profileColor.substring(1);
-			return profileColor;
-		}
-
 		// Get the user's Discord ID
 		const discordId = interaction.user.id;
 
 		// Read the contents of the accounts.aof file
-		const linkedAccountsData = fs.readFileSync('/home/minecraft/Main/plugins/DiscordSRV/accounts.aof', 'utf8');
+    const accountsFilePath = config.accounts_aof;
+		const linkedAccountsData = fs.readFileSync(accountsFilePath, 'utf8');
 
 
 		// Parse the AOF data into a JavaScript object
@@ -96,58 +91,10 @@ module.exports = {
 		// Show modal and await response
 
 		const profileModal = new ModalBuilder()
-			.setCustomId('profileModal')
+			.setCustomId(`profileModal:${trimmedUUID}`)
 			.setTitle('Profile Customization - ' + interaction.user.username)
 			.addComponents(profileColorActionRow, profileImageActionRow, profileDescriptionActionRow, profileTitleActionRow, favoriteGameActionRow);
 
 		await interaction.showModal(profileModal);
-
-		const modalInteraction = await interaction.awaitModalSubmit({ filter: i => i.customId === 'profileModal' && i.user.id === interaction.user.id, time: 300000 });
-		modalInteraction.deferUpdate();
-
-		// Try to update user profile with values from modal
-		const profileColorRaw = modalInteraction.fields.getTextInputValue('profileColorTextInput');
-		const profileColor = sanitizeProfileColor(profileColorRaw);
-		const profileImage = modalInteraction.fields.getTextInputValue('profileImageTextInput');
-		const profileDescription = modalInteraction.fields.getTextInputValue('profileDescriptionTextInput');
-		const profileTitle = modalInteraction.fields.getTextInputValue('profileTitleTextInput');
-		const favoriteGame = modalInteraction.fields.getTextInputValue('favoriteGameTextInput');
-
-		// Build the SQL query based on the non-empty variables
-		let sql = 'UPDATE users SET minecraft_uuid = ?';
-		const params = [trimmedUUID];
-		if (profileColor !== '') {
-			sql += ', profile_color = ?';
-			params.push(profileColor);
-		}
-		if (profileImage !== '') {
-			sql += ', profile_image = ?';
-			params.push(profileImage);
-		}
-		if (profileDescription !== '') {
-			sql += ', profile_description = ?';
-			params.push(profileDescription);
-		}
-		if (profileTitle !== '') {
-			sql += ', profile_title = ?';
-			params.push(profileTitle);
-		}
-		if (favoriteGame !== '') {
-			sql += ', favorite_game = ?';
-			params.push(favoriteGame);
-		}
-		sql += ' WHERE discord_id = ?';
-		params.push(discordId);
-
-		await queryDB(griggyDatabaseDir, sql, params);
-
-		// Send confirmation message
-		const confirmationEmbed = new EmbedBuilder()
-			.setTitle('Profile Customization')
-			.setDescription('Your profile has been updated!')
-			.setColor('77dd77');
-
-		return interaction.followUp({ embeds: [confirmationEmbed] });
-
 	},
 };

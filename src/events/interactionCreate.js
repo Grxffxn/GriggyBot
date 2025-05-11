@@ -51,31 +51,12 @@ module.exports = {
         });
       }
     } else if (interaction.type === InteractionType.MessageComponent) {
-      if (interaction.customId.startsWith('vouchButton-')) {
-        Vouch(interaction);
-      }
       if (
         interaction.customId.startsWith('approve-') ||
         interaction.customId.startsWith('deny-') ||
         interaction.customId.startsWith('refresh-')
       ) {
         handleApplication(interaction);
-      }
-      if (interaction.customId.startsWith('approve_')) {
-        handleChoreApproval(interaction);
-      }
-      if (interaction.customId === 'redraw_chore') {
-        const config = getConfig();
-
-        if (!checkMom(interaction.member) && (!checkStaff(interaction.member) || !config.allowStaffApproveChores)) {
-          return interaction.reply({
-            content: ':no_entry_sign: You do not have permission to redraw chores.',
-            ephemeral: true
-          });
-        }
-
-        const handleRedraw = require('./chores.js').handleRedraw;
-        await handleRedraw(interaction);
       }
     }
 

@@ -1,9 +1,4 @@
 const { Events, InteractionType, MessageFlags } = require('discord.js');
-const Vouch = require('./vouchEvent.js');
-const handleApplication = require('./handleApplication.js');
-const handleChoreApproval = require('./handleChoreApproval.js');
-const { getConfig } = require('../utils/configUtils.js');
-const { checkMom, checkStaff } = require('../utils/roleCheckUtils.js');
 
 module.exports = {
   name: Events.InteractionCreate,
@@ -49,14 +44,6 @@ module.exports = {
           content: ':dizzy_face: Uh oh! There was an error processing your slash command.',
           flags: MessageFlags.Ephemeral
         });
-      }
-    } else if (interaction.type === InteractionType.MessageComponent) {
-      if (
-        interaction.customId.startsWith('approve-') ||
-        interaction.customId.startsWith('deny-') ||
-        interaction.customId.startsWith('refresh-')
-      ) {
-        handleApplication(interaction);
       }
     }
 

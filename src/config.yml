@@ -110,18 +110,22 @@ ranks:
     requiredPoints: 25
 
 # Array of automated messages to be sent periodically (see autoMsgDelay)
+# Events are a WIP, more info to come
 autoMessages:
-  - description: |
+  - title: "Vote for our Server!"
+    description: |
       **Have you voted yet today?**
       Run the command `/vote` to vote for rewards in-game!
-  - description: |
-      **Profile Customization**
+    event: "vote"
+  - title: "Profile Customization"
+    description: |
       Players who have linked their Discord and Minecraft accounts now have access to custom profiles with `/profile`.
       Set a custom profile color and use Discord text formatting to create something unique.
 
       View your profile with `/info <username>`
     footer:
       text: "/profile"
+    event: "profile"
 
 # Voting links
 voteSites:

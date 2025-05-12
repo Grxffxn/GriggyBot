@@ -1,4 +1,16 @@
-const { SlashCommandBuilder, EmbedBuilder, ButtonBuilder, ActionRowBuilder, MessageFlags } = require('discord.js');
+const {
+  SlashCommandBuilder,
+  ButtonBuilder,
+  MessageFlags,
+  ButtonStyle,
+  ContainerBuilder,
+  SectionBuilder,
+  SeparatorBuilder,
+  SeparatorSpacingSize,
+  TextDisplayBuilder,
+  ThumbnailBuilder,
+  resolveColor,
+} = require('discord.js');
 const axios = require('axios');
 const { queryDB } = require('../../utils/databaseUtils.js');
 
@@ -29,9 +41,13 @@ module.exports = {
       const luckPermsDatabasePath = config.luckperms_sqlite_db;
 
       const username = interaction.options.getString('username');
-      const { data } = await axios.get(`https://api.geysermc.org/v2/utils/uuid/bedrock_or_java/${username}?prefix=.`);
-
-      if (!data) return interaction.reply({ content: 'Invalid username, or Mojang\'s API is down.', flags: MessageFlags.Ephemeral });
+      let data;
+      try {
+        const response = await axios.get(`https://api.geysermc.org/v2/utils/uuid/bedrock_or_java/${username}?prefix=.`);
+        data = response.data;
+      } catch (err) {
+        return interaction.editReply({ content: 'Invalid username, or Mojang\'s API is down.', flags: MessageFlags.Ephemeral });
+      }
 
       const trimmedUUID = data.id;
 
@@ -47,21 +63,11 @@ module.exports = {
         queryDB(luckPermsDatabasePath, 'SELECT `primary_group` FROM `luckperms_players` WHERE LOWER(`username`) = LOWER(?)', [username], true)
       ]);
 
-      let vouchButton;
-      if (row) {
-        vouchButton = new ButtonBuilder()
-          .setCustomId(`vouchButton:${row.discord_id}`)
-          .setLabel('Vouch')
-          .setStyle('Success');
-      } else {
-        vouchButton = new ButtonBuilder()
-          .setCustomId('unlinkedVouchButton')
-          .setLabel('Cannot Vouch')
-          .setStyle('Secondary')
-          .setDisabled(true);
-      }
-
-      const vouchRow = new ActionRowBuilder().addComponents(vouchButton);
+      const customizeProfileButtonComponent = new ButtonBuilder()
+        .setCustomId(`tryMeButton:profile`)
+        .setLabel('Edit Profile')
+        .setStyle(ButtonStyle.Primary)
+        .setEmoji('🎨');
 
       const streak = row?.streak || 0;
       const primary_group = result2?.primary_group?.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) ?? 'Unknown';
@@ -70,30 +76,61 @@ module.exports = {
       const userMetaValue = (result1?.UserMeta || '').split('%%')[1] || '0';
       const points = parseFloat(userMetaValue || '0');
       const vouches = parseFloat(row?.vouches || '0');
-      const rankPoints = points - vouches;
 
-      const embed = new EmbedBuilder()
-        .setTitle(row?.profile_title || `${username}'s Profile`)
-        .setDescription(`**Username:** ${username}\n**Current Rank:** ${primary_group}\n**Total Playtime:** ${finalPlayTime}\n**Current Balance:** $${balance}\n\n${row?.profile_description || 'No bio.'}\n-+--+---+---+--+-`)
-        .setColor(row?.profile_color || '391991')
-        .setThumbnail(row?.profile_image || `https://visage.surgeplay.com/bust/256/${trimmedUUID}`);
-
-      const fields = [
-        ...(config.enableVouch ? [{ name: 'Vouches', value: vouches.toString(), inline: true }] : []),
-        ...(config.enableRankPoints ? [{ name: 'Rank Points', value: rankPoints.toString(), inline: true }] : []),
-        ...(config.enableVouch && config.enableRankPoints ? [{ name: 'Total Points', value: points.toString(), inline: true }] : []),
-        ...(config.enableDaily && streak ? [{ name: 'Daily Streak', value: streak.toString(), inline: true }] : []),
-        { name: 'Discord Account', value: row?.discord_id ? `<@${row.discord_id}>` : 'Not Linked', inline: true },
-        { name: 'Favorite Game', value: row?.favorite_game || 'Minecraft', inline: true }
-      ];
-
-      embed.addFields(fields);
-
-      if (config.enableVouch) {
-        await interaction.editReply({ embeds: [embed], components: [vouchRow] });
+      const container = new ContainerBuilder()
+        .setAccentColor(row?.profile_color ? resolveColor(row.profile_color) : resolveColor('391991'));
+      const titleText = new TextDisplayBuilder()
+        .setContent(row?.profile_title || `${username}'s Profile`);
+      const contentText = new TextDisplayBuilder();
+      const rankPointsText = new TextDisplayBuilder();
+      const extraInfoText = new TextDisplayBuilder();
+      const vouchButton = new ButtonBuilder();
+      const playerDataSectionComponent = new SectionBuilder();
+      const rankPointsSectionComponent = new SectionBuilder();
+      const extraInfoSectionComponent = new SectionBuilder();
+      const thumbnailComponent = new ThumbnailBuilder({
+        media: {
+          url: row?.profile_image || `https://visage.surgeplay.com/bust/256/${trimmedUUID}`,
+        }
+      });
+      const separatorComponent = new SeparatorBuilder()
+        .setSpacing(SeparatorSpacingSize.Small);
+      if (row) {
+        contentText.setContent(`**Username:** ${username}\n**Current Rank:** ${primary_group}\n**Total Playtime:** ${finalPlayTime}\n**Current Balance:** $${balance}\n\n${row?.profile_description || 'No bio.'}`);
+        rankPointsText.setContent(`**Rank Points:** ${points.toString()}${config.enableVouch ? ` (${vouches.toString()} ${vouches === 1 ? 'Vouch' : 'Vouches'})` : ''}`);
+        extraInfoText.setContent(`**Discord Account:** <@${row.discord_id}>\n**Favorite Game:** ${row.favorite_game || 'Minecraft'}${(config.enableDaily && row?.streak) ? `\n**Daily Streak:** ${streak.toString()}` : ''}`);
+        vouchButton.setCustomId(`vouchButton:${row.discord_id}`)
+          .setLabel('Vouch')
+          .setStyle('Success');
+        playerDataSectionComponent.addTextDisplayComponents([titleText, contentText])
+          .setThumbnailAccessory(thumbnailComponent);
+        rankPointsSectionComponent.addTextDisplayComponents([rankPointsText])
+          .setButtonAccessory(vouchButton);
+        extraInfoSectionComponent.addTextDisplayComponents([extraInfoText])
+          .setButtonAccessory(customizeProfileButtonComponent);
+        if (config.enableRankPoints) {
+          container.addSectionComponents([playerDataSectionComponent]);
+          container.addSeparatorComponents([separatorComponent]);
+          container.addSectionComponents([rankPointsSectionComponent]);
+          container.addSeparatorComponents([separatorComponent]);
+          container.addSectionComponents([extraInfoSectionComponent]);
+        } else {
+          container.addSectionComponents([playerDataSectionComponent]);
+          container.addSeparatorComponents([separatorComponent]);
+          container.addSectionComponents([extraInfoSectionComponent]);
+        }
       } else {
-        await interaction.editReply({ embeds: [embed] });
+        contentText.setContent(`**Username:** ${username}`);
+        playerDataSectionComponent.addTextDisplayComponents([titleText, contentText])
+          .setThumbnailAccessory(thumbnailComponent);
+        container.addSectionComponents([playerDataSectionComponent]);
       }
+
+      await interaction.editReply({
+        components: [container],
+        flags: MessageFlags.IsComponentsV2,
+        allowedMentions: { parse: [] },
+      });
     } catch (err) {
       interaction.client.log('/info command failure:', 'ERROR', err);
       interaction.editReply({ content: 'Command failed. Try again or contact an admin.', flags: MessageFlags.Ephemeral });

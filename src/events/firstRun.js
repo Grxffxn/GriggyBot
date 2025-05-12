@@ -333,7 +333,7 @@ async function firstRun(client) {
     }
 
     // DATABASE SETUP
-    const databasePath = path.resolve(__dirname, '../../database.db');
+    const databasePath = path.resolve(__dirname, '../../griggydatabase.db');
     if (!fs.existsSync(databasePath)) {
         try {
             client.log('No database found. Creating...');
@@ -413,6 +413,7 @@ function createDatabase(updatedValues, databasePath, client) {
             `);
         });
         db.close();
+        updatedValues.griggyDbPath = databasePath;
         client.log(`SQLite database initialized at ${updatedValues.griggyDbPath}`, 'SUCCESS');
     } catch (err) {
         client.log('Error creating database:', 'ERROR', err);

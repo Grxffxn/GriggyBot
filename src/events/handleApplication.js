@@ -25,9 +25,15 @@ async function approveApplication(interaction, applicantUserId, rank) {
   const application = await queryDB(griggyDatabaseDir, 'SELECT * FROM applications WHERE message_id = ?', [interaction.message.id], true);
   if (!application) return interaction.followUp({ content: `No active application found for <@${applicantUserId}>.`, flags: MessageFlags.Ephemeral });
 
+  if ((application.staff_reactions || '').includes(interaction.user.id)) {
+    return interaction.followUp({ content: `You have already approved this application.`, flags: MessageFlags.Ephemeral });
+  }
+
   const approvals = parseInt(application.approvals || 0, 10);
   const updatedApprovals = approvals + 1;
-  await queryDB(griggyDatabaseDir, 'UPDATE applications SET approvals = ? WHERE message_id = ?', [updatedApprovals, interaction.message.id]);
+
+  const updatedStaffReactions = application.staff_reactions ? `${application.staff_reactions},${interaction.user.id}` : interaction.user.id;
+  await queryDB(griggyDatabaseDir, 'UPDATE applications SET approvals = ?, staff_reactions = ? WHERE message_id = ?', [updatedApprovals, updatedStaffReactions, interaction.message.id]);
 
   await interaction.channel.send(`<@${interaction.user.id}> has approved this application. Multiple approvals may be required for higher ranks.`);
   await refreshApplication(interaction, applicantUserId, rank);

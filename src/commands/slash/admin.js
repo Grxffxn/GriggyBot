@@ -5,7 +5,7 @@ const { updateFileCache } = require('../../utils/fileUtils');
 const config = getConfig();
 
 module.exports = {
-  requiredRoles: { all: false, roles: config.adminRoleIds }, //please verify this is your correct ids
+  requiredRoles: { all: false, roles: config.adminRoleIds },
   data: new SlashCommandBuilder()
     .setName('admin')
     .setDescription('Administrative commands for GriggyBot')
@@ -19,25 +19,47 @@ module.exports = {
     .addSubcommand(subcommand =>
       subcommand
         .setName('editconfig')
-        .setDescription('Edit the config file')
+        .setDescription('Edit or view some config values')
         .addStringOption(option => {
-          const config = getConfig();
-          const simpleKeys = Object.keys(config).filter(key => {
-            const value = config[key];
-            return typeof value === 'boolean' || typeof value === 'string' || typeof value === 'number';
-          });
+          const allowedKeys = [
+            'serverName',
+            'serverAcronym',
+            'serverIp',
+            'prefix',
+            'discordsrvBotId',
+            'defaultColor',
+            'mapUrl',
+            'approverRoleId',
+            'allowStaffApproveChores',
+            'welcomeIntro',
+            'staffEmojisList',
+            'useRulesInWelcomeMessage',
+            'rulesFooter',
+            'welcomeServerInfoTitle',
+            'autoMsgDelay',
+            'baseRenderUrl',
+            'gamblingWinCooldown',
+            'gamblingGlobalCooldown',
+            'logoImageUrl',
+            'rconLogThreadId',
+            'welcomeChannelId',
+            'welcomeMessageId',
+            'autoMsgChannelId',
+            'choreChannelId',
+            'rankSubmissionChannelId', //25
+          ];
 
-          const limitedKeys = simpleKeys.slice(0, 25);
+          option.setName('key').setDescription('Key to edit or view').setRequired(true);
 
-          option.setName('key').setDescription('Key to edit').setRequired(true);
-
-          limitedKeys.forEach(key => {
+          allowedKeys.forEach(key => {
             option.addChoices({ name: key, value: key });
           });
 
           return option;
         })
-        .addStringOption(option => option.setName('value').setDescription('New value for the key').setRequired(true))
+        .addStringOption(option =>
+          option.setName('value').setDescription('New value for the key (leave blank to view current value)').setRequired(false)
+        )
     )
     .addSubcommand(subcommand =>
       subcommand
@@ -128,17 +150,17 @@ module.exports = {
       case 'editconfig':
         if (!config.enableEditconfig)
           return interaction.reply({ content: 'This command is disabled.', flags: MessageFlags.Ephemeral });
+
         const key = interaction.options.getString('key');
         const value = interaction.options.getString('value');
 
-        if (!key || !value)
+        if (!value) {
+          const currentValue = config[key];
           return interaction.reply({
-            content: 'Please provide both a key and a value.',
+            content: `The current value of \`${key}\` is: \`${currentValue}\``,
             flags: MessageFlags.Ephemeral
           });
-
-        if (!(key in config))
-          return interaction.reply({ content: `Invalid key: ${key}`, flags: MessageFlags.Ephemeral });
+        }
 
         try {
           config[key] = parseValue(value, config[key]);

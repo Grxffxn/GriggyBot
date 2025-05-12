@@ -13,8 +13,6 @@ module.exports = {
     async run(client, message, args) {
         const config = getConfig();
         if (!config.enableChore) return message.reply('The server owner has disabled the chores feature.');
-        const proof = args.join(' ').trim();
-        if (!proof && message.attachments.size === 0) return message.reply('Please provide proof of your chore completion (text or attachments).');
 
         const choreChannel = client.channels.cache.get(config.choreChannelId);
         if (!choreChannel) return message.reply('Chore channel not found. Please contact an admin.');
@@ -29,6 +27,11 @@ module.exports = {
         const [description, reward] = choreEntry.split(':');
         const selectedChoreDescription = description.trim();
         const selectedChoreReward = parseInt(reward.trim(), 10);
+
+        const proof = args.join(' ').trim();
+        if (!proof && message.attachments.size === 0) return message.reply(
+            `Today's chore is **"${selectedChoreDescription}"**. You can earn **$${selectedChoreReward.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}** in-game for completing it.\nPlease provide proof of completion in the format: \`!chore <proof>\` or attach an image.`
+        );
 
         let embedDescription = `completed **"${selectedChoreDescription}"**`
         if (proof) embedDescription += `\n**Proof:** ${proof}`

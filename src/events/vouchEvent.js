@@ -15,7 +15,11 @@ async function Vouch(interaction, vouchingFor) {
         return interaction.reply({ content: `Can't reach ${config.serverAcronym || config.serverName}, please try again later.`, flags: MessageFlags.Ephemeral });
     }
 
-    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+    if (interaction.isButton()) {
+      await interaction.deferUpdate();
+    } else {
+      await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+    }
 
     try {
         const vouchingAccountRow = await queryDB(griggyDatabaseDir, 'SELECT * FROM users WHERE discord_id = ?', [vouchingAccount], true);
@@ -56,9 +60,12 @@ async function Vouch(interaction, vouchingFor) {
             .setTitle('Vouch')
             .setDescription(`${vouchingAccountUsername} has vouched for ${vouchingForUsername}!`)
             .setTimestamp()
-            .setFooter({ text: 'GriggyBot' });
+            .setAuthor({ name: interaction.member.displayName, iconURL: interaction.member.displayAvatarURL() });
 
-        await interaction.editReply('Success');
+        if (!interaction.isButton()) {
+          await interaction.editReply('Success');
+        }
+        
         await interaction.channel.send({ embeds: [vouchEmbed] });
 
         const command = `cmi usermeta ${vouchingForMCUsername} increment points 1`;

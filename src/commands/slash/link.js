@@ -27,8 +27,8 @@ module.exports = {
         const guild = await interaction.client.guilds.fetch(guildId);
         const channel = await guild.channels.fetch(channelId);
         const message = await channel.messages.fetch(messageId);
-        const displayName = interaction.user.globalName ?? interaction.user.username;
-        const avatarURL = interaction.user.displayAvatarURL({ dynamic: true, size: 512 });
+        const displayName = interaction.member.displayName;
+        const avatarURL = interaction.member.displayAvatarURL();
         linkingEmbed.setFooter({ text: `Requested by ${displayName}`, iconURL: avatarURL });
 
         await message.reply({ embeds: [linkingEmbed] });

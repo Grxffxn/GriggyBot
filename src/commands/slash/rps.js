@@ -63,7 +63,7 @@ module.exports = {
       const embed = new EmbedBuilder()
         .setColor(config.defaultColor)
         .setTitle('⚔️ Rock Paper Scissors Duel ⚔️')
-        .setDescription(`**${interaction.user.username}** vs **${targetedUser.username}**\nWager: $${formatNumber(wager)}\n\n**${targetedUser.username}**, choose your weapon!`)
+        .setDescription(`**${interaction.member.displayName}** vs **${targetedUser.displayName}**\nWager: $${formatNumber(wager)}\n\n**${targetedUser.displayName}**, choose your weapon!`)
         .setFooter({ text: 'Choose your weapon!' })
         .setTimestamp();
       const buttons = choices.map(choice => {
@@ -84,24 +84,24 @@ module.exports = {
         filter: (i) => i.user.id === targetedUser.id,
         time: 30000,
       }).catch(async (error) => {
-        embed.setDescription(`**${interaction.user.username}** vs **${targetedUser.username}**\nWager: $${formatNumber(wager)}\n\n**${targetedUser.username}** took too long to respond!`);
+        embed.setDescription(`**${interaction.member.displayName}** vs **${targetedUser.displayName}**\nWager: $${formatNumber(wager)}\n\n**${targetedUser.displayName}** took too long to respond!`);
         await message.edit({ embeds: [embed], components: [] });
       })
 
       if (!targetedUserInteraction) return;
 
       const targetedUserChoice = choices.find((choice) => choice.name === targetedUserInteraction.customId);
-      await targetedUserInteraction.reply({ content: `You chose **${targetedUserChoice.name}**! ${targetedUserChoice.emoji}`, flags: MessageFlags.Ephemeral });
+      await targetedUserInteraction.deferUpdate();
 
       // Initial user's turn
-      embed.setDescription(`**${interaction.user.username}** vs **${targetedUser.username}**\nWager: $${formatNumber(wager)}\n\n**${interaction.user.username}**, choose your weapon!`);
+      embed.setDescription(`**${interaction.member.displayName}** vs **${targetedUser.displayName}**\nWager: $${formatNumber(wager)}\n\n**${interaction.member.displayName}**, choose your weapon!`);
       await message.edit({ embeds: [embed], components: [row] });
 
       const initialUserInteraction = await message.awaitMessageComponent({
         filter: (i) => i.user.id === interaction.user.id,
         time: 30000,
       }).catch(async (error) => {
-        embed.setDescription(`**${interaction.user.username}** vs **${targetedUser.username}**\nWager: $${formatNumber(wager)}\n\n**${interaction.user.username}** took too long to respond!`);
+        embed.setDescription(`**${interaction.member.displayName}** vs **${targetedUser.displayName}**\nWager: $${formatNumber(wager)}\n\n**${interaction.member.displayName}** took too long to respond!`);
         await message.edit({ embeds: [embed], components: [] });
       })
 

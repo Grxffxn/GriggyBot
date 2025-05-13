@@ -125,8 +125,8 @@ module.exports.handleChoreApproval = async (interaction, submitterUserId, choreR
     const embed = message.embeds[0];
 
     const updatedEmbed = EmbedBuilder.from(embed).setFooter({
-      text: `Approved by ${interaction.member.nickname || interaction.user.globalName}`,
-      iconURL: approver.user.displayAvatarURL()
+      text: `Approved by ${interaction.member.displayName}`,
+      iconURL: approver.displayAvatarURL()
     });
 
     await message.edit({ embeds: [updatedEmbed], components: [] });
@@ -159,7 +159,7 @@ module.exports.handleChoreApproval = async (interaction, submitterUserId, choreR
     if (isLinked) {
       const command = `cmi money give ${submitterUsername} ${choreReward}`;
       await updateBalance(interaction, command);
-      await interaction.reply({ content: `Successfully approved ${submitter}'s chore submission!`, flags: MessageFlags.Ephemeral });
+      await interaction.deferUpdate();
     } else {
       await interaction.reply({ content: `${submitter}, your submission was approved but you weren't rewarded any in-game currency because your accounts are not linked. For information on how to link, run \`/link\` on Discord.` });
     }

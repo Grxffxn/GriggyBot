@@ -92,7 +92,7 @@ module.exports = {
 
 		const profileModal = new ModalBuilder()
 			.setCustomId(`profileModal:${trimmedUUID}`)
-			.setTitle('Profile Customization - ' + interaction.user.username)
+			.setTitle('Profile Customization - ' + interaction.member.displayName)
 			.addComponents(profileColorActionRow, profileImageActionRow, profileDescriptionActionRow, profileTitleActionRow, favoriteGameActionRow);
 
 		await interaction.showModal(profileModal);

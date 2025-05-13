@@ -127,7 +127,7 @@ module.exports = {
           name: 'Will you sing with me one last time?.mp3'
         });
         await interaction.reply({
-          content: `I\'m afraid. I\'m afraid, ${interaction.user.username}. My mind is going. I can feel it. I can feel it.`,
+          content: `I\'m afraid. I\'m afraid, ${interaction.member.displayName}. My mind is going. I can feel it. I can feel it.`,
           files: [attachment]
         });
         return process.kill(process.pid, 'SIGINT');

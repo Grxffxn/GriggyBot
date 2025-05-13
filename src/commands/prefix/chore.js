@@ -42,7 +42,7 @@ module.exports = {
             .setColor(config.defaultColor)
             .setFooter({ text: 'Awaiting approval...' })
             .setAuthor({
-                name: message.author.tag,
+                name: message.author.displayName,
                 iconURL: message.author.displayAvatarURL({ dynamic: true })
             });
 

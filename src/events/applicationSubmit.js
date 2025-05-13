@@ -57,7 +57,7 @@ function createElements(type, interaction) {
         .setColor(rankConfig.color)
         .setThumbnail(applicantInfo.thumbnailUrl)
         .addFields({ name: '📄 Application Form', value: questions.map((q, i) => `**${q}**\n${applicantInfo.answers[i]}`).join('\n-=+=- -=+=- -=+=-\n') })
-        .setFooter({ text: `Application submitted by ${interaction.user.username}`, iconURL: interaction.user.displayAvatarURL() });
+        .setFooter({ text: `Application submitted by ${interaction.member.displayName}`, iconURL: interaction.member.displayAvatarURL() });
       const profileEmbed = new EmbedBuilder()
         .setTitle(applicantInfo.row.profile_title || applicantInfo.playerName)
         .setColor(applicantInfo.row.profile_color)

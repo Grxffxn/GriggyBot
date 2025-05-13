@@ -35,7 +35,7 @@ async function approveApplication(interaction, applicantUserId, rank) {
   const updatedStaffReactions = application.staff_reactions ? `${application.staff_reactions},${interaction.user.id}` : interaction.user.id;
   await queryDB(griggyDatabaseDir, 'UPDATE applications SET approvals = ?, staff_reactions = ? WHERE message_id = ?', [updatedApprovals, updatedStaffReactions, interaction.message.id]);
 
-  await interaction.channel.send(`<@${interaction.user.id}> has approved this application. Multiple approvals may be required for higher ranks.`);
+  await interaction.channel.send(`${interaction.member} has approved this application. Multiple approvals may be required for higher ranks.`);
   await refreshApplication(interaction, applicantUserId, rank);
 }
 

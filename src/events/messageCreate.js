@@ -61,6 +61,7 @@ module.exports = {
           if (msg) {
             setTimeout(async () => {
               await msg.delete();
+              if (message.deletable) await message.delete();
             }, 5000);
             return;
           }

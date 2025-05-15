@@ -413,6 +413,7 @@ function createDatabase(updatedValues, databasePath, client) {
           inventory TEXT DEFAULT '',
           spices TEXT DEFAULT '',
           fishing_rod VARCHAR(50) DEFAULT 'training_rod',
+          selected_rod VARCHAR(50) DEFAULT 'training_rod',
           xp INT DEFAULT 0,
           prestige_level INT DEFAULT 0,
           smoker TEXT DEFAULT NULL,

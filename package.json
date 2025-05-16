@@ -13,6 +13,6 @@
     "node-html-to-image": "^5.0.0",
     "rcon-client": "^4.2.5",
     "sqlite3": "^5.1.6",
-    "yaml": "^2.7.1"
+    "yaml": "^2.8.0"
   }
 }

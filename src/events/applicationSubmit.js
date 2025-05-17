@@ -100,7 +100,14 @@ async function fetchPlayerData(interaction, playerName, rank, answers) {
       return interaction.followUp({ content: `Wait! Your Discord account is not linked to ${playerName}. An impostor is among us...\n-# Contact an Admin for help resolving this.`, flags: MessageFlags.Ephemeral });
     }
     applicantInfo.userPoints = await queryDB(config.cmi_sqlite_db, 'SELECT UserMeta FROM users WHERE username = ? COLLATE NOCASE', [playerName], true)
-      .then(row => parseFloat((row?.UserMeta || '').split('%%')[1], 10) || 0);
+      .then(row => {
+        try {
+          const meta = JSON.parse(row?.UserMeta || '{}');
+          return parseFloat(meta.griggyPoints || '0');
+        } catch {
+          return 0;
+        }
+      });
   } catch (err) {
     interaction.client.log('An error occurred while fetching player data from the database:', 'ERROR', err);
     return interaction.followUp({ content: 'An error occurred while fetching player data from the database. Please try again later.', flags: MessageFlags.Ephemeral });

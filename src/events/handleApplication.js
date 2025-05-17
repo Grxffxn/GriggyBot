@@ -55,7 +55,14 @@ async function refreshApplication(interaction, applicantUserId, rank) {
   const { vouches = 0 } = await queryDB(griggyDatabaseDir, 'SELECT * FROM users WHERE discord_id = ?', [applicantUserId], true) || {};
   const userPoints = config.enableRankPoints
     ? await queryDB(cmiDatabaseDir, 'SELECT UserMeta FROM users WHERE username = ? COLLATE NOCASE', [application.player_name], true)
-      .then(row => parseFloat((row.UserMeta || '').split('%%')[1], 10) || 0)
+      .then(row => {
+        try {
+          const meta = JSON.parse(row?.UserMeta || '{}');
+          return parseFloat(meta.griggyPoints || '0');
+        } catch {
+          return 0;
+        }
+      })
     : 0;
 
   const buttonRow = createButtons(applicantUserId, rank, {

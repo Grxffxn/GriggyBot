@@ -23,10 +23,10 @@ async function Vouch(interaction, vouchingFor) {
 
     try {
         const vouchingAccountRow = await queryDB(griggyDatabaseDir, 'SELECT * FROM users WHERE discord_id = ?', [vouchingAccount], true);
-        if (!vouchingAccountRow) return interaction.editReply(`You must link your Discord account to your Minecraft account before you can vouch for <@${vouchingFor}>`);
+        if (!vouchingAccountRow) return interaction.followUp({ content: `You must link your Discord account to your Minecraft account before you can vouch for <@${vouchingFor}>`, flags: MessageFlags.Ephemeral });
 
         const vouchedPlayerRow = await queryDB(griggyDatabaseDir, 'SELECT * FROM users WHERE discord_id = ?', [vouchingFor], true);
-        if (!vouchedPlayerRow) return interaction.editReply(`<@${vouchingFor}>'s Minecraft account is not linked to their Discord account. This may be an error.`);
+        if (!vouchedPlayerRow) return interaction.followUp({ content: `<@${vouchingFor}>'s Minecraft account is not linked to their Discord account. This may be an error.`, flags: MessageFlags.Ephemeral });
 
         const vouchingForUUID = vouchedPlayerRow.minecraft_uuid;
         const hyphenatedVouchingForUUID = vouchingForUUID.replace(
@@ -38,9 +38,9 @@ async function Vouch(interaction, vouchingFor) {
         const cmiRow = await queryDB(cmiDatabaseDir, cmiQuery, [hyphenatedVouchingForUUID], true);
         const vouchingForMCUsername = cmiRow ? cmiRow.username : null;
 
-        if (!vouchingForMCUsername) return interaction.editReply(`Minecraft username not found for UUID: ${hyphenatedVouchingForUUID}.`);
-        if (vouchedPlayerRow.discord_id === vouchingAccount) return interaction.editReply('Nice try! You cannot vouch for yourself.');
-        if (vouchingAccountRow.vouchedIds && vouchingAccountRow.vouchedIds.includes(vouchingForUUID)) return interaction.editReply(`You have already vouched for <@${vouchingFor}>.`);
+        if (!vouchingForMCUsername) return interaction.followUp({ content: `Minecraft username not found for UUID: ${hyphenatedVouchingForUUID}.`, flags: MessageFlags.Ephemeral });
+        if (vouchedPlayerRow.discord_id === vouchingAccount) return interaction.followUp({ content: 'Nice try! You cannot vouch for yourself.', flags: MessageFlags.Ephemeral });
+        if (vouchingAccountRow.vouchedIds && vouchingAccountRow.vouchedIds.includes(vouchingForUUID)) return interaction.followUp({ content: `You have already vouched for <@${vouchingFor}>.`, flags: MessageFlags.Ephemeral });
 
         const updatedVouches = parseInt(vouchedPlayerRow.vouches) + 1;
         await queryDB(griggyDatabaseDir, 'UPDATE users SET vouches = ? WHERE minecraft_uuid = ?', [updatedVouches, vouchingForUUID]);
@@ -68,12 +68,12 @@ async function Vouch(interaction, vouchingFor) {
         
         await interaction.channel.send({ embeds: [vouchEmbed] });
 
-        const command = `cmi usermeta ${vouchingForMCUsername} increment points 1`;
+        const command = `cmi usermeta ${vouchingForMCUsername} increment griggyPoints 1`;
         const response = await sendMCCommand(command);
         logRCON(command, response);
     } catch (err) {
         interaction.client.log('Error processing vouch:', 'ERROR', err);
-        return interaction.editReply('An error occurred while processing your vouch. Please try again later.');
+        return interaction.followUp({ content: 'An error occurred while processing your vouch. Please try again later.', flags: MessageFlags.Ephemeral });
     }
 }
 

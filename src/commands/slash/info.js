@@ -73,8 +73,13 @@ module.exports = {
       const primary_group = result2?.primary_group?.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) ?? 'Unknown';
       const balance = result1?.Balance?.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || 'Unknown';
       const finalPlayTime = result1 ? formatDuration(result1.TotalPlayTime) : 'Unknown';
-      const userMetaValue = (result1?.UserMeta || '').split('%%')[1] || '0';
-      const points = parseFloat(userMetaValue || '0');
+      let points = 0;
+      try {
+        const userMetaObj = JSON.parse(result1?.UserMeta || '{}');
+        points = parseFloat(userMetaObj.griggyPoints || '0');
+      } catch (err) {
+        points = 0;
+      }
       const vouches = parseFloat(row?.vouches || '0');
 
       const container = new ContainerBuilder()

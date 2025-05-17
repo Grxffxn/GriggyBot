@@ -110,22 +110,32 @@ ranks:
     requiredPoints: 25
 
 # Array of automated messages to be sent periodically (see autoMsgDelay)
-# Events are a WIP, more info to come
+# Event OR Link, not both
+# Valid events: vote, profile (more to come)
 autoMessages:
   - title: "Vote for our Server!"
     description: |
       **Have you voted yet today?**
       Run the command `/vote` to vote for rewards in-game!
     event: "vote"
+    buttonEmoji: "📋"
+    buttonLabel: "Vote"
   - title: "Profile Customization"
     description: |
       Players who have linked their Discord and Minecraft accounts now have access to custom profiles with `/profile`.
       Set a custom profile color and use Discord text formatting to create something unique.
 
       View your profile with `/info <username>`
-    footer:
-      text: "/profile"
+    footer: "/profile"
     event: "profile"
+    buttonEmoji: "🎨"
+    buttonLabel: "Customize"
+  - title: "Automated Rank Applications"
+    description: |
+      GriggyBot is now capable of tracking earned rank points in-game, recording vouches received by other players, and automatically granting ranks in-game and on Discord.
+
+      Create an application with `/apply`!
+    footer: "Check #rank-applications for more info."
 
 # Voting links
 voteSites:

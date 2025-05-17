@@ -20,36 +20,51 @@ function createComponents(message, config) {
     message.title ? `## ${message.title}` : `## ${config.serverName} | AutoMsg`
   );
 
-  const contentText = new TextDisplayBuilder().setContent(
-    `${message.description}`
-  );
+  let content = `${message.description}`;
+  let buttonAttachment = null;
+
+  if (message.link) {
+    buttonAttachment = new ButtonBuilder()
+      .setURL(message.link)
+      .setLabel(message.buttonLabel || 'Visit')
+      .setStyle(ButtonStyle.Link)
+      .setEmoji(message.buttonEmoji || '🔗');
+  } else if (message.event) {
+    buttonAttachment = new ButtonBuilder()
+      .setCustomId(`tryMeButton:${message.event}`)
+      .setLabel(message.buttonLabel || 'Try Me!')
+      .setStyle(ButtonStyle.Primary)
+      .setEmoji(message.buttonEmoji || '🔗');
+  }
+
+  if (!buttonAttachment && (message.footer || message.event || message.link)) {
+    content += `\n-# ${message.footer || 'Run \`/help\` to see what I can do!'}`;
+  }
+
+  const contentText = new TextDisplayBuilder().setContent(content);
   const thumbnailComponent = new ThumbnailBuilder({
     media: {
       url: message.imageUrl || config.logoImageUrl,
     }
-  })
-  const buttonAttachment = new ButtonBuilder()
-    .setCustomId(`tryMeButton:${message.event}`)
-    .setLabel(message.buttonLabel || 'Try Me!')
-    .setStyle(ButtonStyle.Primary)
-    .setEmoji(message.emoji || '🔗');
+  });
 
   const sectionComponent = new SectionBuilder()
     .addTextDisplayComponents([titleText, contentText])
     .setThumbnailAccessory(thumbnailComponent);
 
-  const buttonSectionComponent = new SectionBuilder()
-    .addTextDisplayComponents([new TextDisplayBuilder().setContent(
-      `${message.footer?.text ? `\n-# ${message.footer.text}` : '-# Run `/help` to see what I can do!'}`
-    )])
-    .setButtonAccessory(buttonAttachment);
-
-  if (message.event) {
-    container.addSectionComponents([sectionComponent, buttonSectionComponent]);
-  } else {
-    container.addSectionComponents([sectionComponent]);
+  let footerSectionComponent = null;
+  if (buttonAttachment) {
+    footerSectionComponent = new SectionBuilder()
+      .addTextDisplayComponents([
+        new TextDisplayBuilder().setContent(
+          `-# ${message.footer || 'Run \`/help\` to see what I can do!'}`
+        )
+      ])
+      .setButtonAccessory(buttonAttachment);
   }
-  
+
+  container.addSectionComponents([sectionComponent, footerSectionComponent].filter(Boolean));
+
   return container;
 }
 

@@ -109,7 +109,7 @@ ranks:
     requiredStaffApprovals: 5
     requiredPoints: 25
 
-# Array of automated messages to be sent periodically (see autoMsgDelay)
+# Array of automated messages to be sent periodically
 # Event OR Link, not both
 # Valid events: vote, profile (more to come)
 autoMessages:
@@ -198,6 +198,7 @@ enableDaily: true
 enableDeleteapplication: true
 enableDonate: true
 enableEditconfig: true
+enableFishing: true
 enableInfo: true
 enableLeaderboard: true
 enableMap: true
@@ -224,9 +225,6 @@ enableApplicationNotifications: true
 
 # GriggyBot will attempt to handle the rest
 # You probably don't need to change anything below this.
-
-# Delay for automated messages in milliseconds (e.g., 7200000 = 2 hours)
-autoMsgDelay: 7200000
 
 # Base URL for rendering Minecraft player skins
 baseRenderUrl: "https://visage.surgeplay.com/"

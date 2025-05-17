@@ -7,6 +7,7 @@ const UpdateImage = require('./updateImage.js');
 const AutoProfile = require('./autoprofile.js');
 const firstRun = require('./firstRun.js');
 const chores = require('./chores.js');
+const { checkSmoker } = require('./checkSmoker.js');
 const cron = require('node-cron');
 const { initializeRCONUtils, startRCON } = require('../utils/rconUtils.js');
 
@@ -63,6 +64,12 @@ module.exports = {
 			if (config.enableUpdatingImage) await UpdateImage(client);
 		}, 600000);
 
+    if (config.enableFishing) {
+      setInterval(() => {
+        checkSmoker(client);
+      }, 180000);
+    }
+
 		cron.schedule('30 4 * * *', () => {
 			getServerData(client);
 		});
@@ -74,9 +81,9 @@ module.exports = {
 		}
 
 		if (config.enableAutoMsg) {
-			setInterval(() => {
-				AutoMsg(client);
-			}, config.autoMsgDelay);
+			cron.schedule('0 0,6,12,18 * * *', () => {
+        AutoMsg(client);
+      });
 		}
 
 		AutoProfile(client);

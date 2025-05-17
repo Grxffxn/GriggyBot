@@ -76,7 +76,7 @@ module.exports = {
       let points = 0;
       try {
         const userMetaObj = JSON.parse(result1?.UserMeta || '{}');
-        points = parseFloat(userMetaObj.griggyPoints || '0');
+        points = parseFloat(userMetaObj.griggypoints || '0');
       } catch (err) {
         points = 0;
       }

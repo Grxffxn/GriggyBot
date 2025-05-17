@@ -103,7 +103,7 @@ async function fetchPlayerData(interaction, playerName, rank, answers) {
       .then(row => {
         try {
           const meta = JSON.parse(row?.UserMeta || '{}');
-          return parseFloat(meta.griggyPoints || '0');
+          return parseFloat(meta.griggypoints || '0');
         } catch {
           return 0;
         }

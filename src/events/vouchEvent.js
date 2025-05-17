@@ -68,7 +68,7 @@ async function Vouch(interaction, vouchingFor) {
         
         await interaction.channel.send({ embeds: [vouchEmbed] });
 
-        const command = `cmi usermeta ${vouchingForMCUsername} increment griggyPoints 1`;
+        const command = `cmi usermeta ${vouchingForMCUsername} increment griggypoints 1`;
         const response = await sendMCCommand(command);
         logRCON(command, response);
     } catch (err) {

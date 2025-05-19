@@ -32,7 +32,8 @@ module.exports = {
         .addChoices(
           { name: 'Playtime', value: 'playtime' },
           { name: 'Money', value: 'money' },
-          { name: 'Streak', value: 'streak' }
+          { name: 'Streak', value: 'streak' },
+          { name: 'Fishing', value: 'fishing' },
         )
         .setRequired(false)),
   async run(interaction) {
@@ -73,6 +74,15 @@ module.exports = {
             LIMIT 10`;
           databasePath = griggyDatabasePath;
           break;
+        
+        case 'fishing':
+          leaderboardQuery = `
+            SELECT discord_id, xp
+            FROM fishing
+            ORDER BY xp DESC
+            LIMIT 10`;
+          databasePath = griggyDatabasePath;
+          break;
       }
 
       const rows = await getLeaderboardData(databasePath, leaderboardQuery);
@@ -86,6 +96,8 @@ module.exports = {
               return `${index + 1}. ${row.username} - $${row.Balance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
             case 'streak':
               return `${index + 1}. <@${row.user_id}> - ${row.streak} days`;
+            case 'fishing':
+              return `${index + 1}. <@${row.discord_id}> - ${row.xp} XP`;
           }
         })
         .join('\n');

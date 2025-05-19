@@ -8,6 +8,7 @@ const AutoProfile = require('./autoprofile.js');
 const firstRun = require('./firstRun.js');
 const chores = require('./chores.js');
 const { checkSmoker } = require('./checkSmoker.js');
+const { resetAllDailyEarnings } = require('../utils/fishingUtils.js');
 const cron = require('node-cron');
 const { initializeRCONUtils, startRCON } = require('../utils/rconUtils.js');
 
@@ -68,6 +69,12 @@ module.exports = {
       setInterval(() => {
         checkSmoker(client);
       }, 180000);
+    }
+
+    if (config.enableFishing) {
+      cron.schedule('0 0 * * *', () => {
+        resetAllDailyEarnings(client.config.griggyDbPath);
+      });
     }
 
 		cron.schedule('30 4 * * *', () => {

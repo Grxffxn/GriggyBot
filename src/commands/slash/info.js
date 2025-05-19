@@ -40,13 +40,18 @@ module.exports = {
       const cmiDatabasePath = config.cmi_sqlite_db;
       const luckPermsDatabasePath = config.luckperms_sqlite_db;
 
-      const username = interaction.options.getString('username');
+      let username = interaction.options.getString('username');
       let data;
       try {
         const response = await axios.get(`https://api.geysermc.org/v2/utils/uuid/bedrock_or_java/${username}?prefix=.`);
         data = response.data;
       } catch (err) {
         return interaction.editReply({ content: 'Invalid username, or Mojang\'s API is down.', flags: MessageFlags.Ephemeral });
+      }
+
+      // Change spaces to underscores if the username contains spaces
+      if (username.includes(' ')) {
+        username = username.replace(/ /g, '_');
       }
 
       const trimmedUUID = data.id;

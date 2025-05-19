@@ -83,23 +83,28 @@ async function fetchPlayerData(interaction, playerName, rank, answers) {
     applicantInfo.thumbnailUrl = `https://visage.surgeplay.com/bust/256/${applicantInfo.playerUUID}`;
   } catch (err) {
     if (err.response?.status === 404) {
-      return interaction.followUp({ content: `Player "${playerName}" not found.\n-# Note: Usernames are case-sensitive.`, flags: MessageFlags.Ephemeral });
+      return interaction.followUp({ content: `Player "${applicantInfo.playerName}" not found.\n-# Note: Usernames are case-sensitive.`, flags: MessageFlags.Ephemeral });
     } else {
       return interaction.followUp({ content: 'An error occurred while fetching player data. Please try again later.', flags: MessageFlags.Ephemeral });
     }
+  }
+
+  // Switch spaces to underscores if the username contains spaces
+  if (playerName.includes(' ')) {
+    applicantInfo.playerName = applicantInfo.playerName.replace(/ /g, '_');
   }
 
   // Retrieve data from the databases
   try {
     applicantInfo.row = await queryDB(config.griggyDbPath, 'SELECT * FROM users WHERE minecraft_uuid = ?', [applicantInfo.playerUUID], true);
     if (!applicantInfo.row) {
-      return interaction.followUp({ content: `Player "${playerName}" not found in the database. Have you \`/link\`ed your accounts?\n-# Note: Usernames are case-sensitive.`, flags: MessageFlags.Ephemeral });
+      return interaction.followUp({ content: `Player "${applicantInfo.playerName}" not found in the database. Have you \`/link\`ed your accounts?\n-# Note: Usernames are case-sensitive.`, flags: MessageFlags.Ephemeral });
     }
     // Check if the interaction user's id matches the Minecraft UUID in the database
     if (applicantInfo.row.discord_id !== interaction.user.id) {
-      return interaction.followUp({ content: `Wait! Your Discord account is not linked to ${playerName}. An impostor is among us...\n-# Contact an Admin for help resolving this.`, flags: MessageFlags.Ephemeral });
+      return interaction.followUp({ content: `Wait! Your Discord account is not linked to ${applicantInfo.playerName}. An impostor is among us...\n-# Contact an Admin for help resolving this.`, flags: MessageFlags.Ephemeral });
     }
-    applicantInfo.userPoints = await queryDB(config.cmi_sqlite_db, 'SELECT UserMeta FROM users WHERE username = ? COLLATE NOCASE', [playerName], true)
+    applicantInfo.userPoints = await queryDB(config.cmi_sqlite_db, 'SELECT UserMeta FROM users WHERE username = ? COLLATE NOCASE', [applicantInfo.playerName], true)
       .then(row => {
         try {
           const meta = JSON.parse(row?.UserMeta || '{}');

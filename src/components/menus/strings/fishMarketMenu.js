@@ -1,5 +1,7 @@
 const { MessageFlags } = require('discord.js');
 const {
+  PRESTIGE_CONFIG,
+  SMOKED_FISH_MULTIPLIER,
   fishData,
   fishingRodData,
   herbList,
@@ -10,6 +12,7 @@ const { updateBalance } = require('../../../utils/gamblingUtils.js');
 const {
   getFlatFishIdMap,
   parseFishInventory,
+  getPrestigeFishWorth,
   deleteFromInventory,
   checkForRandomEvent,
   executeSellEvent,
@@ -78,7 +81,8 @@ module.exports = {
       }
 
       // Calculate worth and display name
-      const worthPerFish = fishIsSmoked ? Math.round(fish.worth * 1.5) : fish.worth;
+      const calculatedFishWorth = getPrestigeFishWorth(fish.worth, griggyPlayerData.prestige_level, PRESTIGE_CONFIG.worthBonusPerLevel, PRESTIGE_CONFIG.worthCap);
+      const worthPerFish = fishIsSmoked ? Math.round(calculatedFishWorth * SMOKED_FISH_MULTIPLIER) : Math.round(calculatedFishWorth);
       const totalWorth = worthPerFish * itemQuantity;
       const displayName = fishIsSmoked ? `Smoked ${fish.name}` : fish.name;
 

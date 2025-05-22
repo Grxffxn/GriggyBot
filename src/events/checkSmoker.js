@@ -1,16 +1,16 @@
 const { ContainerBuilder, SectionBuilder, TextDisplayBuilder, ThumbnailBuilder, resolveColor, MessageFlags } = require('discord.js');
-const { fishData, herbList } = require('../fishingConfig.js');
+const { PRESTIGE_CONFIG, fishData, herbList } = require('../fishingConfig.js');
 const { queryDB } = require('../utils/databaseUtils.js');
-const { getFlatFishIdMap, addToInventory } = require('../utils/fishingUtils.js');
+const { getFlatFishIdMap, getPrestigeFishXP, addToInventory } = require('../utils/fishingUtils.js');
 const flatFishMap = getFlatFishIdMap(fishData);
 
 async function checkSmoker(client) {
   const griggyDatabaseDir = client.config.griggyDbPath;
-  const smokerData = await queryDB(griggyDatabaseDir, 'SELECT discord_id, inventory, spices, smoker FROM fishing WHERE smoker IS NOT NULL');
+  const smokerData = await queryDB(griggyDatabaseDir, 'SELECT discord_id, inventory, prestige_level, smoker FROM fishing WHERE smoker IS NOT NULL');
   const currentTime = Date.now();
 
   for (const row of smokerData) {
-    const { discord_id, inventory, spices, smoker } = row;
+    const { discord_id, inventory, prestige_level, smoker } = row;
     const smokerEndTime = parseInt(smoker.split('/')[0], 10);
     if (smokerEndTime > currentTime) continue;
     const guildMember = await client.guilds.cache.get(client.config.guildId).members.fetch(discord_id);
@@ -44,8 +44,8 @@ async function checkSmoker(client) {
         case 'xpgain':
           // Apply the XP gain boost
           // This takes the XP of the fish and multiplies it by the boost value
-          const fishXp = selectedSmokedFishData.xp;
-          const boostedXp = (fishXp * smokedFishAmount) * herbBoostValue;
+          const fishXp = getPrestigeFishXP(selectedSmokedFishData.xp, prestige_level, PRESTIGE_CONFIG.xpBonusPerLevel);
+          const boostedXp = Math.round((fishXp * smokedFishAmount) * herbBoostValue);
           // Update the user's XP in the database
           await queryDB(griggyDatabaseDir, 'UPDATE fishing SET xp = xp + ? WHERE discord_id = ?', [
             boostedXp,

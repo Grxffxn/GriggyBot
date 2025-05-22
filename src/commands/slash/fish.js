@@ -13,13 +13,13 @@ const {
   ActionRowBuilder,
 } = require('discord.js');
 const { queryDB } = require('../../utils/databaseUtils.js');
-const { addToInventory, checkForRandomEvent, parseFishInventory, canUserEarn } = require('../../utils/fishingUtils.js');
+const { addToInventory, checkForRandomEvent, parseFishInventory, getPrestigeFishXP, getPrestigeFishWorth, canUserEarn } = require('../../utils/fishingUtils.js');
 const {
   isUserInEvent,
   startEvent,
   endEvent,
 } = require('../../utils/trackActiveEvents.js');
-const { fishData, fishingRodData, herbList, treasureRewards, TREASURE_EARNINGS_LIMIT } = require('../../fishingConfig.js');
+const { PRESTIGE_CONFIG, fishData, fishingRodData, herbList, treasureRewards, TREASURE_EARNINGS_LIMIT } = require('../../fishingConfig.js');
 
 const randomMessages = {
   'cast': [
@@ -194,7 +194,7 @@ module.exports = {
     }
 
     async function handlePlayerCatchEvent(interaction, playerName, fishingRodInfo, catchEventData, pondConfig) {
-      const { caughtFish, xpGained, doubleCatch, randomEvent, caught } = catchEventData;
+      const { caughtFish, xpGained, worth, doubleCatch, randomEvent, caught } = catchEventData;
       const container = new ContainerBuilder()
         .setAccentColor(caughtFish.rarity === 'common' ? resolveColor('00FF00') : caughtFish.rarity === 'uncommon' ? resolveColor('FFFF00') : resolveColor('FF0000'));
       const separatorComponent = new SeparatorBuilder()
@@ -202,7 +202,7 @@ module.exports = {
       const titleText = new TextDisplayBuilder()
         .setContent(`## 🎣 ${playerName} caught a ${caughtFish.rarity} ${caughtFish.name}! ${getRandomMessage('catch')}`);
       const contentText = new TextDisplayBuilder()
-        .setContent(`**XP Gained:** ${xpGained}\n**Worth:** $${caughtFish.worth.toLocaleString('en-US', { minimumFractionDigits: 2 })}\n**Pond:** ${pondConfig.name}`);
+        .setContent(`**XP Gained:** ${xpGained}\n**Worth:** $${worth.toLocaleString('en-US', { minimumFractionDigits: 2 })}\n**Pond:** ${pondConfig.name}`);
       const fishingResultsSectionComponent = new SectionBuilder()
         .addTextDisplayComponents([titleText, contentText])
         .setThumbnailAccessory(fishingThumbnailComponent);
@@ -348,12 +348,14 @@ module.exports = {
           const catchEventData = {
             caughtFish: null,
             xpGained: 0,
+            worth: 0,
             doubleCatch: false,
             randomEvent: null,
             caught: false,
           };
           catchEventData.caughtFish = getRandomFish(pond);
-          catchEventData.xpGained = catchEventData.caughtFish.xp * (fishermanRow.prestige_level + 1);
+          catchEventData.xpGained = getPrestigeFishXP(catchEventData.caughtFish.xp, fishermanRow.prestige_level, PRESTIGE_CONFIG.xpBonusPerLevel);
+          catchEventData.worth = getPrestigeFishWorth(catchEventData.caughtFish.worth, fishermanRow.prestige_level, PRESTIGE_CONFIG.worthBonusPerLevel, PRESTIGE_CONFIG.worthCap);
           catchEventData.doubleCatch = Math.random() < fishingRodInfo.doubleCatchChance;
           catchEventData.randomEvent = checkForRandomEvent('fishing');
 

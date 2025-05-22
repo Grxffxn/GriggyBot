@@ -60,6 +60,29 @@ function parseHerbInventory(herbInventory) {
 }
 
 /**
+ * Calculates the XP for a fish, including prestige bonus.
+ * @param {number} baseXP - The base XP for the fish.
+ * @param {number} prestigeLevel - The user's prestige level.
+ * @param {number} xpBonusPerLevel - The XP bonus per prestige level (e.g., 0.1 for 10%).
+ * @returns {number} The final XP.
+ */
+function getPrestigeFishXP(baseXP, prestigeLevel, xpBonusPerLevel) {
+  return Math.round(baseXP * (1 + prestigeLevel * xpBonusPerLevel));
+}
+
+/**
+ * Calculates the worth for a fish, including additive prestige bonus and cap.
+ * @param {number} baseWorth - The base worth for the fish.
+ * @param {number} prestigeLevel - The user's prestige level.
+ * @param {number} worthBonusPerLevel - The worth bonus per prestige level (additive).
+ * @param {number} worthCap - The maximum allowed worth.
+ * @returns {number} The final worth.
+ */
+function getPrestigeFishWorth(baseWorth, prestigeLevel, worthBonusPerLevel, worthCap) {
+  return Math.min(worthCap, baseWorth + (prestigeLevel * worthBonusPerLevel));
+}
+
+/**
  * Adds an item to the inventory.
  * @param {string} itemId - The ID of the item to add.
  * @param {number} quantity - The quantity to add.
@@ -150,15 +173,15 @@ function checkForRandomEvent(eventType, fishIsSmoked = false, fallbackEvent = nu
   return fallbackEvent;
 }
 
- /**
-  * Generates a random event description and multiplier for selling fish.
-  * @param {string|null} eventType - The type of event (e.g., "charity", "contest").
-  * @param {number} amount - The amount of fish being sold.
-  * @param {number} worthPerFish - The worth of each fish.
-  * @param {string} memberName - The display name of the member selling the fish.
-  * @param {string} displayName - The display name of the fish.
-  * @returns {Object} An object containing the event description and sell multiplier.
- */
+/**
+ * Generates a random event description and multiplier for selling fish.
+ * @param {string|null} eventType - The type of event (e.g., "charity", "contest").
+ * @param {number} amount - The amount of fish being sold.
+ * @param {number} worthPerFish - The worth of each fish.
+ * @param {string} memberName - The display name of the member selling the fish.
+ * @param {string} displayName - The display name of the fish.
+ * @returns {Object} An object containing the event description and sell multiplier.
+*/
 
 function executeSellEvent(eventType, amount, worthPerFish, memberName, displayName) {
   switch (eventType) {
@@ -264,6 +287,8 @@ module.exports = {
   getFlatFishIdMap,
   parseFishInventory,
   parseHerbInventory,
+  getPrestigeFishXP,
+  getPrestigeFishWorth,
   addToInventory,
   deleteFromInventory,
   checkForRandomEvent,

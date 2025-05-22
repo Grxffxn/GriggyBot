@@ -1,40 +1,129 @@
 const { ButtonStyle } = require('discord.js');
-// DISCORD LIMITS A LOT OF THINGS TO 25 ENTRIES
 
-const RAW_EARNINGS_LIMIT = 15000; // MAXIMUM RAW FISH MARKET MONEY EARNED PER DAY
-const SMOKED_EARNINGS_LIMIT = 15000; // MAXIMUM SMOKED FISH MARKET MONEY EARNED PER DAY
-const TREASURE_EARNINGS_LIMIT = 10000; // MAXIMUM TREASURE MONEY EARNED PER DAY
-
-// KEEP # OF POND TYPES, # OF FISH TYPES, # OF RODS, AND # OF HERBS TO 25 OR LESS
-const fishData = {
-  pond1: {
-    name: "Beginner's Pond",
-    xpRequired: 0,
-    fish: {
-      goldfish: { name: 'Goldfish', rarity: 'common', xp: 2, weight: 5, worth: 100, id: 1 },
-      trout: { name: 'Trout', rarity: 'uncommon', xp: 5, weight: 3, worth: 200, id: 2 },
-      salmon: { name: 'Salmon', rarity: 'rare', xp: 10, weight: 2, worth: 400, id: 3 },
-    }
-  },
-  pond2: {
-    name: "Starfell Shore",
-    xpRequired: 300,
-    fish: {
-      catfish: { name: 'Catfish', rarity: 'common', xp: 10, weight: 5, worth: 200, id: 4 },
-      bass: { name: 'Bass', rarity: 'uncommon', xp: 25, weight: 3, worth: 400, id: 5 },
-      pike: { name: 'Pike', rarity: 'rare', xp: 50, weight: 2, worth: 800, id: 6 },
-    }
-  },
-  pond3: {
-    name: "Shadow Lagoon",
-    xpRequired: 1000,
-    fish: {
-      shark: { name: 'Shark', rarity: 'common', xp: 50, weight: 5, worth: 300, id: 7 },
-      whale: { name: 'Whale', rarity: 'uncommon', xp: 150, weight: 3, worth: 600, id: 8 },
-      kraken: { name: 'Kraken', rarity: 'rare', xp: 300, weight: 2, worth: 1200, id: 9 },
-    }
-  }
+// === CONFIGURABLE FORMULAS ===
+const XP_FORMULA = {
+  baseXPRequired: 100,
+  pondTierMultiplier: 2.7,
 };
+const FISH_XP_FORMULA = {
+  base: { common: 2, uncommon: 4, rare: 8, legendary: 16, mythical: 32 },
+  multiplier: 1.7,
+};
+const FISH_WORTH_FORMULA = {
+  base: { common: 100, uncommon: 200, rare: 400, legendary: 800, mythical: 1500 },
+  multiplier: 1.6,
+  cap: 2500,
+};
+
+// === PRESTIGE CONFIG ===
+const PRESTIGE_CONFIG = {
+  xpBonusPerLevel: 0.1,      // 10% more XP per prestige
+  worthBonusPerLevel: 100,   // +100 worth per prestige
+  worthCap: 4000,            // Max possible worth after bonuses
+  maxPrestige: 10,           // Optional: cap prestige levels
+};
+
+// === POND/FISH DEFINITIONS ===
+const rarityOrder = ['common', 'uncommon', 'rare', 'legendary', 'mythical'];
+const pondNames = [
+  "Beginner's Pond",
+  "Starfell Shore",
+  "Shadow Lagoon",
+  "Mystic Waters",
+  "Celestial Springs"
+];
+
+// Fish names per pond and rarity (edit as needed)
+const pondFishNames = [
+  // Pond 1
+  [
+    { name: 'Goldfish', id: 1 },
+    { name: 'Trout', id: 2 },
+    { name: 'Salmon', id: 3 }
+  ],
+  // Pond 2
+  [
+    { name: 'Catfish', id: 4 },
+    { name: 'Bass', id: 5 },
+    { name: 'Pike', id: 6 }
+  ],
+  // Pond 3
+  [
+    { name: 'Shark', id: 7 },
+    { name: 'Whale', id: 8 },
+    { name: 'Kraken', id: 9 }
+  ],
+  // Pond 4
+  [
+    { name: 'Dragonfish', id: 10 },
+    { name: 'Leviathan', id: 11 },
+    { name: 'Phoenixfish', id: 12 },
+    { name: 'Angelfish', id: 13 }
+  ],
+  // Pond 5
+  [
+    { name: 'Stardustfish', id: 14 },
+    { name: 'Moonlitfish', id: 15 },
+    { name: 'Sunblaze', id: 16 },
+    { name: 'Cometfish', id: 17 },
+    { name: 'Voidfish', id: 18 }
+  ]
+];
+
+// Fish weights per rarity (edit as needed, must match number of fish per pond)
+const pondFishWeights = [
+  [75, 20, 5],           // Pond 1
+  [75, 20, 5],           // Pond 2
+  [75, 20, 5],           // Pond 3
+  [74, 20, 5, 1],        // Pond 4
+  [70, 19, 7, 3, 1],     // Pond 5
+];
+
+// === DYNAMIC GENERATION ===
+function getXPRequiredForPond(tier) {
+  return Math.round(XP_FORMULA.baseXPRequired * Math.pow(XP_FORMULA.pondTierMultiplier, tier - 1));
+}
+function getFishXP(rarity, pondTier) {
+  return Math.round(FISH_XP_FORMULA.base[rarity] * Math.pow(FISH_XP_FORMULA.multiplier, pondTier - 1));
+}
+function getFishWorth(rarity, pondTier) {
+  return Math.min(
+    FISH_WORTH_FORMULA.cap,
+    Math.round(FISH_WORTH_FORMULA.base[rarity] * Math.pow(FISH_WORTH_FORMULA.multiplier, pondTier - 1))
+  );
+}
+
+// Build fishData dynamically
+const fishData = {};
+for (let pondIdx = 0; pondIdx < pondNames.length; pondIdx++) {
+  const pondKey = `pond${pondIdx + 1}`;
+  const fishArr = pondFishNames[pondIdx];
+  const weights = pondFishWeights[pondIdx];
+  const pondFish = {};
+  for (let i = 0; i < fishArr.length; i++) {
+    // Assign rarity by order (if more fish than rarities, use last rarity)
+    const rarity = rarityOrder[i] || rarityOrder[rarityOrder.length - 1];
+    pondFish[fishArr[i].name.toLowerCase().replace(/ /g, '')] = {
+      name: fishArr[i].name,
+      rarity,
+      xp: getFishXP(rarity, pondIdx + 1),
+      weight: weights[i],
+      worth: getFishWorth(rarity, pondIdx + 1),
+      id: fishArr[i].id,
+    };
+  }
+  fishData[pondKey] = {
+    name: pondNames[pondIdx],
+    xpRequired: pondIdx === 0 ? 0 : getXPRequiredForPond(pondIdx + 1),
+    fish: pondFish,
+  };
+}
+
+// === REST OF CONFIG ===
+const RAW_EARNINGS_LIMIT = 15000;
+const SMOKED_EARNINGS_LIMIT = 15000;
+const TREASURE_EARNINGS_LIMIT = 10000;
+const SMOKED_FISH_MULTIPLIER = 1.5;
 
 const fishingRodData = {
   training_rod: {
@@ -95,7 +184,6 @@ const herbList = [
   { name: 'Sage', id: 3, boost: 'xpgain', boostValue: 3, boostDescription: 'Earn 3x the fish\'s XP' },
 ];
 
-// MAX 5 REWARDS
 const treasureRewards = {
   money: {
     displayName: 'In-Game Currency',
@@ -105,7 +193,7 @@ const treasureRewards = {
     minValue: 1000,
     maxValue: 2500,
   },
-  battlepass: { // BATTLEPASS DOES NOT CURRENTLY SUPPORT UPDATING PLAYER POINTS WHILE THEY ARE OFFLINE
+  battlepass: {
     displayName: 'Battlepass XP',
     emoji: '🏅',
     buttonStyle: ButtonStyle.Primary,
@@ -117,7 +205,7 @@ const treasureRewards = {
     displayName: 'Fishing XP',
     emoji: '🐟',
     buttonStyle: ButtonStyle.Secondary,
-    command: null, // handled directly in DB
+    command: null,
     minValue: 50,
     maxValue: 250,
   }
@@ -127,6 +215,11 @@ module.exports = {
   RAW_EARNINGS_LIMIT,
   SMOKED_EARNINGS_LIMIT,
   TREASURE_EARNINGS_LIMIT,
+  SMOKED_FISH_MULTIPLIER,
+  XP_FORMULA,
+  FISH_XP_FORMULA,
+  FISH_WORTH_FORMULA,
+  PRESTIGE_CONFIG,
   fishData,
   fishingRodData,
   herbList,

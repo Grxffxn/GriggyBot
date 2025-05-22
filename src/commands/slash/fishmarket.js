@@ -12,11 +12,12 @@ const {
   StringSelectMenuBuilder,
 } = require('discord.js');
 const { queryDB } = require('../../utils/databaseUtils.js');
-const { RAW_EARNINGS_LIMIT, SMOKED_EARNINGS_LIMIT, fishData, fishingRodData, herbList } = require('../../fishingConfig.js');
+const { PRESTIGE_CONFIG, RAW_EARNINGS_LIMIT, SMOKED_EARNINGS_LIMIT, SMOKED_FISH_MULTIPLIER, fishData, fishingRodData, herbList } = require('../../fishingConfig.js');
 const {
   getFlatFishIdMap,
   parseFishInventory,
   checkForRandomEvent,
+  getPrestigeFishWorth,
   canUserEarn,
 } = require('../../utils/fishingUtils.js');
 const flatFishMap = getFlatFishIdMap(fishData);
@@ -85,10 +86,11 @@ module.exports = {
           console.warn(`Fish with ID ${fishId} not found in fishData.`);
           return null;
         }
+        const fishWorth = getPrestigeFishWorth(fish.worth, playerData.prestige_level, PRESTIGE_CONFIG.worthBonusPerLevel, PRESTIGE_CONFIG.worthCap);
         return {
           label: `${fish.name} (${quantity})`,
-          value: `${fishId}:${fish.worth}:${quantity}`,
-          description: `Rarity: ${fish.rarity}, Worth: $${fish.worth.toLocaleString('en-US', { minimumFractionDigits: 2 })}`,
+          value: `${fishId}:${fishWorth}:${quantity}`,
+          description: `Rarity: ${fish.rarity}, Worth: $${fishWorth.toLocaleString('en-US', { minimumFractionDigits: 2 })}`,
           emoji: { name: '🐟' },
         };
       })
@@ -126,10 +128,11 @@ module.exports = {
           console.warn(`Fish with ID ${fishId} not found in fishData.`);
           return null;
         }
+        const fishWorth = getPrestigeFishWorth(fish.worth, playerData.prestige_level, PRESTIGE_CONFIG.worthBonusPerLevel, PRESTIGE_CONFIG.worthCap);
         return {
           label: `Smoked ${fish.name} (${quantity})`,
-          value: `s${fishId}:${fish.worth * 1.5}:${quantity}`,
-          description: `Rarity: ${fish.rarity}, Worth: $${(fish.worth * 1.5).toLocaleString('en-US', { minimumFractionDigits: 2 })}`,
+          value: `s${fishId}:${fishWorth * SMOKED_FISH_MULTIPLIER}:${quantity}`,
+          description: `Rarity: ${fish.rarity}, Worth: $${fishWorth.toLocaleString('en-US', { minimumFractionDigits: 2 })}`,
           emoji: { name: '🔥' },
         };
       })

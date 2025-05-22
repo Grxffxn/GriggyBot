@@ -14,11 +14,12 @@ const {
   StringSelectMenuBuilder,
 } = require('discord.js');
 const { queryDB } = require('../../utils/databaseUtils.js');
-const { fishData, fishingRodData, herbList } = require('../../fishingConfig.js');
+const { PRESTIGE_CONFIG, fishData, fishingRodData, herbList } = require('../../fishingConfig.js');
 const {
   getFlatFishIdMap,
   parseFishInventory,
   parseHerbInventory,
+  getPrestigeFishWorth,
   addToInventory,
   deleteFromInventory,
   checkForRandomEvent,
@@ -81,10 +82,12 @@ module.exports = {
             interaction.client.log(`Fish with ID ${fishId} not found in fishData.`, 'WARN');
             return null;
           }
+          const fishWorth = getPrestigeFishWorth(fish.worth, playerData.prestige_level, PRESTIGE_CONFIG.worthBonusPerLevel, PRESTIGE_CONFIG.worthCap);
+
           return {
             label: `${fish.name} (${quantity})`,
             value: `${fishId}:${quantity}`,
-            description: `Rarity: ${fish.rarity}, Worth: $${fish.worth.toLocaleString('en-US', { minimumFractionDigits: 2 })}`,
+            description: `Rarity: ${fish.rarity}, Worth: $${fishWorth.toLocaleString('en-US', { minimumFractionDigits: 2 })}`,
             emoji: { name: '🐟' },
           };
         })

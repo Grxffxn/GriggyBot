@@ -11,7 +11,6 @@ const {
   ContainerBuilder,
   SectionBuilder,
   SeparatorBuilder,
-  SeparatorSpacingSize,
   TextDisplayBuilder,
   ThumbnailBuilder,
   resolveColor,
@@ -19,25 +18,12 @@ const {
   StringSelectMenuBuilder,
 } = require('discord.js');
 const {
-  getFlatFishIdMap,
-  parseFishInventory,
   parseHerbInventory,
-  addToInventory,
-  deleteFromInventory,
 } = require('../../utils/fishingUtils.js');
 const {
-  RAW_EARNINGS_LIMIT,
-  SMOKED_EARNINGS_LIMIT,
-  TREASURE_EARNINGS_LIMIT,
-  SMOKED_FISH_MULTIPLIER,
-  XP_FORMULA,
-  FISH_XP_FORMULA,
-  FISH_WORTH_FORMULA,
-  PRESTIGE_CONFIG,
   fishData,
   fishingRodData,
   herbList,
-  treasureRewards,
 } = require('../../fishingConfig.js');
 const {
   isUserInEvent,
@@ -62,6 +48,7 @@ module.exports = {
     const config = interaction.client.config;
     const log = interaction.client.log;
     const griggyDatabaseDir = config.griggyDbPath;
+    
     // get the required xp for the highest level pond in fishData
     const pondKeys = Object.keys(fishData);
     const lastPondKey = pondKeys[pondKeys.length - 1];

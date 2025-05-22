@@ -417,6 +417,7 @@ function createDatabase(updatedValues, databasePath, client) {
           xp INT DEFAULT 0,
           prestige_level INT DEFAULT 0,
           smoker TEXT DEFAULT NULL,
+          lifetime_fish_caught INTEGER DEFAULT 0,
           last_fish_time BIGINT DEFAULT 0,
           daily_earnings TEXT DEFAULT '{"collectedTreasureMoney":0,"collectedRawFishMarketMoney":0,"collectedSmokedFishMarketMoney":0}',
           created_at DATETIME DEFAULT CURRENT_TIMESTAMP,

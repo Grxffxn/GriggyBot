@@ -1,6 +1,5 @@
 const { SlashCommandBuilder, AttachmentBuilder, MessageFlags } = require('discord.js');
 const { getConfig, saveConfig, reloadConfig } = require('../../utils/configUtils');
-const { checkAdmin } = require('../../utils/roleCheckUtils');
 const { updateFileCache } = require('../../utils/fileUtils');
 const config = getConfig();
 
@@ -102,18 +101,11 @@ module.exports = {
         case 'autoProfile':
           const AutoProfile = require('../../events/autoprofile');
           await AutoProfile(client);
-          return 'Sent an auto profile message.';
+          return 'Checked for new profiles to create.';
         default:
           return 'Invalid event.';
       }
     }
-
-    const isAdmin = checkAdmin(interaction.member);
-    if (!isAdmin)
-      return interaction.reply({
-        content: 'You do not have permission to use this command.',
-        flags: MessageFlags.Ephemeral
-      });
 
     const subcommand = interaction.options.getSubcommand();
 

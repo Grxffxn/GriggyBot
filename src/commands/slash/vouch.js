@@ -16,12 +16,10 @@ module.exports = {
     if (user.bot) return interaction.reply({ content: 'You cannot vouch for a bot.', flags: MessageFlags.Ephemeral });
 
     const VoucheeIsLinked = checkLinked(user);
-
     if (!VoucheeIsLinked) return interaction.reply({ content: `Both users must link their accounts to vouch.`, flags: MessageFlags.Ephemeral });
 
     const vouchingAccount = interaction.user.id;
     const vouchingFor = user.id;
-
     if (vouchingAccount === vouchingFor) return interaction.reply({ content: 'Nice try! You cannot vouch for yourself.', flags: MessageFlags.Ephemeral });
 
     await Vouch(interaction, vouchingFor);

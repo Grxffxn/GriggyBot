@@ -14,10 +14,10 @@ module.exports = {
       return interaction.reply({ content: 'This is not your menu!', flags: MessageFlags.Ephemeral });
     }
     const rodId = interaction.values[0].split(':')[0];
+    if (rodId === 'none') return interaction.deferUpdate();
     await queryDB(interaction.client.config.griggyDbPath, 'UPDATE fishing SET selected_rod = ? WHERE discord_id = ?', [rodId, interaction.user.id]);
-    return interaction.update({
+    return interaction.reply({
       content: `🎣 You have set your fishing rod to **${fishingRodData[rodId].name}**.`,
-      components: [],
       flags: MessageFlags.Ephemeral,
     });
   }

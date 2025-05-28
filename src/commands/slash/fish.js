@@ -6,83 +6,36 @@ const {
   ContainerBuilder,
   SectionBuilder,
   SeparatorBuilder,
-  SeparatorSpacingSize,
   TextDisplayBuilder,
   ThumbnailBuilder,
   resolveColor,
   ActionRowBuilder,
 } = require('discord.js');
 const { queryDB } = require('../../utils/databaseUtils.js');
-const { addToInventory, checkForRandomEvent, parseFishInventory, getPrestigeFishXP, getPrestigeFishWorth, canUserEarn } = require('../../utils/fishingUtils.js');
+const {
+  addToInventory,
+  checkForRandomEvent,
+  parseFishInventory,
+  getPrestigeFishXP,
+  getPrestigeFishWorth,
+  canUserEarn,
+  getRandomMessage,
+  getRandomFish,
+  getHighestAvailablePond
+} = require('../../utils/fishingUtils.js');
 const {
   isUserInEvent,
   startEvent,
   endEvent,
 } = require('../../utils/trackActiveEvents.js');
-const { PRESTIGE_CONFIG, fishData, fishingRodData, herbList, treasureRewards, TREASURE_EARNINGS_LIMIT } = require('../../fishingConfig.js');
-
-const randomMessages = {
-  'cast': [
-    '\n-# "Hope I catch somethin\' worth more than the bait this time."',
-    '\n-# "Maybe the fish are just shy. Or maybe they know I\'m hungry."',
-    '\n-# "Reckon the fish are laughin\' at me down there... \'Look at this fool!\'"',
-    '\n-# "Betcha the fish are havin\' a meetin\' about avoidin\' my hook."',
-    '\n-# "This rod\'s seen more naps than fish, but I ain\'t complainin\'."',
-    '\n-# "If I don\'t catch somethin\' soon, I might just jump in there and join \'em."',
-    '\n-# "I swear, if I catch another boot, I\'m gonna start a shoe store."',
-    '\n-# "I ain\'t in a hurry. The fish ain\'t either. Guess we\'re on the same page."',
-    '\n-# "Fishin\' teaches ya patience... and how to talk to yourself without feelin\' weird."',
-    '\n-# "Surely they won\'t mind if I take a little nap... Zzzzz..."',
-  ],
-  'hook': [
-    '\n-# "Finally, some action on the line!"',
-    '\n-# "Reckon this one\'s gonna put up a fight."',
-    '\n-# "Well, well, looks like somethin\'s bitin\'!"',
-    '\n-# "Got somethin\' on the line! Hope it ain\'t a boot again."',
-    '\n-# "This better not be one of \'em prank fish."',
-    '\n-# "Alright fishy, it\'s you or me now."',
-    '\n-# "Gotcha! Now don\'t go wrigglin\' off the line."',
-    '\n-# "Feels like a big\'un... or maybe just a determined little guy."',
-    '\n-# "This one\'s got some fight in \'em. I like that."',
-    '\n-# "Finally.. Thought the fish were on vacation or somethin\'."',
-  ],
-  'catch': [
-    '\n-# "This one\'s goin straight to the fryin\' pan."',
-    '\n-# "Well, ain\'t you a beauty. Betcha the other fish are jealous."',
-    '\n-# "Well, look at that. Guess I ain\'t as unlucky as I thought."',
-    '\n-# "Guess the fish decided to take pity on me today."',
-    '\n-# "Not the biggest fish in the pond, but I\'ll take it."',
-    '\n-# "Finally caught somethin\' worth talkin\' about. Maybe."',
-    '\n-# "This one\'s goin\' straight to the braggin\' board."',
-    '\n-# "Not bad for a day\'s work. Or, well, a day\'s sittin\'."',
-    '\n-# "This one\'s got a story to tell... too bad it ain\'t gonna get the chance."',
-    '\n-# "Guess the fish decided to stop playin\' hard to get."',
-  ],
-  'treasure': [
-    '\n-# "Hope there\'s no crab hidin\' in here. Got pinched last time and I\'m still sore."',
-    '\n-# "A chest? Out here? Either I\'m dreamin\' or the fish are gettin\' generous."',
-    '\n-# "Hope this ain\'t one of those chests full of sand. I got enough of that in my boots already."',
-    '\n-# "If there\'s a genie in here, I\'m wishin\' for a fish that don\'t wriggle so much."',
-    '\n-# "Maybe it\'s pirate loot. Or maybe it\'s just someone\'s lost lunchbox."',
-    '\n-# "I ain\'t sayin\' no to free stuff, even if it smells a little fishy."',
-  ],
-  'herb': [
-    '\n-# "Ain\'t this a nice surprise? A little somethin\' to spice up my day."',
-    '\n-# "Well, look at that. A little green friend to keep me company."',
-    '\n-# "Guess the fish ain\'t the only ones with good taste."',
-    '\n-# "This herb might just be the secret ingredient I was lookin\' for."',
-    '\n-# "A little herb never hurt nobody. Unless you eat too much, then it gets weird."',
-    '\n-# "I reckon this will make my fish taste a whole lot better."',
-  ],
-  'doubleCatch': [
-    '\n-# "Two fish? Now that\'s what I call a good day!"',
-    '\n-# "This fishin\' rod\'s finally payin\' off! Two fish in one go!"',
-    '\n-# "Guess the fish are feelin\' generous today. Can\'t say I blame \'em."',
-    '\n-# "Two fish in one go? I must be doin\' somethin\' right."',
-    '\n-# "I ain\'t complainin\'! Double the fish means double the braggin\' rights."',
-    '\n-# "Two fish? Now that\'s a catch worth showin\' off!"',
-  ],
-};
+const {
+  PRESTIGE_CONFIG,
+  fishData,
+  fishingRodData,
+  herbList,
+  treasureRewards,
+  TREASURE_EARNINGS_LIMIT
+} = require('../../fishingConfig.js');
 
 const pondChoices = Object.entries(fishData).map(([pondKey, pondObj]) => ({
   name: pondObj.name,
@@ -99,206 +52,80 @@ module.exports = {
         .addChoices(...pondChoices)
     ),
   async run(interaction) {
-    function denyInteraction(message) {
-      endEvent(interaction.user.id, 'fishing');
-      if (interaction.deferred || interaction.replied) {
-        return interaction.editReply({
-          content: message,
-          flags: MessageFlags.Ephemeral,
-        });
-      }
-      return interaction.reply({
-        content: message,
-        flags: MessageFlags.Ephemeral,
-      });
-    }
-
-    if (isUserInEvent(interaction.user.id, 'fishing')) {
-      return denyInteraction('You\'re already fishing! Unless you have four arms, I\'d recommend using one fishing rod at a time.\n-# If you believe this is an error, ask an admin to run the command `/admin userEvents`');
-    }
-
-    startEvent(interaction.user.id, 'fishing');
-    let fishermanRow = null;
-    let randomEventContainer = null;
-
     const config = interaction.client.config;
     const griggyDatabaseDir = config.griggyDbPath;
     const playerName = interaction.member.displayName;
     const currentTime = Date.now();
 
-    const catchButton = new ButtonBuilder()
-      .setCustomId(`catch:${interaction.user.id}`)
-      .setLabel('Reel \'em in!')
-      .setEmoji('🎣')
-      .setStyle(ButtonStyle.Success);
+    await interaction.deferReply();
 
-    const fishingMinigameActionRow = new ActionRowBuilder()
-      .addComponents(catchButton);
-
-    const canCollectTreasureMoney = await canUserEarn(interaction.client.config.griggyDbPath, interaction.user.id, 'collectedTreasureMoney', TREASURE_EARNINGS_LIMIT);
-    const treasureActionRow = new ActionRowBuilder().addComponents(
-      ...Object.entries(treasureRewards).map(([key, reward]) =>
-        new ButtonBuilder()
-          .setCustomId(`fishingTreasure:${key}/${interaction.user.id}`)
-          .setLabel(reward.displayName)
-          .setEmoji(reward.emoji)
-          .setStyle(reward.buttonStyle)
-          .setDisabled(key === "money" && !canCollectTreasureMoney)
-      )
-    );
-
-    const fishingThumbnailComponent = new ThumbnailBuilder({
-      media: {
-        url: 'https://minecraft.wiki/images/Fishing_Rod_JE2_BE2.png',
-      }
-    });
-
-    const bonusThumbnailComponent = new ThumbnailBuilder({
-      media: {
-        url: 'https://minecraft.wiki/images/Luck_JE3.png',
-      }
-    });
-
-    function getRandomMessage(type) {
-      const messages = randomMessages[type];
-      const randomIndex = Math.floor(Math.random() * messages.length);
-      return messages[randomIndex];
+    function denyInteraction(message) {
+      endEvent(interaction.user.id, 'fishing');
+      return interaction.editReply({ content: message, flags: MessageFlags.Ephemeral });
     }
 
-    function getRandomFish(pond) {
-      const fishInPond = Object.values(fishData[pond].fish);
-      const totalWeight = fishInPond.reduce((sum, fish) => sum + fish.weight, 0);
-      const randomWeight = Math.random() * totalWeight;
-
-      let cumulativeWeight = 0;
-      for (const fish of fishInPond) {
-        cumulativeWeight += fish.weight;
-        if (randomWeight < cumulativeWeight) {
-          return fish;
-        }
-      }
-    }
-
-    function getHighestAvailablePond(userXp) {
-      const pondEntries = Object.entries(fishData);
-      pondEntries.sort((a, b) => a[1].xpRequired - b[1].xpRequired);
-      let highestPondKey = pondEntries[0][0];
-      for (const [pondKey, pondObj] of pondEntries) {
-        if (userXp >= pondObj.xpRequired) {
-          highestPondKey = pondKey;
-        } else {
-          break;
-        }
-      }
-      return highestPondKey;
-    }
-
-    async function handlePlayerCatchEvent(interaction, playerName, fishingRodInfo, catchEventData, pondConfig) {
-      const { caughtFish, xpGained, worth, doubleCatch, randomEvent, caught } = catchEventData;
-      const container = new ContainerBuilder()
-        .setAccentColor(caughtFish.rarity === 'common' ? resolveColor('00FF00') : caughtFish.rarity === 'uncommon' ? resolveColor('FFFF00') : resolveColor('FF0000'));
-      const separatorComponent = new SeparatorBuilder()
-        .setSpacing(SeparatorSpacingSize.Small);
-      const titleText = new TextDisplayBuilder()
-        .setContent(`## 🎣 ${playerName} caught a ${caughtFish.rarity} ${caughtFish.name}! ${getRandomMessage('catch')}`);
-      const contentText = new TextDisplayBuilder()
-        .setContent(`**XP Gained:** ${xpGained}\n**Worth:** $${worth.toLocaleString('en-US', { minimumFractionDigits: 2 })}\n**Pond:** ${pondConfig.name}`);
-      const fishingResultsSectionComponent = new SectionBuilder()
-        .addTextDisplayComponents([titleText, contentText])
-        .setThumbnailAccessory(fishingThumbnailComponent);
-      container.addSectionComponents(fishingResultsSectionComponent);
-      const bonusSectionComponent = new SectionBuilder();
-      const treasureSectionComponent = new SectionBuilder();
-      const bonusText = new TextDisplayBuilder()
-        .setContent(`## 🎉 ${playerName} caught another ${caughtFish.name}!\n**Fishing Rod:** ${fishingRodInfo.name} ${getRandomMessage('doubleCatch')}`)
-      const treasureText = new TextDisplayBuilder();
-
-      if (doubleCatch) {
-        container.addSeparatorComponents(separatorComponent);
-        bonusSectionComponent.addTextDisplayComponents([bonusText])
-          .setThumbnailAccessory(bonusThumbnailComponent);
-        container.addSectionComponents(bonusSectionComponent);
-      }
-
-      let fishInventory = fishermanRow.inventory;
-      let spiceInventory = fishermanRow.spices;
-      fishInventory = addToInventory(caughtFish.id, doubleCatch ? 2 : 1, fishInventory);
-
-      switch (randomEvent) {
-        case 'treasure':
-          container.addSeparatorComponents(separatorComponent);
-          treasureText.setContent(`## 🎁 ${playerName} found a treasure chest! ${getRandomMessage('treasure')}`);
-          treasureSectionComponent.addTextDisplayComponents([treasureText])
-            .setThumbnailAccessory(new ThumbnailBuilder({
-              media: {
-                url: 'https://minecraft.wiki/images/Chest_%28S%29_JE2.png',
-              }
-            }));
-          container.addSectionComponents(treasureSectionComponent)
-            .addActionRowComponents(treasureActionRow);
-          await interaction.editReply({ content: '', components: [container], flags: MessageFlags.IsComponentsV2 });
-          interaction.client.log(`Showed treasure section for ${interaction.user.id}`, 'DEBUG');
-          await queryDB(griggyDatabaseDir, 'UPDATE fishing SET inventory = ?, xp = xp + ? WHERE discord_id = ?', [fishInventory, xpGained, interaction.user.id]);
-          break;
-        case 'herb':
-          container.addSeparatorComponents(separatorComponent);
-          const herb = herbList[Math.floor(Math.random() * herbList.length)];
-          treasureText.setContent(`## 🌿 ${playerName} found ${herb.name}! ${getRandomMessage('herb')}`);
-          treasureSectionComponent.addTextDisplayComponents([treasureText])
-            .setThumbnailAccessory({
-              media: {
-                url: 'https://minecraft.wiki/images/Seagrass_JE1_BE2.gif',
-              }
-            });
-          container.addSectionComponents(treasureSectionComponent);
-          await interaction.editReply({ content: '', components: [container], flags: MessageFlags.IsComponentsV2 });
-          interaction.client.log(`Showed herb section for ${interaction.user.id}`, 'DEBUG');
-          spiceInventory = addToInventory(herb.id, 1, spiceInventory);
-          interaction.client.log(`Added herb ${herb.id} to ${interaction.user.id}'s spice inventory`, 'DEBUG');
-          await queryDB(griggyDatabaseDir, 'UPDATE fishing SET inventory = ?, spices = ?, xp = xp + ? WHERE discord_id = ?', [fishInventory, spiceInventory, xpGained, interaction.user.id]);
-          break;
-        default:
-          await interaction.editReply({ content: '', components: [container], flags: MessageFlags.IsComponentsV2 });
-          interaction.client.log(`No random event triggered for ${interaction.user.id}`, 'DEBUG');
-          await queryDB(griggyDatabaseDir, 'UPDATE fishing SET inventory = ?, xp = xp + ? WHERE discord_id = ?', [fishInventory, xpGained, interaction.user.id]);
-          break;
-      }
-    }
-
-    try {
-      fishermanRow = await queryDB(griggyDatabaseDir, 'SELECT * FROM fishing WHERE discord_id = ?', [interaction.user.id], true);
-
+    /**
+     * Fetches or creates the fisherman's data, checks if they can fish in the selected pond, and returns the necessary data.
+     * @returns {Promise<{fishermanRow: Object, pond: string, pondConfig: Object}>} - Resolves to an object containing the fisherman's data, the pond they are fishing in, and the pond's configuration.
+     */
+    async function getFishermanData() {
+      if (isUserInEvent(interaction.user.id, 'fishing')) return denyInteraction('You\'re already fishing! Unless you have four arms, I\'d recommend using one fishing rod at a time.\n-# If you believe this is an error, ask an admin to run the command `/admin userEvents`');
+      let fishermanRow = await queryDB(griggyDatabaseDir, 'SELECT * FROM fishing WHERE discord_id = ?', [interaction.user.id], true);
       if (!fishermanRow) {
         await queryDB(griggyDatabaseDir, `
-        INSERT INTO fishing (discord_id, inventory, spices, fishing_rod, selected_rod, xp, prestige_level, smoker, last_fish_time)
-        VALUES (?, '', '', 'training_rod', 'training_rod', 0, 0, NULL, 0)
-      `, [interaction.user.id]);
-
+      INSERT INTO fishing (discord_id, inventory, spices, fishing_rod, selected_rod, xp, prestige_level, smoker, last_fish_time)
+      VALUES (?, '', '', 'training_rod', 'training_rod', 0, 0, NULL, 0)
+    `, [interaction.user.id]);
         fishermanRow = await queryDB(griggyDatabaseDir, 'SELECT * FROM fishing WHERE discord_id = ?', [interaction.user.id], true);
       }
-
       const parsedFishInventory = parseFishInventory(fishermanRow.inventory);
-      if (Object.keys(parsedFishInventory.regular).length > 24) {
-        return denyInteraction('Your fish bucket is too heavy! You need to sell or smoke some fish before you can catch more. -# "How d\'you expect me to carry all these back home?"');
-      }
-
+      if (Object.keys(parsedFishInventory.regular).length > 24) return denyInteraction('Your fish bucket is too heavy! You need to sell or smoke some fish before you can catch more. -# "How d\'you expect me to carry all these back home?"');
       let pond = interaction.options.getString('pond');
-      if (!pond) {
-        pond = getHighestAvailablePond(fishermanRow.xp);
-      }
+      if (!pond) pond = getHighestAvailablePond(fishermanRow.xp);
       const pondConfig = fishData[pond];
-      if (fishermanRow.xp < pondConfig.xpRequired) {
-        return denyInteraction(`❌ You need some more experience before fishing in ${pondConfig.name} (${fishermanRow.xp}/${pondConfig.xpRequired})\n-# "I'm not sure I can handle these fish yet."`);
-      }
+      if (fishermanRow.xp < pondConfig.xpRequired) return denyInteraction(`❌ You need some more experience before fishing in ${pondConfig.name} (${fishermanRow.xp}/${pondConfig.xpRequired})\n-# "I'm not sure I can handle these fish yet."`);
+      return { fishermanRow, pond, pondConfig };
+    }
 
-      if (fishermanRow.smoker) {
-        const randomEvent = checkForRandomEvent('smokerUnattended');
-        if (randomEvent) {
-          switch (randomEvent) {
-            case 'smokerFire':
-              interaction.client.log(`Smoker fire event triggered for user ${interaction.member.displayName} (${interaction.user.id})`, 'INFO');
+    /**
+     * Prompts the user to confirm fishing while a smoker is running, with a chance of a fire event.
+     * @returns {Promise<boolean>} Resolves to true if the user confirms, false if they cancel. Throws if a smoker fire occurs.
+     */
+    async function handleSmokerCheck() {
+      const smokerWarningText = `⚠️ ${playerName}, you have a smoker running! If you go fishing now, there's a chance it could catch fire and burn your fish. Do you want to continue?`;
+      const smokerWarningConfirmActionRow = new ActionRowBuilder()
+        .addComponents(
+          new ButtonBuilder()
+            .setCustomId(`smokerWarningConfirm:${interaction.user.id}`)
+            .setLabel('Take the risk!')
+            .setEmoji('🔥')
+            .setStyle(ButtonStyle.Danger));
+      const confirmationInteractionFilter = (buttonInteraction) =>
+        buttonInteraction.customId === `smokerWarningConfirm:${interaction.user.id}` &&
+        buttonInteraction.user.id === interaction.user.id;
+      const confirmationCollector = interaction.channel.createMessageComponentCollector({ filter: confirmationInteractionFilter, time: 15000, max: 1 });
+      await interaction.editReply({ content: smokerWarningText, components: [smokerWarningConfirmActionRow] });
 
-              randomEventContainer = new ContainerBuilder()
+      return new Promise((resolve, reject) => {
+        let confirmed = false;
+        confirmationCollector.on('collect', async (buttonInteraction) => {
+          confirmed = true;
+          confirmationCollector.stop('confirmed');
+          await buttonInteraction.deferUpdate();
+        });
+        confirmationCollector.on('end', async (collected, reason) => {
+          if (reason === 'time') {
+            endEvent(interaction.user.id, 'fishing');
+            await interaction.editReply({
+              content: `🛶 ${playerName} decided not to risk leaving the smoker unattended.`,
+              components: [],
+            });
+            resolve(false);
+          } else if (reason === 'confirmed' && confirmed) {
+            // Check for fire event
+            const randomEvent = checkForRandomEvent('smokerUnattended');
+            if (randomEvent === 'smokerFire') {
+              const randomEventContainer = new ContainerBuilder()
                 .setAccentColor(resolveColor('DarkRed'))
                 .addSectionComponents(
                   new SectionBuilder()
@@ -306,33 +133,30 @@ module.exports = {
                       new TextDisplayBuilder().setContent(`# 🔥 ${interaction.member.displayName}'s Smoker Caught Fire!`),
                       new TextDisplayBuilder().setContent(`${interaction.member.displayName} took a chance and went fishing while their smoker was running. Unfortunately, their smoker caught fire and all of their fish were lost!`),
                       new TextDisplayBuilder().setContent('-# "Did I leave the stove on?"'),
-                    ]).setThumbnailAccessory(
-                      new ThumbnailBuilder({
-                        media: {
-                          url: 'https://minecraft.wiki/images/Fire.gif',
-                        }
-                      })
-                    )
+                    ]).setThumbnailAccessory(new ThumbnailBuilder({ media: { url: 'https://minecraft.wiki/images/Fire.gif' } }))
                 );
-              await queryDB(griggyDatabaseDir, 'UPDATE fishing SET smoker = ? WHERE discord_id = ?', [
-                null,
-                interaction.user.id
-              ]);
-              break;
-            default:
-              interaction.client.log(`Random event '${randomEvent}' has not been setup in fish.js`, 'WARN');
-              break;
+              await queryDB(griggyDatabaseDir, 'UPDATE fishing SET smoker = ? WHERE discord_id = ?', [null, interaction.user.id]);
+              endEvent(interaction.user.id, 'fishing');
+              await interaction.editReply({ content: '', components: [randomEventContainer], flags: MessageFlags.IsComponentsV2 });
+              reject(new Error('smokerFire'));
+            } else {
+              resolve(true);
+            }
           }
-        }
-      }
-      if (randomEventContainer) {
-        endEvent(interaction.user.id, 'fishing');
-        return interaction.reply({ components: [randomEventContainer], flags: MessageFlags.IsComponentsV2 });
-      }
+        });
+      });
+    }
 
+    /**
+     * Starts the fishing minigame, handles the fishing logic, and manages the interaction flow.
+     * @param {Object} fishermanRow - The fisherman's data row from the database.
+     * @param {string} pond - The pond the user is fishing in.
+     * @param {Object} pondConfig - The configuration for the pond.
+     */
+    async function startFishingMinigame(fishermanRow, pond, pondConfig) {
       await queryDB(griggyDatabaseDir, 'UPDATE fishing SET last_fish_time = ? WHERE discord_id = ?', [currentTime, interaction.user.id]);
 
-      await interaction.reply(`🎣 ${playerName} cast their line. ${getRandomMessage("cast")}`);
+      await interaction.editReply({ content: `🎣 ${playerName} cast their line. ${getRandomMessage("cast")}`, components: [] });
       const fishingRod = fishermanRow.selected_rod;
       const fishingRodInfo = fishingRodData[fishingRod];
 
@@ -340,62 +164,213 @@ module.exports = {
       const catchTime = Math.floor(baseCatchTime / fishingRodInfo.catchSpeed);
       const hookTime = fishingRodInfo.hookTime * 3000;
 
-      setTimeout(async () => {
-        try {
-          const checkSmokerStartWhileFishing = await queryDB(griggyDatabaseDir, 'SELECT smoker FROM fishing WHERE discord_id = ?', [interaction.user.id], true);
-          if (checkSmokerStartWhileFishing.smoker && !fishermanRow.smoker) return denyInteraction(`🛶 ${playerName} stopped fishing and decided to fire up the smoker.\n-# "I can\'t take it anymore, I\'m starvin'!"`);
+      await new Promise(resolve => setTimeout(resolve, catchTime));
+      try {
+        const checkSmokerStartWhileFishing = await queryDB(griggyDatabaseDir, 'SELECT smoker FROM fishing WHERE discord_id = ?', [interaction.user.id], true);
+        if (checkSmokerStartWhileFishing.smoker && !fishermanRow.smoker) return denyInteraction(`🛶 ${playerName} stopped fishing and decided to fire up the smoker.\n-# "I can\'t take it anymore, I\'m starvin'!"`);
 
-          const catchEventData = {
-            caughtFish: null,
-            xpGained: 0,
-            worth: 0,
-            doubleCatch: false,
-            randomEvent: null,
-            caught: false,
-          };
-          catchEventData.caughtFish = getRandomFish(pond);
-          catchEventData.xpGained = getPrestigeFishXP(catchEventData.caughtFish.xp, fishermanRow.prestige_level, PRESTIGE_CONFIG.xpBonusPerLevel);
-          catchEventData.worth = getPrestigeFishWorth(catchEventData.caughtFish.worth, fishermanRow.prestige_level, PRESTIGE_CONFIG.worthBonusPerLevel, PRESTIGE_CONFIG.worthCap);
-          catchEventData.doubleCatch = Math.random() < fishingRodInfo.doubleCatchChance;
-          catchEventData.randomEvent = checkForRandomEvent('fishing');
+        const catchEventData = {
+          caughtFish: getRandomFish(pond),
+          xpGained: 0,
+          worth: 0,
+          doubleCatch: false,
+          randomEvent: checkForRandomEvent('fishing'),
+          caught: false,
+        };
+        catchEventData.xpGained = getPrestigeFishXP(catchEventData.caughtFish.xp, fishermanRow.prestige_level, PRESTIGE_CONFIG.xpBonusPerLevel);
+        catchEventData.worth = getPrestigeFishWorth(catchEventData.caughtFish.worth, fishermanRow.prestige_level, PRESTIGE_CONFIG.worthBonusPerLevel, PRESTIGE_CONFIG.worthCap);
+        catchEventData.doubleCatch = Math.random() < fishingRodInfo.doubleCatchChance;
 
-          await interaction.editReply({
-            content: `🎣 ${interaction.member}, you've got a bite! ${getRandomMessage("hook")}`,
-            components: [fishingMinigameActionRow],
-          });
+        const fishingMinigameActionRow = new ActionRowBuilder()
+          .addComponents(new ButtonBuilder()
+            .setCustomId(`catch:${interaction.user.id}`)
+            .setLabel('Reel \'em in!')
+            .setEmoji('🎣')
+            .setStyle(ButtonStyle.Success));
 
-          const filter = (buttonInteraction) => buttonInteraction.customId === `catch:${interaction.user.id}`;
-          const collector = interaction.channel.createMessageComponentCollector({ filter, time: hookTime, max: 1 });
+        await interaction.editReply({
+          content: `🎣 ${interaction.member}, you've got a bite! ${getRandomMessage("hook")}`,
+          components: [fishingMinigameActionRow],
+        });
 
-          catchEventData.caught = false;
+        const filter = (buttonInteraction) => buttonInteraction.customId === `catch:${interaction.user.id}`;
+        const collector = interaction.channel.createMessageComponentCollector({ filter, time: hookTime, max: 1 });
 
-          collector.on('collect', async (buttonInteraction) => {
-            await buttonInteraction.deferUpdate();
-            catchEventData.caught = true;
-            collector.stop('caught');
+        collector.on('collect', async (buttonInteraction) => {
+          catchEventData.caught = true;
+          collector.stop('caught');
+          await buttonInteraction.deferUpdate();
+          await handlePlayerCatchEvent(fishermanRow, fishingRodInfo, catchEventData, pondConfig);
+        });
 
-            await handlePlayerCatchEvent(interaction, playerName, fishingRodInfo, catchEventData, pondConfig);
-          });
-          collector.on('end', async (collected, reason) => {
-            if (reason === 'caught') {
-              endEvent(interaction.user.id, 'fishing');
-              return;
-            } else {
-              endEvent(interaction.user.id, 'fishing');
-              return interaction.editReply({
-                content: `🎣 ${playerName}, you lost the fish!`,
-                components: [],
-              });
-            }
-          });
-        } catch (err) {
-          interaction.client.log('Error during fishing minigame:', 'ERROR', err);
-          return denyInteraction('The fish aren\'t bitin\' today. Come back later. ||This is an error, please report it to an admin.||');
+        collector.on('end', async (collected, reason) => {
+          if (catchEventData.caught) {
+            endEvent(interaction.user.id, 'fishing');
+            return;
+          } else {
+            endEvent(interaction.user.id, 'fishing');
+            return interaction.editReply({
+              content: `🎣 ${playerName}, you lost the fish!`,
+              components: [],
+            });
+          }
+        });
+      } catch (err) {
+        interaction.client.log('Error during fishing minigame:', 'ERROR', err);
+        return denyInteraction('The fishin\' line snapped! Try again later.\n-# ⚠️ This is an error, please report it to an admin.');
+      }
+    }
+
+    /**
+     * Handles the player's catch event, updating their inventory and sending the appropriate response.
+     * @param {Object} fishermanRow - The fisherman's data row from the database.
+     * @param {Object} fishingRodInfo - Information about the fishing rod used.
+     * @param {Object} catchEventData - Data about the catch event, including the caught fish, XP gained, worth, and random events.
+     * @param {Object} pondConfig - Configuration for the pond where the fishing took place.
+     */
+    async function handlePlayerCatchEvent(fishermanRow, fishingRodInfo, catchEventData, pondConfig) {
+      const { caughtFish, xpGained, worth, doubleCatch, randomEvent } = catchEventData;
+      const caughtFishAmount = doubleCatch ? 2 : 1;
+      let fishInventory = fishermanRow.inventory;
+      fishInventory = addToInventory(caughtFish.id, caughtFishAmount, fishInventory);
+
+      const container = buildCatchContainer(caughtFish, xpGained, worth, pondConfig, doubleCatch, fishingRodInfo);
+
+      switch (randomEvent) {
+        case 'treasure': {
+          await handleTreasureEvent(container, fishInventory, xpGained, caughtFishAmount);
+          break;
         }
-      }, catchTime);
+        case 'herb':
+          let spiceInventory = fishermanRow.spices;
+          await handleHerbEvent(container, fishInventory, spiceInventory, xpGained, caughtFishAmount);
+          break;
+        default:
+          await handleDefaultCatchEvent(container, fishInventory, xpGained, caughtFishAmount);
+          break;
+      }
+    }
+
+    /**
+     * Builds the container for the catch event, including the caught fish details and any additional information.
+     * @param {Object} caughtFish - The fish that was caught.
+     * @param {number} xpGained - The amount of XP gained from the catch.
+     * @param {number} worth - The worth of the caught fish.
+     * @param {Object} pondConfig - Configuration for the pond where the fishing took place.
+     * @param {boolean} doubleCatch - Whether the player caught a second fish.
+     * @param {Object} fishingRodInfo - Information about the fishing rod used.
+     * @returns {ContainerBuilder} - The container with the catch details.
+     */
+    function buildCatchContainer(caughtFish, xpGained, worth, pondConfig, doubleCatch, fishingRodInfo) {
+      const container = new ContainerBuilder()
+        .setAccentColor(
+          caughtFish.rarity === 'common'
+            ? resolveColor('00FF00')
+            : caughtFish.rarity === 'uncommon'
+              ? resolveColor('FFFF00')
+              : resolveColor('FF0000')
+        );
+
+      container.addSectionComponents(
+        new SectionBuilder().addTextDisplayComponents([
+          new TextDisplayBuilder().setContent(`## 🎣 ${playerName} caught a ${caughtFish.rarity} ${caughtFish.name}! ${getRandomMessage('catch')}`),
+          new TextDisplayBuilder().setContent(`**XP Gained:** ${xpGained}\n**Worth:** $${worth.toLocaleString('en-US', { minimumFractionDigits: 2 })}\n**Pond:** ${pondConfig.name}`)
+        ]).setThumbnailAccessory(new ThumbnailBuilder({ media: { url: 'https://minecraft.wiki/images/Fishing_Rod_JE2_BE2.png' } }))
+      );
+
+      if (doubleCatch) {
+        container.addSeparatorComponents(new SeparatorBuilder())
+          .addSectionComponents(
+            new SectionBuilder().addTextDisplayComponents([
+              new TextDisplayBuilder().setContent(`## 🎉 ${playerName} caught another ${caughtFish.name}!\n**Fishing Rod:** ${fishingRodInfo.name} ${getRandomMessage('doubleCatch')}`)
+            ]).setThumbnailAccessory(new ThumbnailBuilder({ media: { url: 'https://minecraft.wiki/images/Luck_JE3.png' } }))
+          );
+      }
+      return container;
+    }
+
+    /**
+     * Modifies the container to handle treasure events, allowing the user to collect rewards.
+     * @param {ContainerBuilder} container - The container to modify.
+     * @param {string} fishInventory - The user's current fish inventory.
+     * @param {number} xpGained - The amount of XP gained from the catch.
+     * @param {number} caughtFishAmount - The amount of fish caught.
+     */
+    async function handleTreasureEvent(container, fishInventory, xpGained, caughtFishAmount) {
+      const canCollectTreasureMoney = await canUserEarn(griggyDatabaseDir, interaction.user.id, 'collectedTreasureMoney', TREASURE_EARNINGS_LIMIT);
+      container.addSeparatorComponents(new SeparatorBuilder())
+        .addSectionComponents(
+          new SectionBuilder().addTextDisplayComponents([
+            new TextDisplayBuilder().setContent(`## 🎁 ${playerName} found a treasure chest! ${getRandomMessage('treasure')}`)
+          ]).setThumbnailAccessory(new ThumbnailBuilder({ media: { url: 'https://minecraft.wiki/images/Chest_%28S%29_JE2.png' } }))
+            .addActionRowComponents(
+              new ActionRowBuilder().addComponents(
+                ...Object.entries(treasureRewards).map(([key, reward]) =>
+                  new ButtonBuilder()
+                    .setCustomId(`fishingTreasure:${key}/${interaction.user.id}`)
+                    .setLabel(reward.displayName)
+                    .setEmoji(reward.emoji)
+                    .setStyle(reward.buttonStyle)
+                    .setDisabled(key === "money" && !canCollectTreasureMoney)
+                )
+              )
+            )
+        );
+      await interaction.editReply({ content: '', components: [container], flags: MessageFlags.IsComponentsV2 });
+      await queryDB(griggyDatabaseDir, 'UPDATE fishing SET inventory = ?, xp = xp + ?, lifetime_fish_caught = lifetime_fish_caught + ? WHERE discord_id = ?', [fishInventory, xpGained, caughtFishAmount, interaction.user.id]);
+    }
+
+    /**
+     * Modifies the container to handle herb events, communicating to the user if they found an herb.
+     * @param {ContainerBuilder} container - The container to modify.
+     * @param {string} fishInventory - The user's current fish inventory.
+     * @param {string} spiceInventory - The user's current spice inventory.
+     * @param {number} xpGained - The amount of XP gained from the catch.
+     * @param {number} caughtFishAmount - The amount of fish caught.
+     */
+    async function handleHerbEvent(container, fishInventory, spiceInventory, xpGained, caughtFishAmount) {
+      const herb = herbList[Math.floor(Math.random() * herbList.length)];
+      container.addSeparatorComponents(new SeparatorBuilder())
+        .addSectionComponents(
+          new SectionBuilder().addTextDisplayComponents([
+            new TextDisplayBuilder().setContent(`## 🌿 ${playerName} found ${herb.name}! ${getRandomMessage('herb')}`)
+          ]).setThumbnailAccessory(new ThumbnailBuilder({ media: { url: 'https://minecraft.wiki/images/Seagrass_JE1_BE2.gif' } }))
+        );
+      await interaction.editReply({ content: '', components: [container], flags: MessageFlags.IsComponentsV2 });
+      spiceInventory = addToInventory(herb.id, 1, spiceInventory);
+      await queryDB(griggyDatabaseDir, 'UPDATE fishing SET inventory = ?, spices = ?, xp = xp + ?, lifetime_fish_caught = lifetime_fish_caught + ? WHERE discord_id = ?', [fishInventory, spiceInventory, xpGained, caughtFishAmount, interaction.user.id]);
+    }
+
+    /**
+     * Handles the default catch event, updating the user's inventory and XP, and sending the catch container.
+     * @param {ContainerBuilder} container - The container with the catch details.
+     * @param {string} fishInventory - The user's current fish inventory.
+     * @param {number} xpGained - The amount of XP gained from the catch.
+     * @param {number} caughtFishAmount - The amount of fish caught.
+     */
+    async function handleDefaultCatchEvent(container, fishInventory, xpGained, caughtFishAmount) {
+      await interaction.editReply({ content: '', components: [container], flags: MessageFlags.IsComponentsV2 });
+      await queryDB(griggyDatabaseDir, 'UPDATE fishing SET inventory = ?, xp = xp + ?, lifetime_fish_caught = lifetime_fish_caught + ? WHERE discord_id = ?', [fishInventory, xpGained, caughtFishAmount, interaction.user.id]);
+    }
+
+    try {
+      const { fishermanRow, pond, pondConfig } = await getFishermanData();
+      startEvent(interaction.user.id, 'fishing');
+
+      if (fishermanRow.smoker) {
+        try {
+          const confirmed = await handleSmokerCheck();
+          if (!confirmed) return;
+        } catch (err) {
+          if (err.message === 'smokerFire') return;
+          throw err;
+        }
+      }
+
+      await startFishingMinigame(fishermanRow, pond, pondConfig);
     } catch (err) {
       interaction.client.log('Error in /fish command:', 'ERROR', err);
-      return denyInteraction('The fish aren\'t bitin\' today. Come back later. ||This is an error, please report it to an admin.||');
+      return denyInteraction('The fish aren\'t bitin\' today. Come back later.\n-# ⚠️ This is an error, please report it to an admin.');
     }
   },
 };

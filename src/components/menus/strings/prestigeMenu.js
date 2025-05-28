@@ -24,16 +24,14 @@ module.exports = {
     if (args[0] === 'herb') {
       const herbValue = interaction.values[0]; // e.g., "1:16"
       prestigeSelections.get(userId).herb = herbValue;
-      await interaction.reply({ content: `🌿 Herb selected!`, flags: MessageFlags.Ephemeral });
-      return;
+      return interaction.deferUpdate();
     }
 
     // Handle rod selection
     if (args[0] === 'rod') {
       const rodValue = interaction.values[0]; // e.g., "training_rod"
       prestigeSelections.get(userId).rod = rodValue;
-      await interaction.reply({ content: `🎣 Fishing rod selected!`, flags: MessageFlags.Ephemeral });
-      return;
+      return interaction.deferUpdate();
     }
 
     // Fallback

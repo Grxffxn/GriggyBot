@@ -46,9 +46,8 @@ module.exports = {
     }
 
     const config = interaction.client.config;
-    const log = interaction.client.log;
     const griggyDatabaseDir = config.griggyDbPath;
-    
+
     // get the required xp for the highest level pond in fishData
     const pondKeys = Object.keys(fishData);
     const lastPondKey = pondKeys[pondKeys.length - 1];
@@ -95,7 +94,9 @@ module.exports = {
 
     const herbSelectSection = new SectionBuilder()
       .addTextDisplayComponents([
-        new TextDisplayBuilder().setContent('### Select a herb to keep:')
+        new TextDisplayBuilder().setContent('### Select an herb to keep:'),
+        new TextDisplayBuilder().setContent(`You can only keep one herb type. Make sure you've used as much as you can before you prestige.`),
+        new TextDisplayBuilder().setContent(`-# "Maybe I should choose whichever one smells the best?"`),
       ])
       .setThumbnailAccessory(new ThumbnailBuilder({
         media: { url: 'https://minecraft.wiki/images/Seagrass_JE1_BE2.gif' }
@@ -127,7 +128,9 @@ module.exports = {
 
     const fishingRodSelectSection = new SectionBuilder()
       .addTextDisplayComponents([
-        new TextDisplayBuilder().setContent('### Select a fishing rod to keep:')
+        new TextDisplayBuilder().setContent('### Select a fishing rod to keep:'),
+        new TextDisplayBuilder().setContent(`You can only keep one rod. You will lose all other rods, but you can buy them back from the shop.`),
+        new TextDisplayBuilder().setContent(`-# "I love them all so much... how can I choose?"`),
       ])
       .setThumbnailAccessory(new ThumbnailBuilder({
         media: { url: 'https://minecraft.wiki/images/Fishing_Rod_JE2_BE2.png' }
@@ -165,9 +168,15 @@ module.exports = {
       .addSeparatorComponents(separatorComponent)
       .addSectionComponents(confirmationSection);
 
-    return interaction.reply({
+    const prestigeMsg = await interaction.reply({
       components: [selectionContainer],
       flags: [MessageFlags.IsComponentsV2, MessageFlags.Ephemeral],
+      withResponse: true,
     });
+
+    setTimeout(() => {
+      endEvent(interaction.user.id, 'prestige');
+      prestigeMsg.delete();
+    }, 120000); // 2 minute timeout for the menu
   }
 }

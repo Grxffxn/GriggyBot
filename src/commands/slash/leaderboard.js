@@ -77,9 +77,9 @@ module.exports = {
         
         case 'fishing':
           leaderboardQuery = `
-            SELECT discord_id, xp
+            SELECT discord_id, xp, prestige_level
             FROM fishing
-            ORDER BY xp DESC
+            ORDER BY prestige_level DESC, xp DESC
             LIMIT 10`;
           databasePath = griggyDatabasePath;
           break;
@@ -97,7 +97,7 @@ module.exports = {
             case 'streak':
               return `${index + 1}. <@${row.user_id}> - ${row.streak} days`;
             case 'fishing':
-              return `${index + 1}. <@${row.discord_id}> - ${row.xp} XP`;
+              return `${index + 1}. <@${row.discord_id}> - Lv. ${row.prestige_level} (${row.xp} XP)`;
           }
         })
         .join('\n');

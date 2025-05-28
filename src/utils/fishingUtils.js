@@ -1,3 +1,5 @@
+const { fishData, randomMessages } = require('../fishingConfig.js');
+
 /**
  * Flattens the fishData object into a map of fish ID to fish object.
  * @param {Object} fishDataObj - The fishData object from fishingConfig.js
@@ -19,7 +21,6 @@ function getFlatFishIdMap(fishDataObj) {
  * @returns {Object} An object with `regular` and `smoked` fish inventories.
  */
 function parseFishInventory(fishInventory) {
-  console.log('fishInventory', fishInventory);
   if (!fishInventory) return { regular: {}, smoked: {} };
 
   const regular = {};
@@ -45,7 +46,6 @@ function parseFishInventory(fishInventory) {
  * @returns {Object} An object mapping herb IDs to quantities.
  */
 function parseHerbInventory(herbInventory) {
-  console.log('herbInventory', herbInventory);
   if (!herbInventory) return {};
 
   const herbs = {};
@@ -91,12 +91,6 @@ function getPrestigeFishWorth(baseWorth, prestigeLevel, worthBonusPerLevel, wort
  * @returns {string} The updated inventory string.
  */
 function addToInventory(itemId, quantity, inventory, isSmoked = false) {
-  console.log('addToInventory:');
-  console.log('inventory', inventory);
-  console.log('itemId', itemId);
-  console.log('quantity', quantity);
-  console.log('isSmoked', isSmoked);
-
   const itemMap = inventory
     ? Object.fromEntries(inventory.split(';').filter(Boolean).map(entry => entry.split(':')))
     : {};
@@ -104,7 +98,6 @@ function addToInventory(itemId, quantity, inventory, isSmoked = false) {
   const id = isSmoked ? `s${itemId}` : `${itemId}`;
   itemMap[id] = (Number(itemMap[id]) || 0) + Number(quantity);
 
-  console.log('returning', Object.entries(itemMap).map(([id, qty]) => `${id}:${qty}`).join(';'));
   return Object.entries(itemMap).map(([id, qty]) => `${id}:${qty}`).join(';');
 }
 
@@ -117,11 +110,6 @@ function addToInventory(itemId, quantity, inventory, isSmoked = false) {
  * @returns {string} The updated inventory string.
  */
 function deleteFromInventory(itemId, quantity, inventory, isSmoked = false) {
-  console.log('deleteFromInventory:');
-  console.log('inventory', inventory);
-  console.log('itemId', itemId);
-  console.log('quantity', quantity);
-  console.log('isSmoked', isSmoked);
 
   const itemMap = inventory
     ? Object.fromEntries(inventory.split(';').filter(Boolean).map(entry => entry.split(':')))
@@ -134,7 +122,6 @@ function deleteFromInventory(itemId, quantity, inventory, isSmoked = false) {
       delete itemMap[id];
     }
   }
-  console.log('returning', Object.entries(itemMap).map(([id, qty]) => `${id}:${qty}`).join(';'));
   return Object.entries(itemMap).map(([id, qty]) => `${id}:${qty}`).join(';');
 }
 
@@ -283,6 +270,58 @@ async function resetAllDailyEarnings(dbPath) {
   })]);
 }
 
+/**
+ * Returns a random message for a given type.
+ * @param {string} type
+ * @returns {string}
+ */
+function getRandomMessage(type) {
+  const messages = randomMessages[type];
+  if (!messages) return '';
+  const randomIndex = Math.floor(Math.random() * messages.length);
+  return messages[randomIndex];
+}
+
+/**
+ * Returns a random fish object from a pond.
+ * @param {string} pond
+ * @returns {Object}
+ */
+function getRandomFish(pond) {
+  const fishInPond = Object.values(fishData[pond].fish);
+  const totalWeight = fishInPond.reduce((sum, fish) => sum + fish.weight, 0);
+  const randomWeight = Math.random() * totalWeight;
+
+  let cumulativeWeight = 0;
+  for (const fish of fishInPond) {
+    cumulativeWeight += fish.weight;
+    if (randomWeight < cumulativeWeight) {
+      return fish;
+    }
+  }
+  // fallback in case of rounding error
+  return fishInPond[fishInPond.length - 1];
+}
+
+/**
+ * Returns the highest available pond key for a user's XP.
+ * @param {number} userXp
+ * @returns {string}
+ */
+function getHighestAvailablePond(userXp) {
+  const pondEntries = Object.entries(fishData);
+  pondEntries.sort((a, b) => a[1].xpRequired - b[1].xpRequired);
+  let highestPondKey = pondEntries[0][0];
+  for (const [pondKey, pondObj] of pondEntries) {
+    if (userXp >= pondObj.xpRequired) {
+      highestPondKey = pondKey;
+    } else {
+      break;
+    }
+  }
+  return highestPondKey;
+}
+
 module.exports = {
   getFlatFishIdMap,
   parseFishInventory,
@@ -297,4 +336,7 @@ module.exports = {
   addUserDailyEarnings,
   canUserEarn,
   resetAllDailyEarnings,
+  getRandomMessage,
+  getRandomFish,
+  getHighestAvailablePond,
 };

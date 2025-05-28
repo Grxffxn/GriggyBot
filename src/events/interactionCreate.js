@@ -52,26 +52,32 @@ module.exports = {
       const splitArgs = args.split('/');
       if (interaction.isButton()) {
         const button = client.components.buttons.get(baseId);
+        if (!button) return;
         await button.run(interaction, splitArgs);
       }
       if (interaction.isModalSubmit()) {
         const modal = client.components.modals.get(baseId);
+        if (!modal) return;
         await modal.run(interaction, splitArgs);
       }
       if (interaction.isRoleSelectMenu()) {
         const roleMenu = client.components.menus.roles.get(baseId);
+        if (!roleMenu) return;
         await roleMenu.run(interaction, splitArgs);
       }
       if (interaction.isChannelSelectMenu()) {
         const channelMenu = client.components.menus.channels.get(baseId);
+        if (!channelMenu) return;
         await channelMenu.run(interaction, splitArgs);
       }
       if (interaction.isMentionableSelectMenu()) {
         const mentionableMenu = client.components.menus.mentions.get(baseId);
+        if (!mentionableMenu) return;
         await mentionableMenu.run(interaction, splitArgs);
       }
       if (interaction.isStringSelectMenu()) {
         const stringMenu = client.components.menus.strings.get(baseId);
+        if (!stringMenu) return;
         await stringMenu.run(interaction, splitArgs);
       }
     }

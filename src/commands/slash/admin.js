@@ -1,6 +1,7 @@
-const { SlashCommandBuilder, AttachmentBuilder, MessageFlags } = require('discord.js');
+const { SlashCommandBuilder, AttachmentBuilder, MessageFlags, ContainerBuilder, SectionBuilder, SeparatorBuilder, TextDisplayBuilder, ActionRowBuilder, StringSelectMenuBuilder, resolveColor, ButtonStyle, ButtonBuilder } = require('discord.js');
 const { getConfig, saveConfig, reloadConfig } = require('../../utils/configUtils');
 const { updateFileCache } = require('../../utils/fileUtils');
+const { getUserEvents } = require('../../utils/trackActiveEvents');
 const config = getConfig();
 
 module.exports = {
@@ -77,6 +78,17 @@ module.exports = {
               { name: 'autoProfile', value: 'autoProfile' },
               { name: 'checkSmoker', value: 'checkSmoker' } // Add more events as needed
             )
+        )
+    )
+    .addSubcommand(subcommand =>
+      subcommand
+        .setName('userevents')
+        .setDescription('View and manage active user events')
+        .addUserOption(option =>
+          option
+            .setName('user')
+            .setDescription('User to manage events for')
+            .setRequired(false)
         )
     ),
 
@@ -185,6 +197,42 @@ module.exports = {
             flags: MessageFlags.Ephemeral
           });
         }
+      case 'userevents':
+        const selectedUser = interaction.options.getUser('user') || interaction.user;
+        const userEvents = getUserEvents(selectedUser.id);
+        if (!userEvents.length) return interaction.reply({ content: `No active events found for ${selectedUser} (${selectedUser.id})`, flags: MessageFlags.Ephemeral });
+        
+        const selectMenuActionRow = new ActionRowBuilder()
+          .addComponents(
+            new StringSelectMenuBuilder()
+              .setCustomId(`adminUserEventsManagerMenu:${interaction.user.id}/${selectedUser.id}`)
+              .setPlaceholder('Select an event to end')
+              .setMinValues(1)
+              .setMaxValues(userEvents.length)
+              .addOptions(
+                userEvents.map(event => ({
+                  label: event,
+                  value: event
+                }))
+              )
+          );
+
+        const eventManagerContainer = new ContainerBuilder().setAccentColor(resolveColor('DarkRed'))
+          .addSectionComponents(new SectionBuilder().addTextDisplayComponents([
+            new TextDisplayBuilder().setContent(`## ${selectedUser.displayName}'s Active Events`),
+            new TextDisplayBuilder().setContent(`-# ${selectedUser.id}`),
+          ]).setThumbnailAccessory({ media: { url: config.logoImageUrl } }))
+          .addActionRowComponents([selectMenuActionRow])
+          .addSeparatorComponents(new SeparatorBuilder())
+          .addSectionComponents(new SectionBuilder().addTextDisplayComponents([
+            new TextDisplayBuilder().setContent(`⚠️ End all active events for ${selectedUser.displayName}`),
+          ]).setButtonAccessory(new ButtonBuilder()
+              .setCustomId(`adminUserEventsEndAllButton:${interaction.user.id}/${selectedUser.id}`)
+              .setLabel('End All Events')
+              .setStyle(ButtonStyle.Danger)
+          ));
+
+        return interaction.reply({ components: [eventManagerContainer], flags: [MessageFlags.IsComponentsV2, MessageFlags.Ephemeral] });
       default:
         return interaction.reply({ content: 'Invalid event.', flags: MessageFlags.Ephemeral });
     }

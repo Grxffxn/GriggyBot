@@ -14,7 +14,7 @@ const {
   StringSelectMenuBuilder,
 } = require('discord.js');
 const { queryDB } = require('../../utils/databaseUtils.js');
-const { PRESTIGE_CONFIG, fishData, fishingRodData, herbList } = require('../../fishingConfig.js');
+const { PRESTIGE_CONFIG, fishData, herbList, DEFAULT_SMOKING_TIME_PER_FISH, MAX_TOTAL_SMOKING_TIME } = require('../../fishingConfig.js');
 const {
   getFlatFishIdMap,
   parseFishInventory,
@@ -51,7 +51,7 @@ module.exports = {
     }
 
     if (isUserInEvent(interaction.user.id, 'smokerMenu')) {
-      return denyInteraction('You\'re already at the smoker! ||You already have a smoker menu open. If you believe this is an error, ask an admin to run the command `/admin userEvents`||');
+      return denyInteraction('You\'re already at the smoker!\n-# You already have a smoker menu open. If you believe this is an error, ask an admin to run the command `/admin userEvents`');
     }
 
     startEvent(interaction.user.id, 'smokerMenu');
@@ -226,7 +226,6 @@ module.exports = {
               amount: quantity,
             };
 
-            console.log('Selected fish:', selectedFish);
             await i.deferUpdate();
           } else if (i.customId.startsWith('useHerb:')) {
             const selectedValue = i.values[0];
@@ -238,7 +237,6 @@ module.exports = {
               amount: quantity,
             };
 
-            console.log('Selected herb:', selectedHerb);
             await i.deferUpdate();
           } else if (i.customId.startsWith('confirmSmoker:')) {
             await i.deferUpdate();
@@ -260,19 +258,21 @@ module.exports = {
             // actual smoking logic here
             const herbProvidesSpeedBoost = selectedHerb && selectedHerb.boost === 'speed';
             // if herbs are selected limit the amount of fish to smoke to the amount of herbs
-            const fishToSmoke = selectedHerb ? Math.min(selectedFish.amount, selectedHerb.amount) : selectedFish.amount;
-            interaction.client.log(`User: ${interaction.user.displayName}`, 'DEBUG');
-            interaction.client.log(`Fish to smoke: ${fishToSmoke}`, 'DEBUG');
-            interaction.client.log(`Selected Fish Amount: ${selectedFish.amount}`, 'DEBUG');
-            interaction.client.log(`Selected Herb Amount: ${selectedHerb ? selectedHerb.amount : 'None'}`, 'DEBUG');
+            const fishToSmoke = selectedFish.amount;
+            const herbsUsed = selectedHerb ? selectedHerb.amount : 0;
 
-            // calculate the time it takes to smoke the fish
-            const baseTimePerFish = 30 * 60 * 1000; // 30 minutes in milliseconds
             let boostedTimePerFish;
             if (selectedHerb) {
-              boostedTimePerFish = baseTimePerFish / selectedHerb.boostValue; // Ex. Thyme's boost value is 2, so the time is halved
+              boostedTimePerFish = DEFAULT_SMOKING_TIME_PER_FISH / selectedHerb.boostValue;
             }
-            const smokingTime = fishToSmoke * (herbProvidesSpeedBoost ? boostedTimePerFish : baseTimePerFish);
+
+            const boostedFishCount = Math.min(herbsUsed, fishToSmoke);
+            const normalFishCount = fishToSmoke - boostedFishCount;
+            const rawSmokingTime =
+              (boostedFishCount * (herbProvidesSpeedBoost ? boostedTimePerFish : DEFAULT_SMOKING_TIME_PER_FISH)) +
+              (normalFishCount * DEFAULT_SMOKING_TIME_PER_FISH);
+
+            const smokingTime = Math.min(rawSmokingTime, MAX_TOTAL_SMOKING_TIME);
             const endTime = Date.now() + smokingTime;
 
             // update the player's inventory
@@ -280,8 +280,8 @@ module.exports = {
             let updatedHerbInventory = playerData.spices;
             let smokerColumn = `${endTime}/${selectedFish.id}:${fishToSmoke}`;
             if (selectedHerb) {
-              updatedHerbInventory = deleteFromInventory(selectedHerb.id, fishToSmoke, playerData.spices);
-              smokerColumn += `/${selectedHerb.id}`;
+              updatedHerbInventory = deleteFromInventory(selectedHerb.id, herbsUsed, playerData.spices);
+              smokerColumn += `/${selectedHerb.id}:${herbsUsed}`;
             }
             await queryDB(griggyDatabaseDir, 'UPDATE fishing SET inventory = ?, spices = ?, smoker = ? WHERE discord_id = ?', [updatedFishInventory, updatedHerbInventory, smokerColumn, interaction.user.id]);
 

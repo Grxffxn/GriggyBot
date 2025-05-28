@@ -22,16 +22,20 @@ async function checkSmoker(client) {
       client.log(`Fish ID ${smokedFishId} not found in fish data`, 'ERROR');
       continue;
     }
-    const herbsUsedId = smoker.split('/')[2];
-    const herbData = herbList.find(herb => herb.id === parseInt(herbsUsedId, 10));
+    // ...inside for (const row of smokerData)...
+    let herbInfo = smoker.split('/')[2];
+    let herbsUsedId, herbsUsedAmount;
+    if (herbInfo) {
+      [herbsUsedId, herbsUsedAmount] = herbInfo.split(':').map(Number);
+    }
+    const herbData = herbList.find(herb => herb.id === herbsUsedId);
     const herbBoost = herbData ? herbData.boost : null;
     const herbBoostValue = herbData ? herbData.boostValue : null;
     if (herbBoost) {
       switch (herbBoost) {
         case 'doublesmokeroutput':
-          // For each fish, there is a X% chance to double the output (defined in fishingConfig)
           let extraFish = 0;
-          for (let i = 0; i < smokedFishAmount; i++) {
+          for (let i = 0; i < herbsUsedAmount; i++) {
             if (Math.random() < herbBoostValue) {
               extraFish++;
             }
@@ -39,16 +43,14 @@ async function checkSmoker(client) {
           smokedFishAmount = Number(smokedFishAmount) + extraFish;
           break;
         case 'speed':
-          // no action necessary, as the speed boost is already applied in the smoker logic
+          // No action needed
           break;
         case 'xpgain':
-          // Apply the XP gain boost
-          // This takes the XP of the fish and multiplies it by the boost value
           const fishXp = getPrestigeFishXP(selectedSmokedFishData.xp, prestige_level, PRESTIGE_CONFIG.xpBonusPerLevel);
-          const boostedXp = Math.round((fishXp * smokedFishAmount) * herbBoostValue);
-          // Update the user's XP in the database
+          const boostedXp = Math.round((fishXp * herbsUsedAmount) * herbBoostValue);
+          const normalXp = fishXp * (smokedFishAmount - herbsUsedAmount);
           await queryDB(griggyDatabaseDir, 'UPDATE fishing SET xp = xp + ? WHERE discord_id = ?', [
-            boostedXp,
+            boostedXp + normalXp,
             discord_id
           ]);
           break;

@@ -36,6 +36,7 @@ const {
   treasureRewards,
   TREASURE_EARNINGS_LIMIT
 } = require('../../fishingConfig.js');
+const { UserDenyError } = require('../../utils/errors.js');
 
 const pondChoices = Object.entries(fishData).map(([pondKey, pondObj]) => ({
   name: pondObj.name,
@@ -59,9 +60,9 @@ module.exports = {
 
     await interaction.deferReply();
 
-    function denyInteraction(message) {
-      endEvent(interaction.user.id, 'fishing');
-      return interaction.editReply({ content: message, flags: MessageFlags.Ephemeral });
+    function denyInteraction(message, denialEndsEvent = true) {
+      if (denialEndsEvent) endEvent(interaction.user.id, 'fishing');
+      throw new UserDenyError(message);
     }
 
     /**
@@ -69,7 +70,7 @@ module.exports = {
      * @returns {Promise<{fishermanRow: Object, pond: string, pondConfig: Object}>} - Resolves to an object containing the fisherman's data, the pond they are fishing in, and the pond's configuration.
      */
     async function getFishermanData() {
-      if (isUserInEvent(interaction.user.id, 'fishing')) return denyInteraction('You\'re already fishing! Unless you have four arms, I\'d recommend using one fishing rod at a time.\n-# If you believe this is an error, ask an admin to run the command `/admin userEvents`');
+      if (isUserInEvent(interaction.user.id, 'fishing')) denyInteraction('You\'re already fishing! Unless you have four arms, I\'d recommend using one fishing rod at a time.\n-# If you believe this is an error, ask an admin to run the command `/admin userevents`', false);
       let fishermanRow = await queryDB(griggyDatabaseDir, 'SELECT * FROM fishing WHERE discord_id = ?', [interaction.user.id], true);
       if (!fishermanRow) {
         await queryDB(griggyDatabaseDir, `
@@ -79,11 +80,11 @@ module.exports = {
         fishermanRow = await queryDB(griggyDatabaseDir, 'SELECT * FROM fishing WHERE discord_id = ?', [interaction.user.id], true);
       }
       const parsedFishInventory = parseFishInventory(fishermanRow.inventory);
-      if (Object.keys(parsedFishInventory.regular).length > 24) return denyInteraction('Your fish bucket is too heavy! You need to sell or smoke some fish before you can catch more. -# "How d\'you expect me to carry all these back home?"');
+      if (Object.keys(parsedFishInventory.regular).length > 24) denyInteraction('Your fish bucket is too heavy! You need to sell or smoke some fish before you can catch more. -# "How d\'you expect me to carry all these back home?"');
       let pond = interaction.options.getString('pond');
       if (!pond) pond = getHighestAvailablePond(fishermanRow.xp);
       const pondConfig = fishData[pond];
-      if (fishermanRow.xp < pondConfig.xpRequired) return denyInteraction(`❌ You need some more experience before fishing in ${pondConfig.name} (${fishermanRow.xp}/${pondConfig.xpRequired})\n-# "I'm not sure I can handle these fish yet."`);
+      if (fishermanRow.xp < pondConfig.xpRequired) denyInteraction(`❌ You need some more experience before fishing in ${pondConfig.name} (${fishermanRow.xp}/${pondConfig.xpRequired})\n-# "I'm not sure I can handle these fish yet."`);
       return { fishermanRow, pond, pondConfig };
     }
 
@@ -167,7 +168,7 @@ module.exports = {
       await new Promise(resolve => setTimeout(resolve, catchTime));
       try {
         const checkSmokerStartWhileFishing = await queryDB(griggyDatabaseDir, 'SELECT smoker FROM fishing WHERE discord_id = ?', [interaction.user.id], true);
-        if (checkSmokerStartWhileFishing.smoker && !fishermanRow.smoker) return denyInteraction(`🛶 ${playerName} stopped fishing and decided to fire up the smoker.\n-# "I can\'t take it anymore, I\'m starvin'!"`);
+        if (checkSmokerStartWhileFishing.smoker && !fishermanRow.smoker) denyInteraction(`🛶 ${playerName} stopped fishing and decided to fire up the smoker.\n-# "I can\'t take it anymore, I\'m starvin'!"`);
 
         const catchEventData = {
           caughtFish: getRandomFish(pond),
@@ -217,7 +218,7 @@ module.exports = {
         });
       } catch (err) {
         interaction.client.log('Error during fishing minigame:', 'ERROR', err);
-        return denyInteraction('The fishin\' line snapped! Try again later.\n-# ⚠️ This is an error, please report it to an admin.');
+        denyInteraction('The fishin\' line snapped! Try again later.\n-# ⚠️ This is an error, please report it to an admin.');
       }
     }
 
@@ -303,7 +304,7 @@ module.exports = {
           new SectionBuilder().addTextDisplayComponents([
             new TextDisplayBuilder().setContent(`## 🎁 ${playerName} found a treasure chest! ${getRandomMessage('treasure')}`)
           ]).setThumbnailAccessory(new ThumbnailBuilder({ media: { url: 'https://minecraft.wiki/images/Chest_%28S%29_JE2.png' } }))
-            .addActionRowComponents(
+        ).addActionRowComponents(
               new ActionRowBuilder().addComponents(
                 ...Object.entries(treasureRewards).map(([key, reward]) =>
                   new ButtonBuilder()
@@ -315,7 +316,6 @@ module.exports = {
                 )
               )
             )
-        );
       await interaction.editReply({ content: '', components: [container], flags: MessageFlags.IsComponentsV2 });
       await queryDB(griggyDatabaseDir, 'UPDATE fishing SET inventory = ?, xp = xp + ?, lifetime_fish_caught = lifetime_fish_caught + ? WHERE discord_id = ?', [fishInventory, xpGained, caughtFishAmount, interaction.user.id]);
     }
@@ -369,8 +369,10 @@ module.exports = {
 
       await startFishingMinigame(fishermanRow, pond, pondConfig);
     } catch (err) {
-      interaction.client.log('Error in /fish command:', 'ERROR', err);
-      return denyInteraction('The fish aren\'t bitin\' today. Come back later.\n-# ⚠️ This is an error, please report it to an admin.');
+      if (err.name !== 'UserDenyError') {
+        interaction.client.log('Unexpected error in /fish command:', 'ERROR', err);
+      }
+      return interaction.editReply({ content: err.message || 'The fish aren\'t bitin\' today. Come back later.\n-# ⚠️ This is an error, please report it to an admin.', flags: MessageFlags.Ephemeral });
     }
   },
 };

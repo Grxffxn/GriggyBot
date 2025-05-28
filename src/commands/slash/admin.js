@@ -74,7 +74,8 @@ module.exports = {
               { name: 'chores', value: 'chores' },
               { name: 'updateImage', value: 'updateImage' },
               { name: 'getServerData', value: 'getServerData' },
-              { name: 'autoProfile', value: 'autoProfile' }
+              { name: 'autoProfile', value: 'autoProfile' },
+              { name: 'checkSmoker', value: 'checkSmoker' } // Add more events as needed
             )
         )
     ),
@@ -102,6 +103,10 @@ module.exports = {
           const AutoProfile = require('../../events/autoprofile');
           await AutoProfile(client);
           return 'Checked for new profiles to create.';
+        case 'checkSmoker':
+          const { checkSmoker } = require('../../events/checkSmoker');
+          await checkSmoker(client);
+          return 'Checked for completed smoking tasks.';
         default:
           return 'Invalid event.';
       }

@@ -8,8 +8,6 @@ const { addUserDailyEarnings } = require('../../utils/fishingUtils.js');
 module.exports = {
   customId: 'fishingTreasure',
   run: async (interaction, args) => {
-    //TEMP
-    console.log(interaction.message.components[0])
     const config = interaction.client.config;
     const selectedReward = args[0];
     const userId = args[1];
@@ -31,7 +29,6 @@ module.exports = {
     const rewardValue = Math.floor(Math.random() * (rewardConfig.maxValue - rewardConfig.minValue + 1)) + rewardConfig.minValue;
 
     let username;
-    console.log(`User ${rewardOwner.displayName} has selected the treasure: ${selectedReward}`);
     // Get username from CMI database
     try {
       const userRow = await queryDB(config.griggyDbPath, 'SELECT minecraft_uuid FROM users WHERE discord_id = ?', [userId], true);

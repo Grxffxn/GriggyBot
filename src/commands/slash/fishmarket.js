@@ -43,8 +43,6 @@ module.exports = {
       if (randomEvent) {
         switch (randomEvent) {
           case 'smokerFire':
-            interaction.client.log(`Smoker fire event triggered for user ${interaction.member.displayName} (${interaction.user.id})`, 'INFO');
-
             randomEventContainer = new ContainerBuilder()
               .setAccentColor(resolveColor('DarkRed'))
               .addSectionComponents(

@@ -1,4 +1,5 @@
 const { Events, InteractionType, MessageFlags } = require('discord.js');
+const { logInteractionCreate } = require('../utils/metricsUtils.js');
 
 module.exports = {
   name: Events.InteractionCreate,
@@ -27,6 +28,14 @@ module.exports = {
               }
             }
           }
+          await logInteractionCreate(interaction, {
+            userId: interaction.user.id,
+            username: interaction.user.username,
+            interactionType: 'command',
+            commandName: interaction.commandName,
+            customId: null,
+            timestamp: new Date().toISOString()
+          });
           await command.run(interaction);
         } else {
           interaction.client.log(
@@ -50,6 +59,14 @@ module.exports = {
     if (interaction.isButton() || interaction.isModalSubmit() || interaction.isAnySelectMenu()) {
       const [baseId, args] = interaction.customId.split(':');
       const splitArgs = args.split('/');
+      await logInteractionCreate(interaction, {
+        userId: interaction.user.id,
+        username: interaction.user.username,
+        interactionType: 'component',
+        commandName: null,
+        customId: interaction.customId,
+        timestamp: new Date().toISOString()
+      });
       if (interaction.isButton()) {
         const button = client.components.buttons.get(baseId);
         if (!button) return;

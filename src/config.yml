@@ -17,6 +17,13 @@ rconIp: "127.0.0.1"
 rconPwd: "YOUR_RCON_PASSWORD_HERE"
 rconPort: 25575  # Default RCON port, replace if different
 
+# DATABASE SETTINGS
+host: "mysql" # Name of MySQL container
+port: 3306
+database: "griggybot"
+username: "griggybot"
+password: "${GBOT_DB_PASSWORD}"
+
 # * Server information (acronym can be left blank)
 serverName: "The Legend Continues"
 serverAcronym: ""
@@ -273,7 +280,7 @@ consoleChannelId: ""
 # The ID of the channel where the bot will send applications
 rankSubmissionChannelId: ""
 
-# Database Paths
+# Database Paths - NOT NECESSARY MUCH LONGER - TRANSITION TO ALL MYSQL
 cmi_sqlite_db: ""
 luckperms_sqlite_db: ""
 accounts_aof: ""

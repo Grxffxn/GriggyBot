@@ -70,4 +70,62 @@ async function updateTodoItem(interaction, todoId) {
   return interaction.followUp({ content: `TODO item '${originalTodoItem.todo}' updated to '${updatedTodoItem}' in '${updatedPriority}' list.`, flags: MessageFlags.Ephemeral });
 }
 
-module.exports = { queryDB, addTodoItem, updateTodoItem };
+async function setupUserMetaTracking(dbPath, force = false) {
+  const db = new sqlite3.Database(dbPath, sqlite3.OPEN_READWRITE);
+
+  return new Promise((resolve, reject) => {
+    db.all('SELECT id, UserMeta FROM users', async (err, rows) => {
+      if (err) {
+        db.close();
+        return reject(err);
+      }
+
+      let updatedCount = 0;
+      for (const row of rows) {
+        let usermetaObj = {};
+        let needsUpdate = false;
+
+        if (!row.usermeta || row.usermeta.trim() === '') {
+          usermetaObj = { griggypoints: "0" };
+          needsUpdate = true;
+        } else {
+          try {
+            usermetaObj = JSON.parse(row.usermeta);
+            if (!usermetaObj.hasOwnProperty('griggypoints')) {
+              usermetaObj.griggypoints = "0";
+              needsUpdate = true;
+            }
+          } catch (err) {
+            // If parsing fails and force is true, reset to just griggypoints
+            if (force) {
+              usermetaObj = { griggypoints: "0" };
+              needsUpdate = true;
+            } else {
+              console.error(`Error parsing usermeta for row ID ${row.id}:`, err);
+              continue;
+            }
+          }
+        }
+
+        if (needsUpdate) {
+          await new Promise((res, rej) => {
+            db.run(
+              'UPDATE users SET UserMeta = ? WHERE id = ?',
+              [JSON.stringify(usermetaObj), row.id],
+              function (updateErr) {
+                if (updateErr) return rej(updateErr);
+                updatedCount++;
+                res();
+              }
+            );
+          });
+        }
+      }
+
+      db.close();
+      resolve(updatedCount);
+    });
+  });
+}
+
+module.exports = { queryDB, addTodoItem, updateTodoItem, setupUserMetaTracking };

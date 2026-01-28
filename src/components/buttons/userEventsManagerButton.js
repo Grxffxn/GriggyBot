@@ -8,11 +8,7 @@ module.exports = {
    * @param {string[]} args
    */
   run: async (interaction, args) => {
-    const managerUserId = args[0];
     const targetedUserId = args[1];
-    if (interaction.user.id !== managerUserId) {
-      return interaction.reply({ content: '😵‍💫 How did we get here?\n-# Your user ID doesn\'t match the user who originally ran `/admin userevents`', flags: MessageFlags.Ephemeral });
-    }
 
     endEvent(targetedUserId, null);
 

@@ -1,4 +1,4 @@
-const { ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder, MessageFlags } = require('discord.js');
+const { ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder, MessageFlags, ButtonBuilder } = require('discord.js');
 const fs = require('fs');
 const { queryDB } = require('../../utils/databaseUtils.js');
 
@@ -58,6 +58,7 @@ module.exports = {
   run: async (interaction, args) => {
     const event = args[0];
     const config = interaction.client.config;
+    const userId = interaction.user.id;
     switch (event) {
       case 'profile':
         // Reused logic from the profile command
@@ -105,6 +106,30 @@ module.exports = {
         };
 
         await interaction.reply({ embeds: [embed] });
+        break;
+      case 'gallery':
+        // Reused logic from the gallery command
+        const { getGalleryPage, getGalleryPageCount } = require('../../events/buildGalleryContainers.js');
+        const index = 0;
+        const pageCount = getGalleryPageCount();
+        const { container, files } = getGalleryPage(index);
+
+        const buttons = new ActionRowBuilder().addComponents(
+          new ButtonBuilder().setCustomId(`galleryPage:${userId}/${index}/first`).setEmoji('⏪').setStyle('Primary').setDisabled(true),
+          new ButtonBuilder().setCustomId(`galleryPage:${userId}/${index}/prev`).setEmoji('⬅️').setStyle('Primary').setDisabled(true),
+          new ButtonBuilder().setCustomId(`galleryPage:${userId}/${index}/count`).setLabel(`1/${pageCount}`).setStyle('Secondary').setDisabled(true),
+          new ButtonBuilder().setCustomId(`galleryPage:${userId}/${index}/next`).setEmoji('➡️').setStyle('Primary').setDisabled(pageCount <= 1),
+          new ButtonBuilder().setCustomId(`galleryPage:${userId}/${index}/last`).setEmoji('⏩').setStyle('Primary').setDisabled(pageCount <= 1)
+        );
+        await interaction.reply({
+          components: [container.addActionRowComponents(buttons)],
+          files,
+          flags: [MessageFlags.IsComponentsV2, MessageFlags.Ephemeral]
+        });
+        break;
+      default:
+        await interaction.reply({ content: 'Unknown event type.', flags: MessageFlags.Ephemeral });
+        return;
     }
   }
 }

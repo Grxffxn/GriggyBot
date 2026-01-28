@@ -1,6 +1,5 @@
 const { MessageFlags } = require('discord.js');
 const {
-  PRESTIGE_CONFIG,
   SMOKED_FISH_MULTIPLIER,
   fishData,
   fishingRodData,
@@ -16,7 +15,8 @@ const {
   deleteFromInventory,
   checkForRandomEvent,
   executeSellEvent,
-  addUserDailyEarnings
+  addUserDailyEarnings,
+  buildFishMarketMenu,
 } = require('../../../utils/fishingUtils.js');
 const flatFishMap = getFlatFishIdMap(fishData);
 
@@ -30,7 +30,6 @@ module.exports = {
     if (args[1] !== interaction.user.id) {
       return interaction.reply({ content: 'This is not your menu!', flags: MessageFlags.Ephemeral });
     }
-    await interaction.message.delete();
 
     const config = interaction.client.config;
     const griggyDatabaseDir = config.griggyDbPath;
@@ -81,7 +80,7 @@ module.exports = {
       }
 
       // Calculate worth and display name
-      const calculatedFishWorth = getPrestigeFishWorth(fish.worth, griggyPlayerData.prestige_level, PRESTIGE_CONFIG.worthBonusPerLevel, PRESTIGE_CONFIG.worthCap);
+      const calculatedFishWorth = getPrestigeFishWorth(fish.worth, griggyPlayerData.prestige_level);
       const worthPerFish = fishIsSmoked ? Math.round(calculatedFishWorth * SMOKED_FISH_MULTIPLIER) : Math.round(calculatedFishWorth);
       const totalWorth = worthPerFish * itemQuantity;
       const displayName = fishIsSmoked ? `Smoked ${fish.name}` : fish.name;
@@ -116,7 +115,18 @@ module.exports = {
       const sellFishCommand = `cmi money give ${username} ${payout}`;
       await updateBalance(interaction, sellFishCommand);
 
-      return interaction.reply(eventResult.description);
+      // Update menu
+      // Get player data
+      const updatedPlayerData = await queryDB(
+        griggyDatabaseDir,
+        'SELECT users.*, fishing.* FROM users INNER JOIN fishing ON users.discord_id = fishing.discord_id WHERE users.discord_id = ?',
+        [interaction.user.id],
+        true
+      );
+      const container = await buildFishMarketMenu(interaction, updatedPlayerData);
+
+      await interaction.update({ components: [container] });
+      return interaction.channel.send(eventResult.description);
 
     } else if (action === 'buyRod') {
       // Rod purchase
@@ -137,7 +147,18 @@ module.exports = {
         : rodId;
       await queryDB(griggyDatabaseDir, 'UPDATE fishing SET fishing_rod = ? WHERE discord_id = ?', [updatedFishingRodColumn, interaction.user.id]);
 
-      return interaction.reply(`https://minecraft-api.com/api/achivements/${selectedFishingRodData.apiItem}/New..Fishing..Rod..Unlocked/${selectedFishingRodData.apiName}/`);
+      // Update menu
+      // Get player data
+      const updatedPlayerData = await queryDB(
+        griggyDatabaseDir,
+        'SELECT users.*, fishing.* FROM users INNER JOIN fishing ON users.discord_id = fishing.discord_id WHERE users.discord_id = ?',
+        [interaction.user.id],
+        true
+      );
+      const container = await buildFishMarketMenu(interaction, updatedPlayerData);
+
+      await interaction.update({ components: [container] });
+      return interaction.channel.send(`https://minecraft-api.com/api/achivements/${selectedFishingRodData.apiItem}/New..Fishing..Rod..Unlocked/${selectedFishingRodData.apiName}/`);
     }
   }
 };

@@ -431,6 +431,23 @@ function createDatabase(updatedValues, databasePath, client) {
           UPDATE fishing SET updated_at = CURRENT_TIMESTAMP WHERE discord_id = OLD.discord_id;
         END;
       `);
+      db.run(`
+        CREATE TABLE IF NOT EXISTS usage_metrics (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          user_id TEXT NULL,
+          username TEXT,
+          type TEXT NOT NULL,
+          command_name TEXT,
+          custom_id TEXT,
+          content TEXT,
+          timestamp TEXT NOT NULL
+        );
+      `);
+      db.run(`
+        CREATE TABLE IF NOT EXISTS metrics_opt_out (
+          user_id TEXT PRIMARY KEY
+        );
+      `);
     });
     db.close();
     updatedValues.griggyDbPath = databasePath;

@@ -261,6 +261,9 @@ botspamChannelId: ""
 # The ID of your minecraft chat channel
 mcChatChannelId: ""
 
+# The ID of your moderation channel
+modChannelId: ""
+
 # The ID of the channel to send chores to
 choreChannelId: ""
 

@@ -1,5 +1,6 @@
 const { ChannelType, Collection, Events } = require('discord.js');
 const { getConfig } = require('../utils/configUtils');
+const { logMessageCreate } = require('../utils/metricsUtils');
 const ms = require('ms');
 const cooldown = new Collection();
 
@@ -37,6 +38,13 @@ module.exports = {
               setTimeout(() => msg.delete(), cooldown.get(`${command.name}${message.author.id}`) - Date.now())
             );
         command.run(client, message, args);
+        await logMessageCreate(message, {
+          userId: message.author.id,
+          username: message.author.username,
+          commandName: command.name,
+          content: message.content,
+          timestamp: new Date().toISOString()
+        });
         cooldown.set(`${command.name}${message.author.id}`, Date.now() + command.cooldown);
         setTimeout(() => {
           cooldown.delete(`${command.name}${message.author.id}`);

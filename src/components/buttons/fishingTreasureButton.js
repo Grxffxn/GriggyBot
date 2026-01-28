@@ -11,10 +11,6 @@ module.exports = {
     const config = interaction.client.config;
     const selectedReward = args[0];
     const userId = args[1];
-    const rewardOwner = await interaction.guild.members.fetch(userId);
-    if (interaction.user.id !== userId) {
-      return interaction.reply({ content: `Keep your hands off ${rewardOwner.displayName}'s treasure!`, flags: MessageFlags.Ephemeral });
-    }
 
     const containerComponent = interaction.message.components[0];
     const filteredComponents = containerComponent.components.filter(

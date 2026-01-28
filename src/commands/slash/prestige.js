@@ -1,8 +1,3 @@
-// Once a user reaches the last configured pond in fishingConfig.js, they have the ability to prestige. This will reset their fishing level and give them a new pond to fish in. The user will also receive a reward for prestiging, which is configurable in the config file. The user can only prestige once every 24 hours.
-// The user will be asked to select 1 fishing rod and 1 type of herb to keep. They will lose all other rods, herbs, and saved fish.
-// Once the user selects their items and confirms, the bot will update the database to remove their inventory column, set the fishing_rod and selected_rod columns to their selected rod,
-// and set the "spices" column to their selected herb's id and quantity. ex. "1:16" for 16 of herb id 1.
-// In the prestige_level column, the bot will increment the value by 1.
 const {
   SlashCommandBuilder,
   ButtonBuilder,
@@ -24,6 +19,7 @@ const {
   fishData,
   fishingRodData,
   herbList,
+  PRESTIGE_CONFIG,
 } = require('../../fishingConfig.js');
 const {
   isUserInEvent,
@@ -60,6 +56,7 @@ module.exports = {
       true
     );
     if (!userRow || (userRow.xp < requiredXp)) return denyInteraction();
+    if (userRow.prestige_level >= PRESTIGE_CONFIG.maxPrestige) return denyInteraction(`You have already reached the maximum prestige level of ${PRESTIGE_CONFIG.maxPrestige}. Congratulations!`);
     const activePrestigeMenu = isUserInEvent(interaction.user.id, 'prestige');
     if (activePrestigeMenu) return denyInteraction('You can only have one menu open at a time!');
 
@@ -168,15 +165,25 @@ module.exports = {
       .addSeparatorComponents(separatorComponent)
       .addSectionComponents(confirmationSection);
 
-    const prestigeMsg = await interaction.reply({
+    await interaction.reply({
       components: [selectionContainer],
-      flags: [MessageFlags.IsComponentsV2, MessageFlags.Ephemeral],
-      withResponse: true,
+      flags: [MessageFlags.IsComponentsV2, MessageFlags.Ephemeral]
     });
 
-    setTimeout(() => {
+    const timedOutContainer = new ContainerBuilder()
+      .setAccentColor(resolveColor('Red'))
+      .addSectionComponents(new SectionBuilder()
+        .addTextDisplayComponents([
+          new TextDisplayBuilder().setContent(`# ⏳ Timed Out\nThis menu has timed out.\nPlease run the command again to prestige.`)
+        ])
+        .setThumbnailAccessory(new ThumbnailBuilder({
+          media: { url: 'https://minecraft.wiki/images/Clock_JE2_BE2.png' }
+        }))
+      );
+
+    setTimeout(async () => {
       endEvent(interaction.user.id, 'prestige');
-      prestigeMsg.delete();
-    }, 120000); // 2 minute timeout for the menu
+      await interaction.editReply({ components: [timedOutContainer] });
+    }, 120000);
   }
 }

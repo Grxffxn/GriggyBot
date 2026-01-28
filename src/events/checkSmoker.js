@@ -1,5 +1,5 @@
 const { ContainerBuilder, SectionBuilder, TextDisplayBuilder, ThumbnailBuilder, resolveColor, MessageFlags } = require('discord.js');
-const { PRESTIGE_CONFIG, fishData, herbList } = require('../fishingConfig.js');
+const { fishData, herbList } = require('../fishingConfig.js');
 const { queryDB } = require('../utils/databaseUtils.js');
 const { getFlatFishIdMap, getPrestigeFishXP, addToInventory } = require('../utils/fishingUtils.js');
 const flatFishMap = getFlatFishIdMap(fishData);
@@ -46,7 +46,7 @@ async function checkSmoker(client) {
           // No action needed
           break;
         case 'xpgain':
-          const fishXp = getPrestigeFishXP(selectedSmokedFishData.xp, prestige_level, PRESTIGE_CONFIG.xpBonusPerLevel);
+          const fishXp = getPrestigeFishXP(selectedSmokedFishData.xp, prestige_level);
           const boostedXp = Math.round((fishXp * herbsUsedAmount) * herbBoostValue);
           const normalXp = fishXp * (smokedFishAmount - herbsUsedAmount);
           await queryDB(griggyDatabaseDir, 'UPDATE fishing SET xp = xp + ? WHERE discord_id = ?', [

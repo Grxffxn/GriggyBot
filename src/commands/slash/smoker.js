@@ -14,7 +14,7 @@ const {
   StringSelectMenuBuilder,
 } = require('discord.js');
 const { queryDB } = require('../../utils/databaseUtils.js');
-const { PRESTIGE_CONFIG, fishData, herbList, DEFAULT_SMOKING_TIME_PER_FISH, MAX_TOTAL_SMOKING_TIME } = require('../../fishingConfig.js');
+const { fishData, herbList, DEFAULT_SMOKING_TIME_PER_FISH, MAX_TOTAL_SMOKING_TIME } = require('../../fishingConfig.js');
 const {
   getFlatFishIdMap,
   parseFishInventory,
@@ -39,6 +39,36 @@ async function safeReply(interaction, message, ephemeral = true) {
     return interaction.editReply({ content: message });
   } else {
     return interaction.reply({ content: message, flags: ephemeral ? MessageFlags.Ephemeral : undefined });
+  }
+}
+
+function getSmokingTimeEstimate(fishAmount, herb, herbsAvailable) {
+  if (!fishAmount) return null;
+  let boostedTimePerFish = DEFAULT_SMOKING_TIME_PER_FISH;
+  let boostedFishCount = 0;
+  let normalFishCount = fishAmount;
+  if (herb && herb.boost === 'speed') {
+    boostedTimePerFish = DEFAULT_SMOKING_TIME_PER_FISH / herb.boostValue;
+    boostedFishCount = Math.min(herbsAvailable, fishAmount);
+    normalFishCount = fishAmount - boostedFishCount;
+  }
+  const rawSmokingTime =
+    (boostedFishCount * boostedTimePerFish) +
+    (normalFishCount * DEFAULT_SMOKING_TIME_PER_FISH);
+  const smokingTime = Math.min(rawSmokingTime, MAX_TOTAL_SMOKING_TIME);
+  return smokingTime;
+}
+
+function formatSmokingTime(ms) {
+  const totalMinutes = Math.ceil(ms / 60000);
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  if (hours > 0 && minutes > 0) {
+    return `${hours} hour${hours !== 1 ? 's' : ''}, ${minutes} minute${minutes !== 1 ? 's' : ''}`;
+  } else if (hours > 0) {
+    return `${hours} hour${hours !== 1 ? 's' : ''}`;
+  } else {
+    return `${minutes} minute${minutes !== 1 ? 's' : ''}`;
   }
 }
 
@@ -77,69 +107,99 @@ module.exports = {
         const fishInventory = parseFishInventory(playerData.inventory);
         if (Object.keys(fishInventory.regular).length === 0) denyInteraction('You ain\'t got any `/fish` to smoke!');
         if (Object.keys(fishInventory.smoked).length > 24) denyInteraction('You can\'t smoke any more fish! You need to sell some first.\n-# "These fish\'re burnin\' a hole in my pocket!"');
-        const fishOptions = Object.entries(fishInventory.regular)
-          .filter(([fishId, quantity]) => quantity > 0)
-          .map(([fishId, quantity]) => {
-            const fish = flatFishMap[fishId];
-            if (!fish) {
-              interaction.client.log(`Fish with ID ${fishId} not found in fishData.`, 'WARN');
-              return null;
-            }
-            const fishWorth = getPrestigeFishWorth(fish.worth, playerData.prestige_level, PRESTIGE_CONFIG.worthBonusPerLevel, PRESTIGE_CONFIG.worthCap);
-
-            return {
-              label: `${fish.name} (${quantity})`,
-              value: `${fishId}:${quantity}`,
-              description: `Rarity: ${fish.rarity}, Worth: $${fishWorth.toLocaleString('en-US', { minimumFractionDigits: 2 })}`,
-              emoji: { name: '🐟' },
-            };
-          })
-          .filter(Boolean)
-          .slice(0, 25);
-
-        if (fishOptions.length === 0) denyInteraction('You ain\'t got any `/fish` to smoke!');
 
         const herbInventory = parseHerbInventory(playerData.spices);
-        const herbOptions = Object.entries(herbInventory)
-          .filter(([herbId, quantity]) => quantity > 0)
-          .map(([herbId, quantity]) => {
-            const herb = herbList.find(h => h.id === Number(herbId));
-            if (!herb) {
-              interaction.client.log(`Herb with ID ${herbId} not found in herbList.`, 'WARN');
-              return null;
+
+        function buildFishOptions(fishInventory, selectedFishId, selectedFishAmount) {
+          return Object.entries(fishInventory.regular)
+            .filter(([fishId, quantity]) => quantity > 0)
+            .map(([fishId, quantity]) => {
+              const fish = flatFishMap[fishId];
+              if (!fish) return null;
+              return {
+                label: `${fish.name} (${quantity})`,
+                value: `${fishId}:${quantity}`,
+                description: `Rarity: ${fish.rarity}`,
+                emoji: { name: '🐟' },
+                default: selectedFishId == fishId && selectedFishAmount == quantity,
+              };
+            })
+            .filter(Boolean)
+            .slice(0, 25);
+        }
+
+        function buildHerbOptions(herbInventory, selectedHerbId, selectedHerbAmount) {
+          return Object.entries(herbInventory)
+            .filter(([herbId, quantity]) => quantity > 0)
+            .map(([herbId, quantity]) => {
+              const herb = herbList.find(h => h.id === Number(herbId));
+              if (!herb) return null;
+              return {
+                label: `${herb.name} (${quantity})`,
+                value: `${herbId}:${quantity}`,
+                description: `${herb.boostDescription}`,
+                emoji: { name: '🌿' },
+                default: selectedHerbId == herbId && selectedHerbAmount == quantity,
+              };
+            })
+            .filter(Boolean)
+            .slice(0, 25);
+        }
+
+        function buildSelectMenus(menuType, options) {
+          if (menuType === 'fish') {
+            return new ActionRowBuilder()
+              .addComponents(
+                new StringSelectMenuBuilder()
+                  .setCustomId(`smokeFish:${interaction.user.id}`)
+                  .setPlaceholder('Select the fish to smoke')
+                  .addOptions(options.length > 0 ? options : [{ label: 'No fish available', value: 'none', description: 'You have no fish to smoke.', emoji: { name: '❌' } }])
+              );
+          } else if (menuType === 'herb') {
+            return new ActionRowBuilder()
+              .addComponents(
+                new StringSelectMenuBuilder()
+                  .setCustomId(`useHerb:${interaction.user.id}`)
+                  .setPlaceholder('Select the herb to use')
+                  .addOptions(options.length > 0 ? options : [{ label: 'No herbs available', value: 'none', description: 'You have no herbs to use.', emoji: { name: '❌' } }])
+              );
+          }
+          return null;
+        }
+
+        const fishOptionsInitial = buildFishOptions(fishInventory);
+        if (fishOptionsInitial.length === 0) denyInteraction('You ain\'t got any `/fish` to smoke!');
+        const herbOptionsInitial = buildHerbOptions(herbInventory);
+
+        const fishSelectMenu = buildSelectMenus('fish', fishOptionsInitial);
+
+        const herbSelectMenu = buildSelectMenus('herb', herbOptionsInitial);
+
+        function buildConfirmationSection(selectedFish, selectedHerb) {
+          let estimateText = '';
+          if (selectedFish) {
+            const fishAmount = selectedFish.amount;
+            const herb = selectedHerb;
+            const herbsAvailable = herb ? herb.amount : 0;
+            const timeMs = getSmokingTimeEstimate(fishAmount, herb, herbsAvailable);
+            if (timeMs) {
+              estimateText = `**ETA:** ${formatSmokingTime(timeMs)}`;
             }
-            return {
-              label: `${herb.name} (${quantity})`,
-              value: `${herbId}:${quantity}`,
-              description: `${herb.boostDescription}`,
-              emoji: { name: '🌿' },
-            };
-          })
-          .filter(Boolean);
-
-        const fishSelectMenu = new ActionRowBuilder()
-          .addComponents(
-            new StringSelectMenuBuilder()
-              .setCustomId(`smokeFish:${interaction.user.id}`)
-              .setPlaceholder('Select the fish to smoke')
-              .addOptions(
-                fishOptions.length > 0
-                  ? fishOptions
-                  : [{ label: 'No fish available', value: 'none', description: 'You have no fish to smoke.', emoji: { name: '❌' } }]
-              )
-          );
-
-        const herbSelectMenu = new ActionRowBuilder()
-          .addComponents(
-            new StringSelectMenuBuilder()
-              .setCustomId(`useHerb:${interaction.user.id}`)
-              .setPlaceholder('Select the herb to use')
-              .addOptions(
-                herbOptions.length > 0
-                  ? herbOptions
-                  : [{ label: 'No herbs available', value: 'none', description: 'You have no herbs to use.', emoji: { name: '❌' } }]
-              )
-          );
+          }
+          return new SectionBuilder()
+            .addTextDisplayComponents([
+              new TextDisplayBuilder().setContent(
+                `**Warning:** You can't cancel the smoker!${estimateText ? `\n${estimateText}` : ''}`
+              ),
+            ])
+            .setButtonAccessory(
+              new ButtonBuilder()
+                .setCustomId(`confirmSmoker:${interaction.user.id}`)
+                .setLabel('Start Smoker')
+                .setStyle(ButtonStyle.Danger)
+                .setEmoji('⏲️')
+            );
+        }
 
         const container = new ContainerBuilder()
           .setAccentColor(resolveColor('620000'));
@@ -183,16 +243,7 @@ module.exports = {
           })
           );
 
-        const confirmButton = new ButtonBuilder()
-          .setCustomId(`confirmSmoker:${interaction.user.id}`)
-          .setLabel('Start Smoker')
-          .setStyle(ButtonStyle.Danger)
-          .setEmoji('⏲️');
-
-        const confirmationSectionComponent = new SectionBuilder()
-          .addTextDisplayComponents([
-            new TextDisplayBuilder().setContent('**Warning:** You can\'t cancel the smoker!'),
-          ]).setButtonAccessory(confirmButton);
+        const confirmationSectionComponent = buildConfirmationSection(selectedFish, selectedHerb);
 
         container.addSectionComponents([smokerTitleSectionComponent])
           .addSeparatorComponents([separatorComponent])
@@ -206,12 +257,13 @@ module.exports = {
 
         await interaction.reply({
           components: [container],
-          flags: MessageFlags.IsComponentsV2,
+          flags: [MessageFlags.IsComponentsV2, MessageFlags.Ephemeral],
         });
 
-        // create interaction collector which updates a variable with the selected fish and herb
-        // the collector should listen for multiple interactions, and if a user reselects a fish or herb, it should update the selected fish and herb variables
-        const filter = i => i.user.id === interaction.user.id;
+        const validPrefixes = ['smokeFish', 'useHerb', 'confirmSmoker'];
+        const filter = i =>
+          i.user.id === interaction.user.id &&
+          validPrefixes.some(prefix => i.customId.startsWith(prefix));
         const collector = interaction.channel.createMessageComponentCollector({
           filter,
           time: 180000, // 3 minutes
@@ -222,30 +274,39 @@ module.exports = {
             if (i.customId.startsWith('smokeFish:')) {
               const selectedValue = i.values[0];
               if (selectedValue === 'none') return i.deferUpdate();
-
               const [fishId, quantity] = selectedValue.split(':').map(Number);
-              selectedFish = {
-                ...flatFishMap[fishId],
-                amount: quantity,
-              };
-
-              await i.deferUpdate();
+              selectedFish = { ...flatFishMap[fishId], amount: quantity, id: fishId };
             } else if (i.customId.startsWith('useHerb:')) {
               const selectedValue = i.values[0];
               if (selectedValue === 'none') return i.deferUpdate();
-
               const [herbId, quantity] = selectedValue.split(':').map(Number);
-              selectedHerb = {
-                ...herbList.find(h => h.id === herbId),
-                amount: quantity,
-              };
-
-              await i.deferUpdate();
+              selectedHerb = { ...herbList.find(h => h.id === herbId), amount: quantity, id: herbId };
             } else if (i.customId.startsWith('confirmSmoker:')) {
               await i.deferUpdate();
               if (!selectedFish) denyInteraction('You need to select a fish to smoke!');
               collector.stop('confirmed');
+              return;
             }
+
+            const fishOptions = buildFishOptions(fishInventory, selectedFish?.id, selectedFish?.amount);
+            const herbOptions = buildHerbOptions(herbInventory, selectedHerb?.id, selectedHerb?.amount);
+            const fishSelectMenu = buildSelectMenus('fish', fishOptions);
+            const herbSelectMenu = buildSelectMenus('herb', herbOptions);
+            const updatedConfirmationSection = buildConfirmationSection(selectedFish, selectedHerb);
+
+            const updatedContainer = new ContainerBuilder()
+              .setAccentColor(resolveColor('620000'))
+              .addSectionComponents([smokerTitleSectionComponent])
+              .addSeparatorComponents([separatorComponent])
+              .addSectionComponents([smokerFishSectionComponent])
+              .addActionRowComponents([fishSelectMenu])
+              .addSeparatorComponents([separatorComponent])
+              .addSectionComponents([smokerHerbSectionComponent])
+              .addActionRowComponents([herbSelectMenu])
+              .addSeparatorComponents([separatorComponent])
+              .addSectionComponents([updatedConfirmationSection]);
+
+            await i.update({ components: [updatedContainer] });
           } catch (err) {
             if (err.name !== 'UserDenyError') {
               interaction.client.log('Error in smoker command interaction:', 'ERROR', err);
@@ -262,7 +323,6 @@ module.exports = {
 
               // actual smoking logic here
               const herbProvidesSpeedBoost = selectedHerb && selectedHerb.boost === 'speed';
-              // if herbs are selected limit the amount of fish to smoke to the amount of herbs
               const fishToSmoke = selectedFish.amount;
               const herbsUsed = selectedHerb ? selectedHerb.amount : 0;
 

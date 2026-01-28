@@ -13,6 +13,7 @@ const {
 } = require('discord.js');
 const { queryDB } = require('../../utils/databaseUtils.js');
 const {
+  getFishermanData,
   addToInventory,
   checkForRandomEvent,
   parseFishInventory,
@@ -29,7 +30,6 @@ const {
   endEvent,
 } = require('../../utils/trackActiveEvents.js');
 const {
-  PRESTIGE_CONFIG,
   fishData,
   fishingRodData,
   herbList,
@@ -44,48 +44,32 @@ const pondChoices = Object.entries(fishData).map(([pondKey, pondObj]) => ({
 }));
 
 module.exports = {
-  data: new SlashCommandBuilder()
-    .setName('fish')
-    .setDescription('Go fishing!')
+  data: new SlashCommandBuilder().setName('fish').setDescription('Go fishing!')
     .addStringOption(option =>
-      option.setName('pond')
-        .setDescription('Pond to fish in')
-        .addChoices(...pondChoices)
+      option.setName('pond').setDescription('Pond to fish in').addChoices(...pondChoices)
     ),
   async run(interaction) {
-    const config = interaction.client.config;
-    const griggyDatabaseDir = config.griggyDbPath;
-    const playerName = interaction.member.displayName;
-    const currentTime = Date.now();
-
-    await interaction.deferReply();
-
     function denyInteraction(message, denialEndsEvent = true) {
       if (denialEndsEvent) endEvent(interaction.user.id, 'fishing');
       throw new UserDenyError(message);
     }
 
     /**
-     * Fetches or creates the fisherman's data, checks if they can fish in the selected pond, and returns the necessary data.
-     * @returns {Promise<{fishermanRow: Object, pond: string, pondConfig: Object}>} - Resolves to an object containing the fisherman's data, the pond they are fishing in, and the pond's configuration.
+     * Checks if the user is eligible to fish, including checking their experience and inventory.
+     * @param {Object} fishermanRow - The fisherman's data row from the database.
+     * @param {Object} pondConfig - The configuration for the pond the user is fishing in.
      */
-    async function getFishermanData() {
-      if (isUserInEvent(interaction.user.id, 'fishing')) denyInteraction('You\'re already fishing! Unless you have four arms, I\'d recommend using one fishing rod at a time.\n-# If you believe this is an error, ask an admin to run the command `/admin userevents`', false);
-      let fishermanRow = await queryDB(griggyDatabaseDir, 'SELECT * FROM fishing WHERE discord_id = ?', [interaction.user.id], true);
-      if (!fishermanRow) {
-        await queryDB(griggyDatabaseDir, `
-      INSERT INTO fishing (discord_id, inventory, spices, fishing_rod, selected_rod, xp, prestige_level, smoker, last_fish_time)
-      VALUES (?, '', '', 'training_rod', 'training_rod', 0, 0, NULL, 0)
-    `, [interaction.user.id]);
-        fishermanRow = await queryDB(griggyDatabaseDir, 'SELECT * FROM fishing WHERE discord_id = ?', [interaction.user.id], true);
+    function preGameCheck(fishermanRow, pondConfig) {
+      if (isUserInEvent(interaction.user.id, 'fishing')) {
+        denyInteraction('You\'re already fishing! Unless you have four arms, I\'d recommend using one fishing rod at a time.\n-# If you believe this is an error, ask an admin to run the command `/admin userevents`', false);
       }
       const parsedFishInventory = parseFishInventory(fishermanRow.inventory);
-      if (Object.keys(parsedFishInventory.regular).length > 24) denyInteraction('Your fish bucket is too heavy! You need to sell or smoke some fish before you can catch more. -# "How d\'you expect me to carry all these back home?"');
-      let pond = interaction.options.getString('pond');
-      if (!pond) pond = getHighestAvailablePond(fishermanRow.xp);
-      const pondConfig = fishData[pond];
-      if (fishermanRow.xp < pondConfig.xpRequired) denyInteraction(`❌ You need some more experience before fishing in ${pondConfig.name} (${fishermanRow.xp}/${pondConfig.xpRequired})\n-# "I'm not sure I can handle these fish yet."`);
-      return { fishermanRow, pond, pondConfig };
+      if (Object.keys(parsedFishInventory.regular).length > 24) {
+        denyInteraction('Your fish bucket is too heavy! You need to sell or smoke some fish before you can catch more. -# "How d\'you expect me to carry all these back home?"', false);
+      }
+      if (fishermanRow.xp < pondConfig.xpRequired) {
+        denyInteraction(`❌ You need some more experience before fishing in ${pondConfig.name} (${fishermanRow.xp}/${pondConfig.xpRequired})\n-# "I'm not sure I can handle these fish yet."`, false);
+      }
     }
 
     /**
@@ -138,7 +122,8 @@ module.exports = {
                 );
               await queryDB(griggyDatabaseDir, 'UPDATE fishing SET smoker = ? WHERE discord_id = ?', [null, interaction.user.id]);
               endEvent(interaction.user.id, 'fishing');
-              await interaction.editReply({ content: '', components: [randomEventContainer], flags: MessageFlags.IsComponentsV2 });
+              await interaction.editReply('You notice a large cloud of smoke in the distance. You rush back to your camp to find your smoker engulfed in flames!\n-# "I really wish the developer let me use curse words right now."');
+              await interaction.channel.send({ content: '', components: [randomEventContainer], flags: MessageFlags.IsComponentsV2 });
               reject(new Error('smokerFire'));
             } else {
               resolve(true);
@@ -178,8 +163,8 @@ module.exports = {
           randomEvent: checkForRandomEvent('fishing'),
           caught: false,
         };
-        catchEventData.xpGained = getPrestigeFishXP(catchEventData.caughtFish.xp, fishermanRow.prestige_level, PRESTIGE_CONFIG.xpBonusPerLevel);
-        catchEventData.worth = getPrestigeFishWorth(catchEventData.caughtFish.worth, fishermanRow.prestige_level, PRESTIGE_CONFIG.worthBonusPerLevel, PRESTIGE_CONFIG.worthCap);
+        catchEventData.xpGained = getPrestigeFishXP(catchEventData.caughtFish.xp, fishermanRow.prestige_level);
+        catchEventData.worth = getPrestigeFishWorth(catchEventData.caughtFish.worth, fishermanRow.prestige_level);
         catchEventData.doubleCatch = Math.random() < fishingRodInfo.doubleCatchChance;
 
         const fishingMinigameActionRow = new ActionRowBuilder()
@@ -191,7 +176,7 @@ module.exports = {
 
         await interaction.editReply({
           content: `🎣 ${interaction.member}, you've got a bite! ${getRandomMessage("hook")}`,
-          components: [fishingMinigameActionRow],
+          components: [fishingMinigameActionRow]
         });
 
         const filter = (buttonInteraction) => buttonInteraction.customId === `catch:${interaction.user.id}`;
@@ -247,7 +232,8 @@ module.exports = {
           await handleHerbEvent(container, fishInventory, spiceInventory, xpGained, caughtFishAmount);
           break;
         default:
-          await handleDefaultCatchEvent(container, fishInventory, xpGained, caughtFishAmount);
+          await interaction.editReply({ content: '', components: [container], flags: MessageFlags.IsComponentsV2 });
+          await queryDB(griggyDatabaseDir, 'UPDATE fishing SET inventory = ?, xp = xp + ?, lifetime_fish_caught = lifetime_fish_caught + ? WHERE discord_id = ?', [fishInventory, xpGained, caughtFishAmount, interaction.user.id]);
           break;
       }
     }
@@ -305,17 +291,17 @@ module.exports = {
             new TextDisplayBuilder().setContent(`## 🎁 ${playerName} found a treasure chest! ${getRandomMessage('treasure')}`)
           ]).setThumbnailAccessory(new ThumbnailBuilder({ media: { url: 'https://minecraft.wiki/images/Chest_%28S%29_JE2.png' } }))
         ).addActionRowComponents(
-              new ActionRowBuilder().addComponents(
-                ...Object.entries(treasureRewards).map(([key, reward]) =>
-                  new ButtonBuilder()
-                    .setCustomId(`fishingTreasure:${key}/${interaction.user.id}`)
-                    .setLabel(reward.displayName)
-                    .setEmoji(reward.emoji)
-                    .setStyle(reward.buttonStyle)
-                    .setDisabled(key === "money" && !canCollectTreasureMoney)
-                )
-              )
+          new ActionRowBuilder().addComponents(
+            ...Object.entries(treasureRewards).map(([key, reward]) =>
+              new ButtonBuilder()
+                .setCustomId(`fishingTreasure:${key}/${interaction.user.id}`)
+                .setLabel(reward.displayName)
+                .setEmoji(reward.emoji)
+                .setStyle(reward.buttonStyle)
+                .setDisabled(key === "money" && !canCollectTreasureMoney)
             )
+          )
+        )
       await interaction.editReply({ content: '', components: [container], flags: MessageFlags.IsComponentsV2 });
       await queryDB(griggyDatabaseDir, 'UPDATE fishing SET inventory = ?, xp = xp + ?, lifetime_fish_caught = lifetime_fish_caught + ? WHERE discord_id = ?', [fishInventory, xpGained, caughtFishAmount, interaction.user.id]);
     }
@@ -341,20 +327,19 @@ module.exports = {
       await queryDB(griggyDatabaseDir, 'UPDATE fishing SET inventory = ?, spices = ?, xp = xp + ?, lifetime_fish_caught = lifetime_fish_caught + ? WHERE discord_id = ?', [fishInventory, spiceInventory, xpGained, caughtFishAmount, interaction.user.id]);
     }
 
-    /**
-     * Handles the default catch event, updating the user's inventory and XP, and sending the catch container.
-     * @param {ContainerBuilder} container - The container with the catch details.
-     * @param {string} fishInventory - The user's current fish inventory.
-     * @param {number} xpGained - The amount of XP gained from the catch.
-     * @param {number} caughtFishAmount - The amount of fish caught.
-     */
-    async function handleDefaultCatchEvent(container, fishInventory, xpGained, caughtFishAmount) {
-      await interaction.editReply({ content: '', components: [container], flags: MessageFlags.IsComponentsV2 });
-      await queryDB(griggyDatabaseDir, 'UPDATE fishing SET inventory = ?, xp = xp + ?, lifetime_fish_caught = lifetime_fish_caught + ? WHERE discord_id = ?', [fishInventory, xpGained, caughtFishAmount, interaction.user.id]);
-    }
+    const config = interaction.client.config;
+    const griggyDatabaseDir = config.griggyDbPath;
+    const playerName = interaction.member.displayName;
+    const currentTime = Date.now();
+
+    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
     try {
-      const { fishermanRow, pond, pondConfig } = await getFishermanData();
+      const fishermanRow = await getFishermanData(interaction.user.id, griggyDatabaseDir, true);
+      let pond = interaction.options.getString('pond');
+      if (!pond) pond = getHighestAvailablePond(fishermanRow.xp);
+      const pondConfig = fishData[pond];
+      preGameCheck(fishermanRow, pondConfig);
       startEvent(interaction.user.id, 'fishing');
 
       if (fishermanRow.smoker) {

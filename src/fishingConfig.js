@@ -17,11 +17,14 @@ const FISH_WORTH_FORMULA = {
 
 // === PRESTIGE CONFIG ===
 const PRESTIGE_CONFIG = {
-  xpBonusPerLevel: 0.1,      // 10% more XP per prestige
-  worthBonusPerLevel: 100,   // +100 worth per prestige
-  worthCap: 4000,            // Max possible worth after bonuses
-  maxPrestige: 10,           // Optional: cap prestige levels
+  xpBonusPerLevel: 0.1,           // 10% more XP per prestige
+  flatWorthBonusPerLevel: 100,    // +100 worth per prestige*
+  percentWorthBonusPerLevel: 0.1, // +10% worth per prestige*
+  worthCap: 4000,                 // Max possible worth after bonuses
+  maxPrestige: 10,                // Optional: cap prestige levels
 };
+// * NOTE: The worth bonuses are calculated based on whichever is lower: the flat bonus or the percentage bonus.
+// This helps prevent the worth from exceeding the cap too quickly, and prevents common fish from becoming too valuable.
 
 // === POND/FISH DEFINITIONS ===
 const rarityOrder = ['common', 'uncommon', 'rare', 'legendary', 'mythical'];
@@ -121,7 +124,7 @@ for (let pondIdx = 0; pondIdx < pondNames.length; pondIdx++) {
 
 // === REST OF CONFIG ===
 const RAW_EARNINGS_LIMIT = 15000;
-const SMOKED_EARNINGS_LIMIT = 15000;
+const SMOKED_EARNINGS_LIMIT = 35000;
 const TREASURE_EARNINGS_LIMIT = 10000;
 const SMOKED_FISH_MULTIPLIER = 1.5;
 const DEFAULT_SMOKING_TIME_PER_FISH = 900_000 // 15 minutes

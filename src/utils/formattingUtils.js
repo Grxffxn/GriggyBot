@@ -40,4 +40,29 @@ function stripMinecraftColorCodes(input, ansi) {
   }
 }
 
-module.exports = { formatNumber, hyphenateUUID, convertMinecraftToANSI, stripMinecraftColorCodes };
+function convertShortDateToISO(input) {
+  if (!input || typeof input !== 'string') return null;
+  // Supported units: w (weeks), d (days), h (hours), m (minutes), s (seconds)
+  const regex = /(\d+)([wdhms])/gi;
+  let match;
+  let ms = 0;
+  const unitToMs = {
+    w: 7 * 24 * 60 * 60 * 1000,
+    d: 24 * 60 * 60 * 1000,
+    h: 60 * 60 * 1000,
+    m: 60 * 1000,
+    s: 1000,
+  };
+  let found = false;
+  while ((match = regex.exec(input)) !== null) {
+    found = true;
+    const value = parseInt(match[1], 10);
+    const unit = match[2].toLowerCase();
+    if (!unitToMs[unit]) return null; // Invalid unit
+    ms += value * unitToMs[unit];
+  }
+  if (!found || ms === 0) return null;
+  return new Date(Date.now() - ms).toISOString();
+}
+
+module.exports = { formatNumber, hyphenateUUID, convertMinecraftToANSI, stripMinecraftColorCodes, convertShortDateToISO };
